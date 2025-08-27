@@ -4,8 +4,12 @@ import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
 import { Folders, User } from "lucide-react";
+import { useState } from "react";
+import LoginModal from "../LoginModal";
 
 const NavBar = () => {
+  const [openModal, setOpenModal] = useState(false)
+
   return (
     <div className="min-h-screen bg-muted">
       <nav
@@ -18,7 +22,10 @@ const NavBar = () => {
 
           <div className="flex items-center gap-6">
             <ToogleMode />
-            <Button variant="outline" className="hidden sm:inline-flex rounded-full text-lg px-7 py-3 h-14 min-w-[120px] cursor-pointer">
+            <Button 
+              variant="outline" 
+              className="hidden sm:inline-flex rounded-full text-lg px-7 py-3 h-14 min-w-[120px] cursor-pointer" 
+              onClick={() => setOpenModal(true)}>
               <User />
               Sign In
             </Button>
@@ -33,6 +40,9 @@ const NavBar = () => {
           </div>
         </div>
       </nav>
+
+      <LoginModal open={openModal} onOpenChange={setOpenModal} />
+
     </div>
   );
 };
