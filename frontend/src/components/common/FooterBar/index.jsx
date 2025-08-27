@@ -59,13 +59,13 @@ const FooterBar = ({
           className="flex w-full flex-col justify-between gap-10 lg:flex-row lg:items-start lg:text-left">
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start">
             {/* Logo */}
-            <div className="flex items-center gap-2 lg:justify-start">
+            <div className="flex items-center gap-2 lg:justify-start dark:bg-black">
               <Logo />
             </div>
             <p className="text-muted-foreground max-w-[70%] text-sm">
               {description}
             </p>
-            <ul className="text-amber-50 flex items-center space-x-6">
+            <ul className="text-amber-50 dark:text-black flex items-center space-x-6">
               {socialLinks.map((social, idx) => (
                 <li key={idx} className="hover:text-primary font-medium">
                   <a href={social.href} aria-label={social.label}>
@@ -75,7 +75,7 @@ const FooterBar = ({
               ))}
             </ul>
           </div>
-          <div className="grid w-full gap-6 md:grid-cols-3 lg:gap-20 text-amber-50">
+          <div className="grid w-full gap-6 md:grid-cols-3 lg:gap-20 text-amber-50 dark:text-black">
             {sections.map((section, sectionIdx) => (
               <div key={sectionIdx}>
                 <h3 className="mb-4 font-bold">{section.title}</h3>
