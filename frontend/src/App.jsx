@@ -1,10 +1,18 @@
-import { Button } from "@/components/ui/button"
-
+import { Navigate, Route, Routes } from 'react-router-dom'
+import HomePage from './pages'
+import NotFoundPage from './pages/404'
 function App() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div>
+    <Routes>
+      {/* redirect route */}
+      <Route path="/" element={
+        <Navigate to="/home" replace={true} />
+      }/>
+
+      <Route path="/home" element={<HomePage/>} />
+      {/* page not found */}
+      <Route path="*" element={<NotFoundPage/>} />
+    </Routes>
   )
 }
 
