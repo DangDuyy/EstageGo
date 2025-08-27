@@ -20,7 +20,7 @@ function LoginModal({ open, onOpenChange }) {
           {/* Left image panel = 4/10 */}
           <div className="hidden md:block md:col-span-4 relative h-full">
             <img
-              src="/auth.jpg"
+              src="/images/banner/banner-account1.jpg"
               alt="cover"
               className="absolute inset-0 h-full w-full object-cover"
             />
