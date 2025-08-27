@@ -1,11 +1,24 @@
-import { Footer } from '@/components/common/Footer'
+import AgentForm from '@/components/common/Agent'
+import { FooterBar } from '@/components/common/FooterBar'
+import HeroSearch from '@/components/common/HeroSearch'
 import NavBar from '@/components/common/NavBar'
+import ReviewForm from '@/components/common/Review'
 
 function HomePage() {
+
+  const handleSearch = (payload) => {
+    // { mode, type, location, keyword }
+    console.log(payload);
+    // call API / navigate ...
+  }
+
   return (
     <>
       <NavBar/>
-      <Footer/>
+      <HeroSearch backgroundUrl="/images/home/house-21.jpg" onSearch={handleSearch}/>
+      <ReviewForm/>
+      <AgentForm/>
+      <FooterBar/>
     </>
   )
 }

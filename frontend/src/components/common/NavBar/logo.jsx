@@ -10,7 +10,6 @@ export const Logo = () => (
      <text
       x="40"
       y="24"
-      fontFamily="Inter, Arial, sans-serif"
       fontSize="24"
       fontWeight="700"
       letterSpacing="1"

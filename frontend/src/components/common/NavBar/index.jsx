@@ -11,9 +11,9 @@ const NavBar = () => {
   const [openModal, setOpenModal] = useState(false)
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-[95px] bg-muted">
       <nav
-        className="fixed top-4 left-0 right-0 h-24 bg-background border dark:border-slate-700/70 rounded-full shadow-lg w-full">
+        className="fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full">
         <div className="h-full flex items-center justify-between mx-auto px-20">
           <Logo />
 
