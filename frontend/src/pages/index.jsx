@@ -1,4 +1,5 @@
 import AgentForm from '@/components/common/Agent'
+import { FeatureCard } from '@/components/common/FeatureCard'
 import { FooterBar } from '@/components/common/FooterBar'
 import HeroSearch from '@/components/common/HeroSearch'
 import NavBar from '@/components/common/NavBar'
@@ -16,6 +17,7 @@ function HomePage() {
     <>
       <NavBar/>
       <HeroSearch backgroundUrl="/images/home/house-21.jpg" onSearch={handleSearch}/>
+      <FeatureCard/>
       <ReviewForm/>
       <AgentForm/>
       <FooterBar/>
