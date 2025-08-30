@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import HomePage from './pages'
+import HomePage from './pages/HomePage'
 import NotFoundPage from './pages/404'
+import PropertyPage from './pages/PropertyPage'
 function App() {
   return (
     <Routes>
@@ -10,6 +11,7 @@ function App() {
       }/>
 
       <Route path="/home" element={<HomePage/>} />
+      <Route path="/properties" element={<PropertyPage/>} />
       {/* page not found */}
       <Route path="*" element={<NotFoundPage/>} />
     </Routes>
