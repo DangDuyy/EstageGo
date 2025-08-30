@@ -1,4 +1,5 @@
 import {
+  ArrowUpRight,
   BathIcon,
   BedIcon,
   LandPlot,
@@ -14,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const categories = ["View All", "Apartment", "Villa", "Studio", "House", "Office"]
 
@@ -364,6 +367,14 @@ const FeatureCard = () => {
             
           </div>
         </div>
+      </div>
+      <div className="flex justify-center items-center my-10">
+        <Button className="flex justify-center items-center rounded-full border border-gray-400 px-7 py-7 text-2xl cursor-pointer">
+          <Link href="/properties" className="flex flex-row gap-3 items-center">
+            <span>View all properties</span>
+            <ArrowUpRight className="!h-8 !w-8" />
+          </Link>
+        </Button>
       </div>
     </section>
   );
