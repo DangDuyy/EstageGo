@@ -8,6 +8,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 export default function LocationCard() {
   const [api, setApi] = React.useState(null);
@@ -46,14 +48,17 @@ export default function LocationCard() {
                   alt=""
                   className="block w-full h-auto rounded-xl"
                 />
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 px-4 py-3 rounded-xl shadow-md flex items-center justify-between w-[95%]">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 px-4 py-3 rounded-xl shadow-md flex items-center justify-between w-[95%] cursor-pointer">
                   <div>
-                    <p className="text-xs font-semibold">321 Property</p>
-                    <p className="text-base font-medium text-gray-900">Naperville</p>
+                    <p className="text-xl font-semibold text-gray-900">321 Property</p>
+                    <p className="text-xl font-medium text-gray-900">Naperville</p>
                   </div>
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-300">
-                    <span className="text-lg">→</span>
-                  </div>
+                  <Link
+                    to="/locations"
+                    className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 hover:bg-blue-500 transition"
+                  >
+                    <ArrowRight className="w-7 h-7 text-gray-900"/>
+                  </Link>
                 </div>
               </CardHeader>
             </Card>
