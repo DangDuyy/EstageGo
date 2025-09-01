@@ -2,11 +2,12 @@ import express from 'express'
 import { APIs_V1 } from './routes/v1'
 import { env } from './config/environment'
 import exitHook from 'async-exit-hook'
-import { CLOSE_DB, CONNECT_DB } from './config/mongodb'
 import { corsOptions } from './config/cors'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { errorHandlingMiddleware } from '~/middlewares/exampleMiddleware'
+import mongoose from 'mongoose'
+
 
 const START_SERVER = () => {
   const app = express ()
@@ -42,20 +43,19 @@ const START_SERVER = () => {
 
   exitHook(() => {
     console.log('4. Disconnecting from MongoDB Cloud Atlas')
-    CLOSE_DB()
-    console.log('5. Disconnecting from MongoDB Cloud Atlas')
+    mongoose.connection.close()
+    console.log('5. Disconnected from MongoDB Cloud Atlas')
   })
 }
 
-
 (async () => {
   try {
-    console.log("1. Connect to MongoDB Atlas")
-    await CONNECT_DB()
-    console.log("2. Connect to MongoDB Atlas")
-    START_SERVER()
+    console.log("1. Connect to MongoDB Atlas (Mongoose)");
+    await mongoose.connect(env.MONGODB_URI, { dbName: env.DATABASE_NAME });
+    console.log("2. Connected to MongoDB Atlas (Mongoose)");
+    START_SERVER();
   } catch (error) {
-    console.error(error)
-    process.exit(0)
+    console.error(error);
+    process.exit(0);
   }
-})()
+})();

@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE, PHONE_RULE, PHONE_RULE_MESSAGE } from "~/utils/validators";
 
 const USER_ROLE = {
-    PATIENT: 'patient',
-    DOCTOR: 'doctor',
+    USER: 'user',
+    AGENT: 'agent',
     ADMIN: 'admin'
 }
 const USER_GENDER = {
@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         enum: Object.values(USER_ROLE),
-        default: USER_ROLE.PATIENT
+        default: USER_ROLE.USER
     },
     address: {
         type: String,
@@ -99,5 +99,5 @@ userSchema.pre('findOneAndUpdate', function() {
   update.$set.updatedAt = new Date()
 })
 
-const User = mongoose.model('User', userSchema);
-export default User;
+const userModel = mongoose.model('User', userSchema);
+export default userModel;
