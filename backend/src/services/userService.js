@@ -12,7 +12,7 @@ const createNew = async (reqBody) => {
 
 const verifyAccount = async (reqBody) => {
   try {
-    const existUser = await userModel.findOneByEmail(reqBody.email)
+    const existUser = await userModel.findOne({email: reqBody.email})
 
   if (!existUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
   if (existUser.isActive) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Account is already active')
@@ -23,7 +23,7 @@ const verifyAccount = async (reqBody) => {
       verifyToken: null
     }
 
-    const updateUser = await userModel.update(updateData, existUser._id)
+    const updateUser = await userModel.findByIdAndUpdate(existUser._id, { $set: updateData }, { new: true })
     return pickUser(updateUser)
   } catch (error) {
     throw new Error
@@ -32,7 +32,7 @@ const verifyAccount = async (reqBody) => {
 
 const login = async (reqBody) => {
   try {
-    const existUser = await userModel.findOneByEmail(reqBody.email)
+    const existUser = await userModel.findOne({email: reqBody.email})
 
     if (!existUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
     if (!existUser.isActive) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Account is not active')

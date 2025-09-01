@@ -3,9 +3,37 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { loginUserAPI } from "@/redux/user/userSlice";
+import { EMAIL_RULE, EMAIL_RULE_MESSAGE, FIELD_REQUIRED_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE } from "@/utils/validators";
 import { CircleUserRound, Facebook, Lock, X } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import FieldErrorAlert from "../Form/FieldErrorAlert";
 
 function LoginModal({ open, onOpenChange }) {
+  const dispatch = useDispatch()
+  const [ register, handleSubmit, formState: { errors } ] = useForm()
+  useEffect(() => {
+    toast.promise(() => {
+
+    })
+  }, [])
+
+  const navigate = useNavigate()
+
+  const submitLogin = (data) => {
+    const { email, password } = data
+    toast.promise(
+      dispatch(loginUserAPI({ email, password })),
+      { pending: 'Login in ... '}
+    ).then((res) => {
+      if (!res.error) navigate('/')
+    })
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -44,9 +72,19 @@ function LoginModal({ open, onOpenChange }) {
                 </Label>
                 <div className="relative">
                   <CircleUserRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input id="email" placeholder="Your name" className="h-14 pl-12 rounded-full text-base" />
+                  <Input id="email" placeholder="Email Adress" className="h-14 pl-12 rounded-full text-base" 
+                    {...register('email', {
+                      required: FIELD_REQUIRED_MESSAGE,
+                      pattern: {
+                        value: EMAIL_RULE,
+                        message: EMAIL_RULE_MESSAGE
+                      }
+                    })}
+                  />
                 </div>
               </div>
+
+              <FieldErrorAlert errors={errors} fieldName={'email'} />      
 
               {/* Password */}
               <div className="space-y-2">
@@ -55,9 +93,19 @@ function LoginModal({ open, onOpenChange }) {
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input id="password" type="password" placeholder="Your password" className="h-14 pl-12 rounded-full text-base" />
+                  <Input id="password" type="password" placeholder="Your password" className="h-14 pl-12 rounded-full text-base" 
+                    {...register('password', {
+                      required: FIELD_REQUIRED_MESSAGE,
+                      pattern: {
+                        value: PASSWORD_RULE,
+                        message: PASSWORD_RULE_MESSAGE
+                      }
+                    })}
+                  />
                 </div>
               </div>
+
+              <FieldErrorAlert errors={errors} fieldName={'password'} />
 
               <div className="flex items-center justify-end -mt-2">
                 <Button type="button" variant="link" className="px-0 text-muted-foreground">

@@ -5,7 +5,7 @@ import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
 import { Folders, User } from "lucide-react";
 import { useState } from "react";
-import LoginModal from "../LoginModal";
+import LoginModal from "../Modal/login";
 
 const NavBar = () => {
   const [openModal, setOpenModal] = useState(false)
