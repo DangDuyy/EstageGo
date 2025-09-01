@@ -1,10 +1,10 @@
 import { StatusCodes } from "http-status-codes"
-import { userModel } from "~/models/userModel"
 import { pickUser } from "~/utils/formatter"
 import bcryptjs from 'bcryptjs'
 import { JwtProvider } from "~/providers/JwtProvider"
 import ApiError from "~/utils/ApiError"
 import { env } from "~/config/environment"
+import userModel from "~/models/users"
 
 const createNew = async (reqBody) => {
   //
