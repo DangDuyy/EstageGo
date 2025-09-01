@@ -119,11 +119,20 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scrollbar-gutter: stable;}
   body {
     @apply bg-background text-foreground;
     @apply font-sans; 
     font-family: var(--font-sans);
-
   }
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; }
+}
+
+.keep-scrollbar { scrollbar-gutter: stable; }
+
+@supports not (scrollbar-gutter: stable) {
+  .keep-scrollbar { overflow-y: scroll; }
 }

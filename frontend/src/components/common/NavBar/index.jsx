@@ -9,6 +9,15 @@ import LoginModal from "../Modal/login";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 const NavBar = () => {
   const [openModal, setOpenModal] = useState(false)
@@ -28,10 +37,19 @@ const NavBar = () => {
           <div className="flex items-center gap-6">
             <ToogleMode />
             { currentUser 
-              ? <Avatar className="h-13 w-13">
-                  <AvatarImage src={currentUser.avatar} />
-                  <AvatarFallback>{currentUser.name}</AvatarFallback>
-                </Avatar>
+              ? <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <Avatar className="h-13 w-13 cursor-pointer">
+                    <AvatarImage src={currentUser.avatar} />
+                    <AvatarFallback>{currentUser.name}</AvatarFallback>
+                  </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="cursor-pointer">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Logout</DropdownMenuLabel>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               : <Button 
                 variant="outline" 
                 className="hidden sm:inline-flex rounded-full text-lg px-7 py-3 h-14 min-w-[120px] cursor-pointer" 
