@@ -1,5 +1,3 @@
-import { ModeToggle } from "@/components/mode-toggle";
-import { UserNav } from "@/components/common/SidebarMenu/user-nav";
 import { SheetMenu } from "@/components/common/SidebarMenu/sheet-menu";
 
 export function Navbar({
@@ -12,10 +10,6 @@ export function Navbar({
         <div className="flex items-center space-x-4 lg:space-x-0">
           <SheetMenu />
           <h1 className="font-bold">{title}</h1>
-        </div>
-        <div className="flex flex-1 items-center justify-end">
-          <ModeToggle />
-          <UserNav />
         </div>
       </div>
     </header>

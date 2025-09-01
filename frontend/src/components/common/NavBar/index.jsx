@@ -3,23 +3,38 @@ import { Logo } from "./logo";
 import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
-import { Folders, User } from "lucide-react";
+import { Folders, LayoutGrid, LogOut, User } from "lucide-react";
 import { useState } from "react";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { useStore } from "@/hooks/use-store";
+import { cn } from "@/lib/utils";
 import LoginModal from "../Modal/login";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
 
 
-const NavBar = () => {
+const NavBar = ({ hideLogo = false }) => {
+  // Lấy trạng thái sidebar nếu cần co giãn
+  const sidebar = useStore(useSidebar, (x) => x);
+  const sidebarOpen = hideLogo && sidebar ? sidebar.getOpenState() : false;
+  const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
 
   const currentUser = useSelector(selectCurrentUser)
@@ -27,9 +42,13 @@ const NavBar = () => {
   return (
     <div className="min-h-[95px] bg-muted">
       <nav
-        className="fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full">
+        className={cn(
+          "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[margin-left] ease-in-out duration-300 z-10",
+          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:ml-72" : "lg:ml-[90px]")
+        )}
+      >
         <div className="h-full flex items-center justify-between mx-auto px-20">
-          <Logo />
+          {!hideLogo && <Logo />}
 
           {/* Desktop Menu */}
           <NavMenu className="hidden md:block" />
@@ -38,16 +57,50 @@ const NavBar = () => {
             <ToogleMode />
             { currentUser 
               ? <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Avatar className="h-13 w-13 cursor-pointer">
-                    <AvatarImage src={currentUser.avatar} />
-                    <AvatarFallback>{currentUser.name}</AvatarFallback>
-                  </Avatar>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="cursor-pointer">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <TooltipProvider disableHoverableContent>
+                    <Tooltip delayDuration={100}>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="relative h-8 w-8 rounded-full">
+                            <Avatar className="h-13 w-13">
+                              <AvatarImage src={currentUser.avatar} alt="Avatar" />
+                              <AvatarFallback className="bg-transparent">{currentUser.fullName}</AvatarFallback>
+                            </Avatar>
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">{currentUser.fullName}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {currentUser.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Logout</DropdownMenuLabel>
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="hover:cursor-pointer" asChild>
+                        <Link href="/dashboard" className="flex items-center">
+                          <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
+                          Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="hover:cursor-pointer" asChild>
+                        <Link href="/account" className="flex items-center">
+                          <User className="w-4 h-4 mr-3 text-muted-foreground" />
+                          Account
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+                      <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
+                      Sign out
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               : <Button 
