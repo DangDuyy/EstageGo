@@ -5,8 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { loginUserAPI } from "@/redux/user/userSlice";
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE, FIELD_REQUIRED_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE } from "@/utils/validators";
-import { CircleUserRound, Facebook, Lock, X } from "lucide-react";
-import { useEffect } from "react";
+import { CircleUserRound, Lock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -15,20 +14,17 @@ import FieldErrorAlert from "../Form/FieldErrorAlert";
 
 function LoginModal({ open, onOpenChange }) {
   const dispatch = useDispatch()
-  const [ register, handleSubmit, formState: { errors } ] = useForm()
-  useEffect(() => {
-    toast.promise(() => {
-
-    })
-  }, [])
+  const { register, handleSubmit, formState: { errors } } = useForm()
 
   const navigate = useNavigate()
 
   const submitLogin = (data) => {
+    
     const { email, password } = data
+
     toast.promise(
       dispatch(loginUserAPI({ email, password })),
-      { pending: 'Login in ... '}
+      { pending: 'Login in...' }
     ).then((res) => {
       if (!res.error) navigate('/')
     })
@@ -64,7 +60,7 @@ function LoginModal({ open, onOpenChange }) {
               </div>
             </DialogHeader>
 
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6" onSubmit={handleSubmit(submitLogin)}>
               {/* Account */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-muted-foreground">

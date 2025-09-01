@@ -2,7 +2,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FaExclamationTriangle } from 'react-icons/fa'
 
 function FieldErrorAlert ({ errors, fieldName }) {
-  if (!errors || !errors(fieldName )) return null
+  if (!errors || !errors[fieldName]) return null
 
   return (
     <Alert
