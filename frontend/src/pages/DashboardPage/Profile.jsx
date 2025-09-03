@@ -3,6 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { DropzoneContent, DropzoneEmptyState, Dropzone } from '@/components/ui/dropzone'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { selectCurrentUser } from '@/redux/user/userSlice'
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -18,7 +21,8 @@ export default function Profile() {
 
   return (
     <ContentLayout title="Account Settings">
-      <div className='border-2 w-full rounded-2xl flex flex-col gap-5 p-5'>
+      
+      <div className="w-full border-2 rounded-2xl flex flex-col gap-5 p-5">
         <p>Agent Account</p>
         <p className='border-1 bg-[#fff3cd] text-black p-4 rounded-2xl'>
           Your current account type is set to agent, if you want to remove your agent account, and return to normal account, you must click the button below
@@ -68,7 +72,67 @@ export default function Profile() {
             </Dropzone>
           </div>
         </div>
-        {/* Dialog cho zoom ảnh */}
+      </div>
+
+      <div className="mt-10 py-10">
+        <p className="text-2xl font-semibold mb-5">Information</p>
+        <div className="flex flex-col gap-8">
+          <span>
+            <p>Full name:*</p>
+            <Input type="text" placeholder="Type your full name..."></Input>
+          </span>
+          <span>
+            <p>Bio:*</p>
+            <Input type="text" placeholder="Type your bio..."></Input>
+          </span>
+          <div className="flex flex-row gap-12">
+            <span className='flex flex-row gap-5'>
+              <p>Gender:*</p>
+              <RadioGroup defaultValue="option-one">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="option-one" id="option-one" />
+                  <Label htmlFor="option-one">Male</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="option-two" id="option-two" />
+                  <Label htmlFor="option-two">Female</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="option-three" id="option-two" />
+                  <Label htmlFor="option-two">Others</Label>
+                </div>
+              </RadioGroup> 
+            </span>
+            <span>
+              <p>Phone:*</p>
+              <Input type="text" placeholder="Type your phone number.."></Input>
+            </span>
+          </div>
+          <span>
+            <p>Location:*</p>
+            <Input type="text" placeholder="Type your address..."></Input>
+          </span>
+          <Button className="max-w-[150px] rounded-3xl">Save and update</Button>
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <p className="text-2xl font-semibold mb-10">Change password</p>
+        <div className="flex flex-row gap-30 mb-10">
+          <span>
+            <p>Old Password:*</p>
+            <Input type="password" placeholder="Type password..."></Input>
+          </span>
+          <span>
+            <p>New Password:*</p>
+            <Input type="password" placeholder="Type password..."></Input>
+          </span>
+          <span>
+            <p>Confirm New Password:*</p>
+            <Input type="password" placeholder="Type password..."></Input>
+          </span>
+        </div>
+        <Button className="max-w-[150px] rounded-3xl">Change password</Button>
       </div>
     </ContentLayout>
   )
