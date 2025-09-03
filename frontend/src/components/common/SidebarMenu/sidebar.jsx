@@ -24,15 +24,21 @@ export function Sidebar() {
         onMouseEnter={() => setIsHover(true)}
         onMouseLeave={() => setIsHover(false)}
         className="relative h-full flex flex-col px-3 py-4 overflow-y-auto shadow-md dark:shadow-zinc-800">
-        <Button
+        <div
           className={cn(
-            "transition-transform ease-in-out duration-300 mb-1",
+            "transition-transform ease-in-out duration-300 mb-1 w-full flex items-center justify-center",
             !getOpenState() ? "translate-x-1" : "translate-x-0"
           )}
-          variant="link"
-          asChild>
-            <Logo />
-        </Button>
+        >
+          <Logo
+            showText={getOpenState()}
+            style={{
+              height: getOpenState() ? '80px' : '64px',
+              width: getOpenState() ? 'auto' : '30px'
+            }}
+          />
+        </div>
+
         <Menu isOpen={getOpenState()} />
       </div>
     </aside>

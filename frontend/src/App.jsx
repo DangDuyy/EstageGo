@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import NotFoundPage from './pages/404'
-import DashboardPage from './pages/DashboardPage'
+import DashboardPage from './pages/DashboardPage/DashBoard'
 import HomePage from './pages/HomePage'
 import PropertyPage from './pages/PropertyPage'
 function App() {
