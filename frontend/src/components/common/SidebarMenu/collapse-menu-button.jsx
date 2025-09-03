@@ -28,7 +28,6 @@ import { DropdownMenuArrow } from "@radix-ui/react-dropdown-menu";
 export function CollapseMenuButton({
   icon: Icon,
   label,
-  active,
   submenus,
   isOpen
 }) {
@@ -100,18 +99,9 @@ export function CollapseMenuButton({
             <DropdownMenuTrigger asChild>
               <Button
                 variant={isSubmenuActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-10 mb-1">
-                <div className="w-full items-center flex justify-between">
-                  <div className="flex items-center">
-                    <span className={cn(isOpen === false ? "" : "mr-4")}>
-                      <Icon size={18} />
-                    </span>
-                    <p
-                      className={cn("max-w-[200px] truncate", isOpen === false ? "opacity-0" : "opacity-100")}>
-                      {label}
-                    </p>
-                  </div>
-                </div>
+                className="h-10 w-10 mb-1 p-0 flex items-center justify-center gap-0"
+              >
+                {Icon && <Icon size={18} />}
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>

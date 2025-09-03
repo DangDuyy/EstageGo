@@ -1,3 +1,4 @@
+// Sidebar Menu component
 import { Ellipsis, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -12,16 +13,14 @@ import {
 import { getMenuList } from "@/lib/menu-list";
 import { cn } from "@/lib/utils";
 
-export function Menu({
-  isOpen
-}) {
-  const location = useLocation()
-  const pathname = location.pathname
-  const menuList = getMenuList(pathname)
+export function Menu({ isOpen }) {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const menuList = getMenuList(pathname);
 
   return (
     <nav className="mt-8 h-screen w-full flex flex-col">
-      <ul className="flex flex-col flex-1 items-start space-y-1 overflow-y-auto">
+      <ul className="flex flex-col flex-1 space-y-1 overflow-y-auto">
         {menuList.map(({ groupLabel, menus }, index) => (
           <li className={cn("w-full", groupLabel ? "pt-5" : "")} key={index}>
             {(isOpen && groupLabel) || isOpen === undefined ? (
@@ -33,7 +32,7 @@ export function Menu({
               <TooltipProvider>
                 <Tooltip delayDuration={100}>
                   <TooltipTrigger className="w-full">
-                    <div className="w-full flex justify-center items-center">
+                    <div className="w-full h-10 flex items-center justify-center">
                       <Ellipsis className="h-5 w-5" />
                     </div>
                   </TooltipTrigger>
@@ -45,57 +44,61 @@ export function Menu({
             ) : (
               <p className="pb-2"></p>
             )}
-            {menus.map(({ href, label, icon: Icon, active, submenus }, index) =>
-              !submenus || submenus.length === 0 ? (
-                <div className="w-full" key={index}>
-                  <TooltipProvider disableHoverableContent>
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={
-                            (active === undefined &&
-                              pathname.startsWith(href)) ||
-                            active
-                              ? "secondary"
-                              : "ghost"
-                          }
-                          className="w-full justify-start h-10 mb-1"
-                          asChild>
-                          <Link href={href}>
-                            <span className={cn(isOpen === false ? "" : "mr-4")}>
-                              <Icon size={14} />
-                            </span>
-                            <p
-                              className={cn("max-w-[200px] truncate text-xl", isOpen === false
-                                ? "-translate-x-96 opacity-0"
-                                : "translate-x-0 opacity-100")}>
-                              {label}
-                            </p>
-                          </Link>
-                        </Button>
-                      </TooltipTrigger>
-                      {isOpen === false && (
-                        <TooltipContent side="right">
-                          {label}
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              ) : (
+            {menus.map(({ href, label, icon: Icon, active, submenus }, index) => {
+              const isActive = (active === undefined && pathname.startsWith(href)) || active;
+              const baseButton = (
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "h-10 mb-1",
+                    isOpen ? "w-full justify-start" : "w-full justify-center px-0"
+                  )}
+                  asChild>
+                  <Link
+                    href={href}
+                    className={cn(
+                      "flex items-center h-full w-full",
+                      isOpen ? "justify-start" : "justify-center"
+                    )}>
+                    <span className={cn(isOpen ? "mr-4" : "")}> <Icon size={18} /> </span>
+                    <p
+                      className={cn(
+                        "max-w-[200px] truncate text-xl transition-all",
+                        !isOpen && "hidden"
+                      )}>
+                      {label}
+                    </p>
+                  </Link>
+                </Button>
+              );
+
+              if (!submenus || submenus.length === 0) {
+                return (
+                  <div className="w-full" key={index}>
+                    <TooltipProvider disableHoverableContent>
+                      <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>{baseButton}</TooltipTrigger>
+                        {!isOpen && (
+                          <TooltipContent side="right">{label}</TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                );
+              }
+
+              return (
                 <div className="w-full" key={index}>
                   <CollapseMenuButton
                     icon={Icon}
                     label={label}
-                    active={
-                      active === undefined
-                        ? pathname.startsWith(href)
-                        : active
-                    }
+                    active={isActive}
                     submenus={submenus}
-                    isOpen={isOpen} />
+                    isOpen={isOpen}
+                  />
                 </div>
-              ))}
+              );
+            })}
           </li>
         ))}
       </ul>
