@@ -63,7 +63,7 @@ const NavBar = ({ hideLogo = false }) => {
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" className="relative h-8 w-8 rounded-full">
                             <Avatar className="h-13 w-13">
-                              <AvatarImage src={currentUser.avatar} alt="Avatar" />
+                              <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
                               <AvatarFallback className="bg-transparent">{currentUser.fullName}</AvatarFallback>
                             </Avatar>
                           </Button>

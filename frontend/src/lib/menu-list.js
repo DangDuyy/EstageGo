@@ -1,4 +1,4 @@
-import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid } from "lucide-react";
+import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid, MessageCircleMore, HeartPlus, House } from "lucide-react";
 
 export function getMenuList(pathname) {
   return [
@@ -20,26 +20,31 @@ export function getMenuList(pathname) {
           href: "",
           label: "Posts",
           icon: SquarePen,
-          submenus: [
-            {
-              href: "/posts",
-              label: "All Posts"
-            },
-            {
-              href: "/posts/new",
-              label: "New Post"
-            }
-          ]
+          // submenus: [
+          //   {
+          //     href: "/posts",
+          //     label: "All Posts"
+          //   },
+          //   {
+          //     href: "/posts/new",
+          //     label: "New Post"
+          //   }
+          // ]
         },
         {
-          href: "/categories",
-          label: "Categories",
-          icon: Bookmark
+          href: "/properties",
+          label: "My properties",
+          icon: House,
         },
         {
-          href: "/tags",
-          label: "Tags",
-          icon: Tag
+          href: "/messages",
+          label: "Message",
+          icon: MessageCircleMore
+        },
+        {
+          href: "/wishlist",
+          label: "My wishlist",
+          icon: HeartPlus
         }
       ]
     },
