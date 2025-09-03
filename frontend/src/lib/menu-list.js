@@ -20,6 +20,10 @@ export function getMenuList() {
           href: "/dashboard/posts",
           label: "Posts",
           icon: SquarePen,
+          submenus: [
+            { href: "/dashboard/posts", label: "All post" },
+            { href: "/dashboard/posts/new", label: "New post" }
+          ]
         },
         {
           href: "/dashboard/properties",

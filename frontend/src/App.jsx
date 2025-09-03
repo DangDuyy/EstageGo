@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import NotFoundPage from './pages/404'
 import DashboardPage from './pages/DashboardPage/DashBoard'
 import Post from './pages/DashboardPage/Post'
+import NewPost from './pages/DashboardPage/NewPost'
 import Message from './pages/DashboardPage/Message'
 import MyProperty from './pages/DashboardPage/MyProperty'
 import Profile from './pages/DashboardPage/Profile'
@@ -23,7 +24,10 @@ function App() {
         <Route index element={<DashboardPage/>} />
         <Route path="users" element={<Profile/>} />
         <Route path="messages" element={<Message/>} />
-        <Route path="posts" element={<Post/>} />
+        <Route path="posts">
+          <Route index element={<Post/>} />
+          <Route path="new" element={<NewPost/>} />
+        </Route>
         <Route path="properties" element={<MyProperty/>} />
         <Route path="wishlist" element={<Wishlist/>} />
       </Route>

@@ -42,14 +42,14 @@ export function CollapseMenuButton({
       <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1" asChild>
         <Button
           variant={isSubmenuActive ? "secondary" : "ghost"}
-          className="w-full justify-start h-10">
-          <div className="w-full items-center flex justify-between">
+          className="w-full justify-start h-10 px-0">
+          <div className="w-full items-center flex justify-between pl-4 pr-2">
             <div className="flex items-center">
-              <span className="mr-4">
+              <span className="mr-6">
                 <Icon size={18} />
               </span>
               <p
-                className={cn("max-w-[150px] truncate", isOpen
+                className={cn("max-w-[150px] truncate text-xl", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -74,14 +74,14 @@ export function CollapseMenuButton({
                 ? "secondary"
                 : "ghost"
             }
-            className="w-full justify-start h-10 mb-1"
+            className="w-full justify-start h-10 mb-1 pl-4 pr-2"
             asChild>
             <Link to={href}>
-              <span className="mr-4 ml-2">
+              <span className="mr-4 ml-1">
                 <Dot size={18} />
               </span>
               <p
-                className={cn("max-w-[170px] truncate", isOpen
+                className={cn("max-w-[170px] truncate text-xl", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -99,7 +99,7 @@ export function CollapseMenuButton({
             <DropdownMenuTrigger asChild>
               <Button
                 variant={isSubmenuActive ? "secondary" : "ghost"}
-                className="h-10 w-10 mb-1 p-0 flex items-center justify-center gap-0"
+                className="h-10 w-full mb-1 p-0 flex items-center justify-center gap-0"
               >
                 {Icon && <Icon size={18} />}
               </Button>
@@ -111,7 +111,7 @@ export function CollapseMenuButton({
         </Tooltip>
       </TooltipProvider>
       <DropdownMenuContent side="right" sideOffset={25} align="start">
-        <DropdownMenuLabel className="max-w-[190px] truncate">
+  <DropdownMenuLabel className="max-w-[190px] truncate text-xl">
           {label}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
