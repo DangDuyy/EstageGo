@@ -21,10 +21,10 @@ function App() {
       <Route path="/properties" element={<PropertyPage/>} />
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<DashboardPage/>} />
-        <Route path="account" element={<Profile title="Account Settings"/>} />
+        <Route path="users" element={<Profile/>} />
         <Route path="messages" element={<Message/>} />
-  <Route path="posts" element={<Post/>} />
-  <Route path="properties" element={<MyProperty/>} />
+        <Route path="posts" element={<Post/>} />
+        <Route path="properties" element={<MyProperty/>} />
         <Route path="wishlist" element={<Wishlist/>} />
       </Route>
 
