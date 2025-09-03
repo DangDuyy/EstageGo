@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/components/ui/navigation-menu";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -17,21 +17,19 @@ const menuItems = [
   { to: "/dashboard", label: "Dashboard" },
 ];
 
-// Item receives selected/setSelected so we can persist the active tab
-const Item = ({ to, children, end, selected, setSelected }) => (
+// Item derives active state directly from current pathname (no persistence)
+const Item = ({ to, children, end, currentPath }) => (
   <NavigationMenuItem>
     <NavLink
       to={to}
       end={end}
-      onClick={() => {
-        try {
-          localStorage.setItem("nav-active", to);
-        } catch {
-          /* ignore storage errors (e.g., private mode) */
+      className={({ isActive }) => {
+        // Treat '/home' as home too
+        if (to === '/' && (currentPath === '/' || currentPath === '/home')) {
+          isActive = true;
         }
-        setSelected?.(to);
+        return `${linkBase} ${isActive ? activeClass : inactiveClass}`;
       }}
-      className={() => `${linkBase} ${selected === to ? activeClass : inactiveClass}`}
     >
       {children}
     </NavLink>
@@ -39,48 +37,13 @@ const Item = ({ to, children, end, selected, setSelected }) => (
 );
 
 export const NavMenu = (props) => {
-  const location = useLocation();
-  const [selected, setSelected] = useState(() => {
-    try {
-      return localStorage.getItem("nav-active") || "";
-    } catch {
-      return "";
-    }
-  });
-
-  // When the route changes, prefer router-derived active tab. If no route matches
-  // any top-level item, fall back to previously stored selection.
-  useEffect(() => {
-  const match = menuItems.find((it) => {
-      if (it.end) return location.pathname === it.to;
-      if (it.to === "/") return location.pathname === "/";
-      return location.pathname.startsWith(it.to);
-    });
-
-    if (match) {
-      setSelected(match.to);
-      try {
-        localStorage.setItem("nav-active", match.to);
-      } catch {
-        /* ignore storage errors */
-      }
-    }
-    // else keep previously selected (from storage)
-  }, [location.pathname]);
+  const { pathname } = useLocation();
 
   return (
     <NavigationMenu {...props}>
       <NavigationMenuList className="gap-10 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start font-bold text-2xl">
-  {menuItems.map((it) => (
-          <Item
-            key={it.to}
-            to={it.to}
-            end={it.end}
-            selected={selected}
-            setSelected={setSelected}
-          >
-            {it.label}
-          </Item>
+        {menuItems.map((it) => (
+          <Item key={it.to} to={it.to} end={it.end} currentPath={pathname}>{it.label}</Item>
         ))}
       </NavigationMenuList>
     </NavigationMenu>

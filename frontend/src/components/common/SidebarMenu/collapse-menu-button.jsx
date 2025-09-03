@@ -28,14 +28,13 @@ import { DropdownMenuArrow } from "@radix-ui/react-dropdown-menu";
 export function CollapseMenuButton({
   icon: Icon,
   label,
-  active,
   submenus,
   isOpen
 }) {
   const location = useLocation()
   const pathname = location.pathname
   const isSubmenuActive = submenus.some((submenu) =>
-    submenu.active === undefined ? submenu.href === pathname : submenu.active);
+    submenu.active === undefined ? pathname === submenu.href : submenu.active);
   const [isCollapsed, setIsCollapsed] = useState(isSubmenuActive);
 
   return isOpen ? (
@@ -43,14 +42,14 @@ export function CollapseMenuButton({
       <CollapsibleTrigger className="[&[data-state=open]>div>div>svg]:rotate-180 mb-1" asChild>
         <Button
           variant={isSubmenuActive ? "secondary" : "ghost"}
-          className="w-full justify-start h-10">
-          <div className="w-full items-center flex justify-between">
+          className="w-full justify-start h-10 px-0">
+          <div className="w-full items-center flex justify-between pl-4 pr-2">
             <div className="flex items-center">
-              <span className="mr-4">
+              <span className="mr-6">
                 <Icon size={18} />
               </span>
               <p
-                className={cn("max-w-[150px] truncate", isOpen
+                className={cn("max-w-[150px] truncate text-xl", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -75,14 +74,14 @@ export function CollapseMenuButton({
                 ? "secondary"
                 : "ghost"
             }
-            className="w-full justify-start h-10 mb-1"
+            className="w-full justify-start h-10 mb-1 pl-4 pr-2"
             asChild>
-            <Link href={href}>
-              <span className="mr-4 ml-2">
+            <Link to={href}>
+              <span className="mr-4 ml-1">
                 <Dot size={18} />
               </span>
               <p
-                className={cn("max-w-[170px] truncate", isOpen
+                className={cn("max-w-[170px] truncate text-xl", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -100,18 +99,9 @@ export function CollapseMenuButton({
             <DropdownMenuTrigger asChild>
               <Button
                 variant={isSubmenuActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-10 mb-1">
-                <div className="w-full items-center flex justify-between">
-                  <div className="flex items-center">
-                    <span className={cn(isOpen === false ? "" : "mr-4")}>
-                      <Icon size={18} />
-                    </span>
-                    <p
-                      className={cn("max-w-[200px] truncate", isOpen === false ? "opacity-0" : "opacity-100")}>
-                      {label}
-                    </p>
-                  </div>
-                </div>
+                className="h-10 w-full mb-1 p-0 flex items-center justify-center gap-0"
+              >
+                {Icon && <Icon size={18} />}
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
@@ -121,7 +111,7 @@ export function CollapseMenuButton({
         </Tooltip>
       </TooltipProvider>
       <DropdownMenuContent side="right" sideOffset={25} align="start">
-        <DropdownMenuLabel className="max-w-[190px] truncate">
+  <DropdownMenuLabel className="max-w-[190px] truncate text-xl">
           {label}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -132,7 +122,7 @@ export function CollapseMenuButton({
                 ((active === undefined && pathname === href) || active) &&
                 "bg-secondary"
               }`}
-              href={href}>
+              to={href}>
               <p className="max-w-[180px] truncate">{label}</p>
             </Link>
           </DropdownMenuItem>

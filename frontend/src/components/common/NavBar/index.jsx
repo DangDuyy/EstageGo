@@ -43,17 +43,20 @@ const NavBar = ({ hideLogo = false }) => {
     <div className="min-h-[95px] bg-muted">
       <nav
         className={cn(
-          "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[margin-left] ease-in-out duration-300 z-10",
-          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:ml-72" : "lg:ml-[90px]")
+          // Instead of shifting the whole navbar width (which caused right-side items to overflow
+          // when the sidebar opened), we reserve horizontal space using left padding. This keeps
+          // the navbar full width so the user avatar & theme toggle are always visible.
+          "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-10",
+          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-72" : "lg:pl-[90px]")
         )}
       >
-        <div className="h-full flex items-center justify-between mx-auto px-20">
+        <div className="h-full flex items-center justify-between mx-auto px-6 sm:px-10 2xl:px-20">
           {!hideLogo && <Logo />}
 
           {/* Desktop Menu */}
           <NavMenu className="hidden md:block" />
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 shrink-0">
             <ToogleMode />
             { currentUser 
               ? <DropdownMenu>
@@ -63,7 +66,7 @@ const NavBar = ({ hideLogo = false }) => {
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" className="relative h-8 w-8 rounded-full">
                             <Avatar className="h-13 w-13">
-                              <AvatarImage src={currentUser.avatar} alt="Avatar" />
+                              <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
                               <AvatarFallback className="bg-transparent">{currentUser.fullName}</AvatarFallback>
                             </Avatar>
                           </Button>
@@ -84,13 +87,13 @@ const NavBar = ({ hideLogo = false }) => {
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                        <Link href="/dashboard" className="flex items-center">
+                        <Link to="/dashboard" className="flex items-center">
                           <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
                           Dashboard
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                        <Link href="/account" className="flex items-center">
+                        <Link to="/dashboard/account" className="flex items-center">
                           <User className="w-4 h-4 mr-3 text-muted-foreground" />
                           Account
                         </Link>
@@ -110,10 +113,11 @@ const NavBar = ({ hideLogo = false }) => {
                 <User />
                 Sign In
               </Button> }
-            <Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer">
+              {!hideLogo && (<Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer">
               <Folders />
               Submit Property
-            </Button>
+            </Button>)}
+            
             {/* Mobile Menu */}
             <div className="md:hidden">
               <NavigationSheet />
