@@ -45,7 +45,15 @@ export function Menu({ isOpen }) {
               <p className="pb-2"></p>
             )}
             {menus.map(({ href, label, icon: Icon, active, submenus }, index) => {
-              const isActive = (active === undefined && pathname.startsWith(href)) || active;
+              const computedActive = (() => {
+                if (active) return true;
+                if (!href) return false;
+                // Exact match
+                if (pathname === href) return true;
+                // If item has submenus later we can extend logic; for now strict
+                return false;
+              })();
+              const isActive = computedActive;
               const baseButton = (
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
@@ -55,7 +63,7 @@ export function Menu({ isOpen }) {
                   )}
                   asChild>
                   <Link
-                    href={href}
+                    to={href}
                     className={cn(
                       "flex items-center h-full w-full",
                       isOpen ? "justify-start" : "justify-center"
@@ -102,7 +110,7 @@ export function Menu({ isOpen }) {
           </li>
         ))}
       </ul>
-      <div className="mt-auto">
+  <div className="mt-auto">
         <TooltipProvider disableHoverableContent>
           <Tooltip delayDuration={100}>
             <TooltipTrigger asChild>

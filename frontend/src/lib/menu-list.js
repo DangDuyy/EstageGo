@@ -17,19 +17,9 @@ export function getMenuList() {
       groupLabel: "Contents",
       menus: [
         {
-          href: "",
+          href: "/dashboard/posts",
           label: "Posts",
           icon: SquarePen,
-          // submenus: [
-          //   {
-          //     href: "/posts",
-          //     label: "All Posts"
-          //   },
-          //   {
-          //     href: "/posts/new",
-          //     label: "New Post"
-          //   }
-          // ]
         },
         {
           href: "/dashboard/properties",

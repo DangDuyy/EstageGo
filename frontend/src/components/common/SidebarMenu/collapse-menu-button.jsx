@@ -34,7 +34,7 @@ export function CollapseMenuButton({
   const location = useLocation()
   const pathname = location.pathname
   const isSubmenuActive = submenus.some((submenu) =>
-    submenu.active === undefined ? submenu.href === pathname : submenu.active);
+    submenu.active === undefined ? pathname === submenu.href : submenu.active);
   const [isCollapsed, setIsCollapsed] = useState(isSubmenuActive);
 
   return isOpen ? (
@@ -76,7 +76,7 @@ export function CollapseMenuButton({
             }
             className="w-full justify-start h-10 mb-1"
             asChild>
-            <Link href={href}>
+            <Link to={href}>
               <span className="mr-4 ml-2">
                 <Dot size={18} />
               </span>
@@ -122,7 +122,7 @@ export function CollapseMenuButton({
                 ((active === undefined && pathname === href) || active) &&
                 "bg-secondary"
               }`}
-              href={href}>
+              to={href}>
               <p className="max-w-[180px] truncate">{label}</p>
             </Link>
           </DropdownMenuItem>
