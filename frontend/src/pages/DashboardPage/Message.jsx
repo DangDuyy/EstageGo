@@ -1,9 +1,9 @@
-import React from 'react'
+import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 
-function Message() {
+export default function Message() {
   return (
-    <div>Message</div>
+    <ContentLayout title="Messages">
+      <div>Inbox content...</div>
+    </ContentLayout>
   )
 }
-
-export default Message

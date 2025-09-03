@@ -1,9 +1,9 @@
-import React from 'react'
+import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 
-function MyProperty() {
+export default function MyProperty() {
   return (
-    <div>MyProperty</div>
+    <ContentLayout title="My Properties">
+      <div>Your properties list...</div>
+    </ContentLayout>
   )
 }
-
-export default MyProperty

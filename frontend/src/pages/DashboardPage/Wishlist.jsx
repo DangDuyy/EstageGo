@@ -1,9 +1,9 @@
-import React from 'react'
+import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 
-function Wishlist() {
+export default function Wishlist() {
   return (
-    <div>Wishlist</div>
+    <ContentLayout title="Wishlist">
+      <div>Your wishlist...</div>
+    </ContentLayout>
   )
 }
-
-export default Wishlist

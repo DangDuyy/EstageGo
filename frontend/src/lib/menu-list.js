@@ -1,6 +1,6 @@
 import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid, MessageCircleMore, HeartPlus, House } from "lucide-react";
 
-export function getMenuList(pathname) {
+export function getMenuList() {
   return [
     {
       groupLabel: "",
@@ -32,17 +32,17 @@ export function getMenuList(pathname) {
           // ]
         },
         {
-          href: "/properties",
+          href: "/dashboard/properties",
           label: "My properties",
           icon: House,
         },
         {
-          href: "/messages",
+          href: "/dashboard/messages",
           label: "Message",
           icon: MessageCircleMore
         },
         {
-          href: "/wishlist",
+          href: "/dashboard/wishlist",
           label: "My wishlist",
           icon: HeartPlus
         }
@@ -52,12 +52,12 @@ export function getMenuList(pathname) {
       groupLabel: "Settings",
       menus: [
         {
-          href: "/users",
+          href: "/dashboard/users",
           label: "Users",
           icon: Users
         },
         {
-          href: "/account",
+          href: "/dashboard/account",
           label: "Account",
           icon: Settings
         }

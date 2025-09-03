@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export function Menu({ isOpen }) {
   const location = useLocation();
   const pathname = location.pathname;
-  const menuList = getMenuList(pathname);
+  const menuList = getMenuList();
 
   return (
     <nav className="mt-8 h-screen w-full flex flex-col">

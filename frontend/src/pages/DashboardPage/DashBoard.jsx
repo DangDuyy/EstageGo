@@ -1,14 +1,12 @@
-import NavBar from "@/components/common/NavBar";
-import AdminPanelLayout from "@/components/common/SidebarMenu/admin-panel-layout";
-import Profile from "./Profile";
+import { ContentLayout } from "@/components/common/SidebarMenu/content-layout";
 
-function DashboardPage() {
+export default function DashboardPage() {
   return (
-    <AdminPanelLayout>
-      <NavBar hideLogo />
-      <Profile title="Account Settings"/>
-    </AdminPanelLayout>
+    <ContentLayout title="Dashboard">
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold">Welcome back!</h2>
+        <p className="text-muted-foreground">This is your dashboard overview area. Add stats / charts here.</p>
+      </div>
+    </ContentLayout>
   );
 }
-
-export default DashboardPage;

@@ -1,9 +1,9 @@
-import React from 'react'
+import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 
-function Post() {
+export default function Post() {
   return (
-    <div>Post</div>
+    <ContentLayout title="Posts">
+      <div>Posts content...</div>
+    </ContentLayout>
   )
 }
-
-export default Post
