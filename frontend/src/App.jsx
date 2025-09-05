@@ -10,6 +10,7 @@ import Wishlist from './pages/DashboardPage/Wishlist'
 import HomePage from './pages/HomePage'
 import PropertyPage from './pages/PropertyPage'
 import DashboardLayout from './layouts/DashboardLayout'
+import MapPage from './pages/MapPage'
 function App() {
   return (
     <Routes>
@@ -20,6 +21,7 @@ function App() {
 
       <Route path="/home" element={<HomePage/>} />
       <Route path="/properties" element={<PropertyPage/>} />
+      <Route path="/map" element={<MapPage/>} />
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<DashboardPage/>} />
         <Route path="users" element={<Profile/>} />
@@ -30,6 +32,7 @@ function App() {
         </Route>
         <Route path="properties" element={<MyProperty/>} />
         <Route path="wishlist" element={<Wishlist/>} />
+        
       </Route>
 
       {/* page not found */}
