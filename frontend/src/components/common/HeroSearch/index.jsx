@@ -104,7 +104,7 @@ export default function HeroSearch({
                   >
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" align="start" sideOffset={4} className="w-36">
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="apartment">Apartment</SelectItem>
                     <SelectItem value="house">House</SelectItem>

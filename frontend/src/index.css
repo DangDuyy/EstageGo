@@ -116,23 +116,32 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  * { @apply border-border outline-ring/50; }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* luôn giữ rãnh scrollbar cố định */
+    scrollbar-gutter: stable right-edges;
+    overflow-y: scroll;
+    /* tránh xuất hiện scrollbar ngang khi lock/unlock làm dịch layout */
+    overflow-x: hidden;
   }
-  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scrollbar-gutter: stable;}
   body {
     @apply bg-background text-foreground;
-    @apply font-sans; 
+    @apply font-sans;
     font-family: var(--font-sans);
   }
 }
-
-@supports not (scrollbar-gutter: stable) {
-  html { overflow-y: scroll; }
-}
-
 .keep-scrollbar { scrollbar-gutter: stable; }
 
 @supports not (scrollbar-gutter: stable) {
-  .keep-scrollbar { overflow-y: scroll; }
+  .keep-scrollbar { overflow-y: scroll; overflow-x: hidden; }
+}
+
+/* Ngăn react-remove-scroll bù trừ gây dịch layout khi Select mở */
+body[data-scroll-locked] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px !important;
+  width: 100% !important; /* đề phòng lib set width khác */
 }
