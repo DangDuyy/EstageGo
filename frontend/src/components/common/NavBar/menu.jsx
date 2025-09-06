@@ -41,7 +41,7 @@ export const NavMenu = (props) => {
 
   return (
     <NavigationMenu {...props}>
-      <NavigationMenuList className="gap-10 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start font-bold text-2xl">
+      <NavigationMenuList className="gap-5 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start font-bold text-xl">
         {menuItems.map((it) => (
           <Item key={it.to} to={it.to} end={it.end} currentPath={pathname}>{it.label}</Item>
         ))}
