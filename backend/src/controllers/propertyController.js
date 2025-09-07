@@ -12,11 +12,14 @@ const createProperty = async (req, res, next) => {
             owner
         }
 
+        // 1. Tạo property
         const newProperty = await propertyService.createProperty(propertyData)
 
+        // 2. Upload file
         const files = req.files || []
         const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
 
+        // 3. Update property với media
         const updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult)
         res.status(StatusCodes.CREATED).json({
             succes: true,

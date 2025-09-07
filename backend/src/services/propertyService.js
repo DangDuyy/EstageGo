@@ -1,8 +1,10 @@
+import { StatusCodes } from "http-status-codes"
+import ApiError from "~/utils/ApiError"
+
 const { default: propertyModel } = require("~/models/properties")
 const { slugify } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
-
     try {
         // Tạo slug từ title
         const baseSlug = slugify(propertyData.title, {
@@ -38,9 +40,10 @@ const addMediaToProperty = async (propertyId, mediaItems) => {
         const property = await propertyModel.findOne({_id: propertyId})
 
         if(!property){
-
+            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
         }
 
+        // Add new media item
         property.media.push(...mediaItems)
 
         const updateProperty = await property.save()
