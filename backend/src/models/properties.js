@@ -135,7 +135,7 @@ const propertySchema = new mongoose.Schema({
         },
         type: { // file để lưu các giấy tờ như bản sao sổ đỏ, hợp đồng, ...
             type: String,
-            enum: ['image', 'video', 'file'],
+            // enum: ['image', 'video', 'file'],
             required: true
         },
         metadata: { // Thông tin thêm về file

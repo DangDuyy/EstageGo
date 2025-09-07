@@ -28,6 +28,7 @@ const createProperty = async (req, res, next) => {
         })
     }
     catch (error) {
+        console.log("Error property controlelr", error)
         next(error)
     }
 }
