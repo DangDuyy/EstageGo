@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PROVINCE_API_ROOT } from "@/utils/constants";
-import { Home, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { Home, LocateFixed, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function Divider() {
@@ -189,7 +189,7 @@ export default function HeroSearch({
 
             <div className="flex grow items-center gap-3 rounded-full px-3 py-2 md:px-4">
               <div className="hidden md:grid h-8 w-8 place-items-center rounded-full bg-neutral-100 text-neutral-600">
-                <MapPin className="h-4 w-4" />
+                <LocateFixed className="h-4 w-4" />
               </div>
               <div className="w-full text-left">
                 <p className="text-[10px] uppercase tracking-wide text-neutral-500">District</p>
