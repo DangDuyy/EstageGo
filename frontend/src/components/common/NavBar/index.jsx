@@ -3,7 +3,7 @@ import { Logo } from "./logo";
 import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
-import { Folders, LayoutGrid, LogOut, User } from "lucide-react";
+import { Bell, Folders, LayoutGrid, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -56,8 +56,9 @@ const NavBar = ({ hideLogo = false }) => {
           {/* Desktop Menu */}
           <NavMenu className="hidden md:block" />
 
-          <div className="flex items-center gap-6 shrink-0">
+          <div className="flex items-center gap-8 shrink-0">
             <ToogleMode />
+            <Bell size={30}/>
             { currentUser 
               ? <DropdownMenu>
                   <TooltipProvider disableHoverableContent>

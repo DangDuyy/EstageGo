@@ -17,7 +17,7 @@ function HomePage() {
   return (
     <>
       <NavBar/>
-      <HeroSearch backgroundUrl="/images/home/house-21.jpg" onSearch={handleSearch}/>
+      <HeroSearch backgroundUrl="/images/slider/slider-1.jpg" onSearch={handleSearch}/>
       <FeatureCard/>
       <LocationCard/>
       <ReviewForm/>

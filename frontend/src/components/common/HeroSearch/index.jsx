@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { MapPin, Search, SlidersHorizontal, ChevronDown, Home } from "lucide-react";
+import { PROVINCE_API_ROOT } from "@/utils/constants";
+import { Home, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 function Divider() {
   return <span className="hidden h-8 w-px bg-neutral-200 md:block" />;
@@ -18,42 +17,81 @@ export default function HeroSearch({
 }) {
   const [mode, setMode] = useState("rent");
   const [type, setType] = useState("all");
-  const [locationOpen, setLocationOpen] = useState(false);
-  const [location, setLocation] = useState("");
   const [keyword, setKeyword] = useState("");
 
-  const locations = [
-    "Ho Chi Minh City",
-    "Ha Noi",
-    "Da Nang",
-    "Binh Duong",
-    "Dong Nai",
-    "Can Tho",
-  ];
+  const [provinceCode, setProvinceCode] = useState("")
+  const [districtCode, setDistrictCode] = useState("")
+  const [provinces, setProvinces] = useState([])
+  const [loadingProv, setLoadingProv] = useState(false)
+  const [errorProv, setErrorProv] = useState("")
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoadingProv(true);
+        setErrorProv("");
+
+        const res = await fetch(`${PROVINCE_API_ROOT}/api/v2/?depth=2`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        if (!cancelled) setProvinces(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (!cancelled) setErrorProv(String(error));
+      } finally {
+        if (!cancelled) setLoadingProv(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+
+  //fetch huyen xa theo tinh
+  const districts = useMemo(() => {
+    const p = provinces.find(p => String(p.code) === String(provinceCode))
+    return p?.wards ?? []
+  },[provinceCode, provinces])
 
   const handleSearch = () => {
-    const payload = { mode, type, location, keyword };
+    const payload = { 
+      mode, 
+      type, 
+      //tra ve ca code lan ten cho backend
+      provinceCode: provinceCode || null,
+      provinceName: provinces.find(p => String(p.code) === String(provinceCode))?.name || null,
+      districtCode: districtCode || null,
+      districtName: districts.find(d => String(d.code) === String(districtCode))?.name || null,
+      keyword 
+    };
     if (typeof onSearch === "function") onSearch(payload);
     else console.log("Search:", payload);
   };
+
+  //reset huyen di doi tinh
+  useEffect(() => {
+    setDistrictCode("")
+  }, [provinceCode])
 
   return (
     <section
       className="relative isolate overflow-hidden bg-no-repeat bg-cover bg-center"
       style={{
         backgroundImage: `url(${backgroundUrl})`,
-        minHeight: "50vh",
+        minHeight: "50vh"
       }}
     >
 
       {/* overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30" />
 
-      <div className="relative my-40 mx-auto max-w-8xl px-4 sm:px-6 lg:px-8 py-16 lg:py-28 text-center text-white dark:text-black">
+      <div className="relative my-20 mx-auto max-w-8xl px-4 sm:px-6 lg:px-8 py-16 lg:py-28 text-center text-white dark:text-black">
         <h1 className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-tight drop-shadow-md">
           {title}
         </h1>
-        <p className="mx-auto mt-4 max-w-3xl text-2xl sm:text-xl lg:text-2xl text-white/90 dark:text-black">
+        <p className="mx-auto mt-4 max-w-3xl text-2xl sm:text-xl lg:text-xl text-white/90 dark:text-black">
           {subtitle}
         </p>
 
@@ -127,40 +165,51 @@ export default function HeroSearch({
                 <MapPin className="h-4 w-4" />
               </div>
               <div className="w-full text-left">
-                <p className="text-[10px] uppercase tracking-wide text-neutral-500">Location</p>
-                <Popover open={locationOpen} onOpenChange={setLocationOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="h-7 w-full justify-between rounded-lg px-2 text-left font-normal text-sm text-neutral-700 hover:bg-neutral-100"
-                    >
-                      {location ? location : "Search location"}
-                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[260px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Type a city..." />
-                      <CommandList>
-                        <CommandEmpty>No results.</CommandEmpty>
-                        <CommandGroup>
-                          {locations.map((loc) => (
-                            <CommandItem
-                              key={loc}
-                              value={loc}
-                              onSelect={(v) => {
-                                setLocation(v);
-                                setLocationOpen(false);
-                              }}
-                            >
-                              <MapPin className="mr-2 h-4 w-4" /> {loc}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <p className="text-[10px] uppercase tracking-wide text-neutral-500">Province</p>
+                <Select
+                  value={provinceCode}
+                  onValueChange={setProvinceCode}
+                  disabled={loadingProv || !!errorProv}
+                >
+                  <SelectTrigger className="h-7 w-full rounded-lg border-0 bg-transparent px-2 text-sm text-neutral-700 focus-visible:ring-0">
+                    <SelectValue placeholder={loadingProv ? "Loading..." : errorProv ? "Load failed" : "Select province"}/>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {provinces.map((p) => (
+                      <SelectItem key={p.code} value={String(p.code)}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Divider />
+
+            <div className="flex grow items-center gap-3 rounded-full px-3 py-2 md:px-4">
+              <div className="hidden md:grid h-8 w-8 place-items-center rounded-full bg-neutral-100 text-neutral-600">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <div className="w-full text-left">
+                <p className="text-[10px] uppercase tracking-wide text-neutral-500">District</p>
+
+                <Select
+                  value={districtCode}
+                  onValueChange={setDistrictCode}
+                  disabled={!provinceCode || districts.length === 0}
+                >
+                  <SelectTrigger className="h-7 w-full rounded-lg border-0 bg-transparent px-2 text-sm text-neutral-700 focus-visible:ring-0">
+                    <SelectValue placeholder={!provinceCode ? "Select a province first" : (districts.length ? "Select district" : "No districts")} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {districts.map((d) => (
+                      <SelectItem key={d.code} value={String(d.code)}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
