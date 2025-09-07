@@ -33,6 +33,36 @@ const createProperty = async (propertyData) => {
     }
 }
 
+const addMediaToProperty = async (propertyId, mediaItems) => {
+    try {
+        const property = await propertyModel.findOne({_id: propertyId})
+
+        if(!property){
+
+        }
+
+        property.media.push(...mediaItems)
+
+        const updateProperty = await property.save()
+        return updateProperty
+    }
+    catch(error){
+        throw errors
+    }
+}
+
+const getPropertyById = async (id) => {
+    try{
+        const property = await propertyModel.findById(id)
+        return property
+    }
+    catch(error){
+        throw error
+    }
+}
+
 export const propertyService = {
-    createProperty
+    createProperty,
+    addMediaToProperty,
+    getPropertyById
 }
