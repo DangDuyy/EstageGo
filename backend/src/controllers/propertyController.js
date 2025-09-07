@@ -3,6 +3,7 @@ const { propertyService } = require("~/services/propertyService")
 
 const createProperty = async (req, res, next) => {
     try{
+        console.log(req.body)
         const owner = req.jwtDecoded._id
         const propertyData = {
             ...req.body,
