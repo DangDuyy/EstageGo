@@ -3,7 +3,7 @@ import { Logo } from "./logo";
 import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
-import { Bell, Folders, LayoutGrid, LogOut, User } from "lucide-react";
+import { Bell, Folders, Heart, LayoutGrid, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -60,53 +60,57 @@ const NavBar = ({ hideLogo = false }) => {
             <ToogleMode />
             <Bell size={30}/>
             { currentUser 
-              ? <DropdownMenu>
-                  <TooltipProvider disableHoverableContent>
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="relative h-8 w-8 rounded-full">
-                            <Avatar className="h-13 w-13">
-                              <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
-                              <AvatarFallback className="bg-transparent">{currentUser.fullName}</AvatarFallback>
-                            </Avatar>
-                          </Button>
-                        </DropdownMenuTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{currentUser.fullName}</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {currentUser.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                        <Link to="/dashboard" className="flex items-center">
-                          <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
-                          Dashboard
-                        </Link>
+              ? 
+              <>
+                <Heart size={30}/>
+                <DropdownMenu>
+                    <TooltipProvider disableHoverableContent>
+                      <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="relative h-8 w-8 rounded-full">
+                              <Avatar className="h-13 w-13">
+                                <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
+                                <AvatarFallback className="bg-transparent">{currentUser.fullName}</AvatarFallback>
+                              </Avatar>
+                            </Button>
+                          </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">{currentUser.fullName}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {currentUser.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem className="hover:cursor-pointer" asChild>
+                          <Link to="/dashboard" className="flex items-center">
+                            <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
+                            Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="hover:cursor-pointer" asChild>
+                          <Link to="/dashboard/account" className="flex items-center">
+                            <User className="w-4 h-4 mr-3 text-muted-foreground" />
+                            Account
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+                        <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
+                        Sign out
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                        <Link to="/dashboard/account" className="flex items-center">
-                          <User className="w-4 h-4 mr-3 text-muted-foreground" />
-                          Account
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
-                      <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                    </DropdownMenuContent>
                 </DropdownMenu>
+              </>
               : <Button 
                 variant="outline" 
                 className="hidden sm:inline-flex rounded-full text-lg px-7 py-3 h-14 min-w-[120px] cursor-pointer" 
@@ -114,7 +118,9 @@ const NavBar = ({ hideLogo = false }) => {
                 <User />
                 Sign In
               </Button> }
-              {!hideLogo && (<Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer">
+              {!hideLogo && (<Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer"
+                onClick={() => {}}
+              >
               <Folders />
               Submit Property
             </Button>)}

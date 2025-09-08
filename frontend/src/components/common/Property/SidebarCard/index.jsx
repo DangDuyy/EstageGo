@@ -1,15 +1,10 @@
 /* eslint-disable no-unused-vars */
 "use client";
-import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ChevronRight, Grid2X2, List, Bed, Bath, Ruler } from "lucide-react";
+import { Bath, Bed, ChevronLeft, ChevronRight, Grid2X2, List, Ruler } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import PropertyCard from "../FeatureCard/PropertyCard";
