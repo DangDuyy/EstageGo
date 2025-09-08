@@ -1,9 +1,9 @@
 import { FooterBar } from '@/components/common/FooterBar'
 import NavBar from '@/components/common/NavBar'
-import SidebarCard from '@/components/common/SidebarCard'
+import SidebarCard from '@/components/common/Property/SidebarCard'
 import React from 'react'
 
-function PropertyPage() {
+function PropertyPages() {
   return (
     <>
       <NavBar/>
@@ -13,4 +13,4 @@ function PropertyPage() {
   )
 }
 
-export default PropertyPage
+export default PropertyPages

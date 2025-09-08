@@ -1,5 +1,5 @@
 import AgentForm from '@/components/common/Agent'
-import { FeatureCard } from '@/components/common/FeatureCard'
+import { FeatureCard } from '@/components/common/Property/FeatureCard'
 import { FooterBar } from '@/components/common/FooterBar'
 import HeroSearch from '@/components/common/HeroSearch'
 import LocationCard from '@/components/common/LocationCard'

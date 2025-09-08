@@ -8,9 +8,10 @@ import MyProperty from './pages/DashboardPage/MyProperty'
 import Profile from './pages/DashboardPage/Profile'
 import Wishlist from './pages/DashboardPage/Wishlist'
 import HomePage from './pages/HomePage'
-import PropertyPage from './pages/PropertyPage'
 import DashboardLayout from './layouts/DashboardLayout'
 import MapPage from './pages/MapPage'
+import PropertyPages from './pages/PropertyPage'
+import PropertyPage from './pages/PropertyPage/_id'
 function App() {
   return (
     <Routes>
@@ -20,7 +21,8 @@ function App() {
       }/>
 
       <Route path="/home" element={<HomePage/>} />
-      <Route path="/properties" element={<PropertyPage/>} />
+      <Route path="/properties" element={<PropertyPages/>} />
+      <Route path="/properties/:id" element={<PropertyPage/>} />
       <Route path="/map" element={<MapPage/>} />
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<DashboardPage/>} />

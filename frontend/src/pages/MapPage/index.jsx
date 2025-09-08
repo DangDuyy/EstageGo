@@ -1,6 +1,6 @@
 import { FooterBar } from '@/components/common/FooterBar';
 import NavBar from '@/components/common/NavBar';
-import SidebarCard from '@/components/common/SidebarCard';
+import SidebarCard from '@/components/common/Property/SidebarCard';
 import PropertyMap from '@/components/common/Map/initMap.jsx';
 import React from 'react';
 
