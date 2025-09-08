@@ -1,6 +1,4 @@
-// PropertyDetailsContent.jsx
-"use client";
-
+/* eslint-disable no-unused-vars */
 import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { MapPin, Bed, Bath, Ruler, House, Calendar, Car, Download, Star, Play, ExternalLink } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
+// =================== MOCK DATA ===================
 const mockProperty = {
   id: "2297",
   title: "Casa Lomas de Machalí Machas",
@@ -53,7 +59,7 @@ const mockProperty = {
   ],
   map: {
     iframeSrc:
-      "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d135905.11693909427!2d-73.95165795400088!3d41.17584829642291!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1727094281524!5m2!1sen!2s",
+      "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d135905.11693909427!2d106.7009!3d10.7765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1727094281524!5m2!1sen!2s",
     infoLeft: [
       { label: "Address", value: "150 sqft" },
       { label: "City", value: "#1234" },
@@ -70,13 +76,13 @@ const mockProperty = {
       title: "First Floor",
       beds: 2,
       baths: 2,
-      image: "/images/floor.png",
+      image: "/images/banner/floor.png",
     },
     {
       title: "Second Floor",
       beds: 2,
       baths: 2,
-      image: "/images/floor.png",
+      image: "/images/banner/floor.png",
     },
   ],
   attachments: [
@@ -126,6 +132,7 @@ const mockProperty = {
   ],
 };
 
+// =================== SMALL UTILS ===================
 function PriceTag({ value, unit }) {
   const fmt = new Intl.NumberFormat("en-US").format(value);
   return (
@@ -149,9 +156,107 @@ function Stars({ value = 0 }) {
   );
 }
 
+// =================== CAROUSEL (DEFAULT) ===================
+const defaultImages = [
+  "/images/blog/blog-lg-1.jpg",
+  "/images/blog/blog-lg-2.jpg",
+  "/images/blog/blog-lg-3.jpg",
+  "/images/blog/blog-lg-4.jpg",
+  "/images/blog/blog-lg-5.jpg",
+];
+
+function PropertyImagesCarousel({ images = defaultImages, className }) {
+  const [api, setApi] = React.useState();
+  const [current, setCurrent] = React.useState(1);
+  const [count, setCount] = React.useState(images.length);
+
+  React.useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap() + 1);
+    const onSelect = () => setCurrent(api.selectedScrollSnap() + 1);
+    api.on("select", onSelect);
+    return () => {
+      // guard: api.off may not exist in older @embla versions; check before call
+      if (api && typeof api.off === "function") api.off("select", onSelect);
+    };
+  }, [api]);
+
+  const handleThumbClick = React.useCallback(
+    (index) => {
+      if (api && typeof api.scrollTo === "function") {
+        api.scrollTo(index);
+      }
+    },
+    [api]
+  );
+
+  return (
+    <div className={cn("w-full", className)}>
+      {/* Main carousel */}
+      <div className="relative overflow-hidden rounded-lg border">
+        <Carousel setApi={setApi} className="w-full">
+          <CarouselContent>
+            {images.map((src, i) => (
+              <CarouselItem key={i}>
+                <div className="aspect-[16/9] w-full overflow-hidden bg-muted">
+                  <img
+                    src={src}
+                    alt={`property-${i + 1}`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+
+          <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2" />
+          <CarouselNext className="right-2 top-1/2 -translate-y-1/2" />
+
+          {/* Counter badge */}
+          <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-background/80 px-2 py-1 text-xs font-medium shadow">
+            {current} / {count}
+          </div>
+        </Carousel>
+      </div>
+
+      {/* Thumbnails */}
+      <div className="mt-3 grid grid-cols-5 gap-2">
+        {images.map((src, i) => {
+          const isActive = current - 1 === i;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleThumbClick(i)}
+              className={cn(
+                "group overflow-hidden rounded-md border focus:outline-none",
+                isActive ? "ring-2 ring-primary" : "hover:opacity-90"
+              )}
+            >
+              <div className="aspect-[4/3] w-full bg-muted">
+                <img
+                  src={src}
+                  alt={`thumb-${i + 1}`}
+                  className={cn(
+                    "h-full w-full object-cover transition",
+                    isActive ? "scale-100" : "group-hover:scale-105"
+                  )}
+                  loading="lazy"
+                />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function PropertyDetail({
   property = mockProperty,
-  ImagesCarousel, // optional: pass your existing Carousel component
+  ImagesCarousel = PropertyImagesCarousel,
 }) {
   // loan calculator state
   const [loan, setLoan] = React.useState({
@@ -160,6 +265,7 @@ export default function PropertyDetail({
     months: 12,
     rate: 5,
   });
+
   const monthlyPayment = React.useMemo(() => {
     const principal = Math.max(loan.total - loan.down, 0);
     const r = loan.rate / 100 / 12;
@@ -197,18 +303,10 @@ export default function PropertyDetail({
         </div>
       </div>
 
-      {/* GALLERY — dùng component carousel của bạn */}
+      {/* GALLERY */}
       <div className="container mx-auto px-4 py-6">
-        {ImagesCarousel ? (
-          <ImagesCarousel />
-        ) : (
-          <Card>
-            <CardContent className="p-6 text-center text-sm text-muted-foreground">
-              <div className="mb-2 font-medium">Gallery placeholder</div>
-              Hãy truyền prop <code>ImagesCarousel</code> để dùng carousel ảnh của bạn.
-            </CardContent>
-          </Card>
-        )}
+        {/* ✅ render component */}
+        <ImagesCarousel />
       </div>
 
       <div className="container mx-auto grid grid-cols-1 gap-6 px-4 pb-10 lg:grid-cols-12">
@@ -223,7 +321,7 @@ export default function PropertyDetail({
               {(showFullDesc ? property.description : property.description.slice(0, 1)).map((p, i) => (
                 <p key={i} className="text-muted-foreground">{p}</p>
               ))}
-              <Button variant="link" className="px-0" onClick={() => setShowFullDesc(!showFullDesc)}>
+              <Button variant="link" className="px-0" onClick={() => setShowFullDesc((v) => !v)}>
                 {showFullDesc ? "Show less" : "View more"}
               </Button>
             </CardContent>
@@ -308,10 +406,12 @@ export default function PropertyDetail({
             <CardContent className="space-y-4">
               <div className="overflow-hidden rounded-lg border">
                 <iframe
+                  title="property-map"
                   src={property.map.iframeSrc}
                   className="h-[380px] w-full"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -355,7 +455,6 @@ export default function PropertyDetail({
                     <AccordionContent>
                       <div className="overflow-hidden rounded-lg border">
                         <div className="w-full bg-muted">
-                          {/* dùng ảnh thật của bạn: */}
                           <img
                             src={f.image}
                             alt={f.title}
@@ -475,36 +574,6 @@ export default function PropertyDetail({
             </CardContent>
           </Card>
 
-          {/* Nearby */}
-          <Card>
-            <CardHeader>
-              <CardTitle>What’s nearby?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Explore nearby amenities to precisely locate your property and identify surrounding conveniences.
-              </p>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ul className="space-y-2">
-                  {property.nearby.left.map((i) => (
-                    <li key={i.label} className="flex items-center justify-between rounded-md bg-muted/50 p-3 text-sm">
-                      <span>{i.label}</span>
-                      <span className="font-semibold">{i.value}</span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className="space-y-2">
-                  {property.nearby.right.map((i) => (
-                    <li key={i.label} className="flex items-center justify-between rounded-md bg-muted/50 p-3 text-sm">
-                      <span>{i.label}</span>
-                      <span className="font-semibold">{i.value}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Reviews */}
           <Card>
             <CardHeader>
@@ -515,7 +584,7 @@ export default function PropertyDetail({
                 <div key={idx} className="flex gap-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={r.avatar} alt={r.name} />
-                    <AvatarFallback>{r.name.slice(0,2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{r.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -538,7 +607,7 @@ export default function PropertyDetail({
           </Card>
         </div>
 
-        {/* RIGHT COLUMN (optional widgets / actions) */}
+        {/* RIGHT COLUMN */}
         <div className="lg:col-span-4 space-y-6">
           <Card>
             <CardHeader>
