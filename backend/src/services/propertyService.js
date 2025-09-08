@@ -1,5 +1,8 @@
 import { StatusCodes } from "http-status-codes"
+import userModel from "~/models/users"
+import { pagingSkipValue } from "~/utils/algorithms"
 import ApiError from "~/utils/ApiError"
+import { DEFAULT_ITEM_PER_PAGE, DEFAULT_PAGE } from "~/utils/constants"
 
 const { default: propertyModel } = require("~/models/properties")
 const { slugify } = require("~/utils/formatter")
@@ -64,8 +67,65 @@ const getPropertyById = async (id) => {
     }
 }
 
+const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
+  try {
+    // Chuẩn hóa paging
+    const p = Math.max(1, parseInt(page ?? DEFAULT_PAGE, 10) || DEFAULT_PAGE);
+    const limit = Math.max(1, parseInt(itemsPerPage ?? DEFAULT_ITEM_PER_PAGE, 10) || DEFAULT_ITEM_PER_PAGE);
+
+    // Chuẩn hóa filter: _destroy và owner (nếu truyền string)
+    const match = { _destroy: { $ne: true }, ...(queryFilter || {}) };
+    if (match.owner && typeof match.owner === 'string') {
+      const { Types } = require('mongoose');
+      try { match.owner = new Types.ObjectId(match.owner); } catch {}
+    }
+
+    const pipeline = [
+      { $match: match },
+      {
+        $facet: {
+          queryProperties: [
+            {
+              $lookup: {
+                from: userModel.collection.name,
+                let: { ownerId: '$owner' },
+                pipeline: [
+                  { $match: { $expr: { $eq: ['$_id', '$$ownerId'] } } },
+                  { $project: { password: 0, verifyToken: 0, __v: 0 } }
+                ],
+                as: 'ownerInfo'
+              }
+            },
+            { $unwind: { path: '$ownerInfo', preserveNullAndEmptyArrays: true } },
+            // sort an toàn kể cả khi không có owner
+            { $addFields: { ownerName: { $ifNull: ['$ownerInfo.fullName', ''] } } },
+            { $sort: { ownerName: 1 } },
+            { $skip: pagingSkipValue(p, limit) },
+            { $limit: limit }
+          ],
+          queryTotalProperties: [
+            { $count: 'countedAllProperties' }
+          ]
+        }
+      }
+    ];
+
+    const [res] = await propertyModel
+      .aggregate(pipeline)
+      .collation({ locale: 'vi', strength: 1 });
+
+    return {
+      properties: res?.queryProperties ?? [],
+      totalProperties: res?.queryTotalProperties?.[0]?.countedAllProperties ?? 0
+    };
+  } catch (error) {
+    throw error; // giữ nguyên error gốc
+  }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
-    getPropertyById
+    getPropertyById,
+    getProperties
 }

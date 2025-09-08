@@ -58,7 +58,19 @@ const uploadPropertyMedia = async (req, res, next) => {
     })
 }
 
+const getProperties = async (req, res, next) => {
+    try {
+        //pagination
+        const { page, itemsPerPage, q} = req.query
+        const queryFilter = q
+        const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
+        return res.status(StatusCodes.OK).json(result)
+    } catch (error) {
+        next(error)
+    }
+}
 export const propertyController = {
     createProperty,
-    uploadPropertyMedia
+    uploadPropertyMedia,
+    getProperties
 }

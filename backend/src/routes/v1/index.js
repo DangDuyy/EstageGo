@@ -11,6 +11,6 @@ Router.get('/status', (req,res) => {
 
 Router.use('/users', userRoutes)
 
-Router.use('/property', propertyRoutes)
+Router.use('/properties', propertyRoutes)
 
 export const APIs_V1 = Router
