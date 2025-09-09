@@ -21,9 +21,9 @@ export default function PropertyCard({ item, variant = "grid" }) {
 
   return (
     <Card
-      className={`py-0 ${variant === "list" ? "flex gap-5 overflow-hidden" : "overflow-hidden group"}`}
+      className={`py-0 ${variant === "list" ? "flex flex-row gap-5 overflow-hidden" : "overflow-hidden group"}`}
     >
-      <div className={variant === "list" ? "relative w-64 shrink-0" : "relative"}>
+      <div className={variant === "list" ? "relative w-100 shrink-0" : "relative"}>
         <Link to={item.href ?? "#"} className="block">
           <img
             src={item.image}

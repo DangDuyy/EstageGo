@@ -19,12 +19,7 @@ export const refreshTokenAPI = async () => {
   return response.data
 }
 
-export const fetchDoctorsAPI = async (searchPath) => {
-  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/doctors${searchPath}`)
-  return response.data
-}
-
-export const fetchSpecialtiesAPI = async (searchPath) => {
-  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/specialties${searchPath}`)
+export const fetchAllPropertiesAPI = async (searchPath) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties${searchPath}`)
   return response.data
 }
