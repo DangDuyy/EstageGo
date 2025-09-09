@@ -5,11 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { MapPin, Bed, Bath, Ruler, House, Calendar, Car, Download, Star, Play, ExternalLink } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Star, Play } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -17,127 +16,26 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchPropertyDetailsAPI,
+  selectCurrentActiveProperty
+} from "@/redux/activeProperty/activePropertySlice";
 
-// =================== MOCK DATA ===================
-const mockProperty = {
-  id: "2297",
-  title: "Casa Lomas de Machalí Machas",
-  price: 250000,
-  priceUnit: "/month",
-  address: "145 Brooklyn Ave, California, New York",
-  meta: { beds: 3, baths: 2, sqft: 1150 },
-  description: [
-    "Located around an hour away from Paris, between the Perche and the Iton valley, in a beautiful wooded park bordered by a charming stream, this country property immediately seduces with its bucolic and soothing environment.",
-    "An ideal choice for sports and leisure enthusiasts who will be able to take advantage of its swimming pool (11m x 5m), tennis court, gym and sauna."
-  ],
-  overview: [
-    { key: "ID", value: "2297", icon: House },
-    { key: "Type", value: "House", icon: Ruler },
-    { key: "Garages", value: "1", icon: Car },
-    { key: "Bedrooms", value: "2 Rooms", icon: Bed },
-    { key: "Bathrooms", value: "2 Rooms", icon: Bath },
-    { key: "Land Size", value: "2,000 SqFt", icon: Ruler },
-    { key: "Year Built", value: "2024", icon: Calendar },
-    { key: "Size", value: "900 SqFt", icon: Ruler },
-  ],
-  details: [
-    { key: "ID:", value: "#1234" },
-    { key: "Beds", value: "3" },
-    { key: "Price", value: "$7,500" },
-    { key: "Year built", value: "2024" },
-    { key: "Size", value: "150 sqft" },
-    { key: "Type", value: "Villa" },
-    { key: "Rooms", value: "9" },
-    { key: "Status", value: "For sale" },
-    { key: "Baths", value: "3" },
-    { key: "Garage", value: "1" },
-  ],
-  amenities: [
-    ["Smoke alarm", "Carbon monoxide alarm", "First aid kit", "Self check-in with lockbox", "Security cameras"],
-    ["Hangers", "Bed linens", "Extra pillows & blankets", "Iron", "TV with standard cable"],
-    ["Refrigerator", "Microwave", "Dishwasher", "Coffee maker"],
-  ],
-  map: {
-    iframeSrc:
-      "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d135905.11693909427!2d106.7009!3d10.7765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1727094281524!5m2!1sen!2s",
-    infoLeft: [
-      { label: "Address", value: "150 sqft" },
-      { label: "City", value: "#1234" },
-      { label: "State/county", value: "$7,500" },
-    ],
-    infoRight: [
-      { label: "Postal code", value: "7.328" },
-      { label: "Area", value: "7.328" },
-      { label: "Country", value: "2024" },
-    ],
-  },
-  floors: [
-    {
-      title: "First Floor",
-      beds: 2,
-      baths: 2,
-      image: "/images/banner/floor.png",
-    },
-    {
-      title: "Second Floor",
-      beds: 2,
-      baths: 2,
-      image: "/images/banner/floor.png",
-    },
-  ],
-  attachments: [
-    { name: "Villa-Document.pdf", href: "#", icon: "/images/file-1.png" },
-    { name: "Villa-Blueprint.pdf", href: "#", icon: "/images/file-2.png" },
-  ],
-  explore360: {
-    image: "/images/explore.jpg",
-  },
-  nearby: {
-    left: [
-      { label: "School:", value: "0.7 km" },
-      { label: "University:", value: "1.3 km" },
-      { label: "Grocery center:", value: "0.6 km" },
-      { label: "Market:", value: "1.1 km" },
-    ],
-    right: [
-      { label: "Hospital:", value: "0.4 km" },
-      { label: "Metro station:", value: "1.8 km" },
-      { label: "Gym, wellness:", value: "1.3 km" },
-      { label: "River:", value: "2.1 km" },
-    ],
-  },
-  reviews: [
-    {
-      name: "Floyd Miles",
-      date: "August 13, 2024",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/60?img=12",
-      text:
-        "It's really easy to use and exactly what I am looking for. A lot of good looking templates & highly customizable.",
-      photos: [
-        "https://picsum.photos/seed/rev1/141/79",
-        "https://picsum.photos/seed/rev2/141/79",
-        "https://picsum.photos/seed/rev3/141/79",
-      ],
-    },
-    {
-      name: "Kristin Watson",
-      date: "August 13, 2024",
-      rating: 5,
-      avatar: "https://i.pravatar.cc/60?img=5",
-      text:
-        "Live support is helpful, solved my issue in no time. The layouts are modern and clean.",
-      photos: [],
-    },
-  ],
-};
+/* ============ Small utils ============ */
+function PriceTag({ value, currency, unit }) {
+  // Hiển thị VND theo locale VN, các currency khác rơi về en-US
+  const isVND = currency === "VND";
+  const fmt = new Intl.NumberFormat(isVND ? "vi-VN" : "en-US", {
+    style: "currency",
+    currency: currency || (isVND ? "VND" : "USD"),
+    maximumFractionDigits: 0
+  }).format(value ?? 0);
 
-// =================== SMALL UTILS ===================
-function PriceTag({ value, unit }) {
-  const fmt = new Intl.NumberFormat("en-US").format(value);
   return (
     <div className="flex items-end gap-2">
-      <span className="text-3xl font-bold">${fmt}</span>
+      <span className="text-3xl font-bold">{fmt}</span>
       {unit ? <span className="text-muted-foreground">{unit}</span> : null}
     </div>
   );
@@ -156,7 +54,7 @@ function Stars({ value = 0 }) {
   );
 }
 
-// =================== CAROUSEL (DEFAULT) ===================
+/* ============ Gallery ============ */
 const defaultImages = [
   "/images/blog/blog-lg-1.jpg",
   "/images/blog/blog-lg-2.jpg",
@@ -177,23 +75,17 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
     const onSelect = () => setCurrent(api.selectedScrollSnap() + 1);
     api.on("select", onSelect);
     return () => {
-      // guard: api.off may not exist in older @embla versions; check before call
       if (api && typeof api.off === "function") api.off("select", onSelect);
     };
   }, [api]);
 
   const handleThumbClick = React.useCallback(
-    (index) => {
-      if (api && typeof api.scrollTo === "function") {
-        api.scrollTo(index);
-      }
-    },
+    (index) => api?.scrollTo?.(index),
     [api]
   );
 
   return (
     <div className={cn("w-full", className)}>
-      {/* Main carousel */}
       <div className="relative overflow-hidden rounded-lg border">
         <Carousel setApi={setApi} className="w-full">
           <CarouselContent>
@@ -214,14 +106,12 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
           <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2" />
           <CarouselNext className="right-2 top-1/2 -translate-y-1/2" />
 
-          {/* Counter badge */}
           <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-background/80 px-2 py-1 text-xs font-medium shadow">
             {current} / {count}
           </div>
         </Carousel>
       </div>
 
-      {/* Thumbnails */}
       <div className="mt-3 grid grid-cols-5 gap-2">
         {images.map((src, i) => {
           const isActive = current - 1 === i;
@@ -254,18 +144,14 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
   );
 }
 
-export default function PropertyDetail({
-  property = mockProperty,
-  ImagesCarousel = PropertyImagesCarousel,
-}) {
-  // loan calculator state
-  const [loan, setLoan] = React.useState({
-    total: 10000,
-    down: 3000,
-    months: 12,
-    rate: 5,
-  });
+/* ============ Page ============ */
+export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel }) {
+  const dispatch = useDispatch();
+  const { propertyId } = useParams();
+  const property = useSelector(selectCurrentActiveProperty);
 
+  // loan calculator
+  const [loan, setLoan] = React.useState({ total: 10000, down: 3000, months: 12, rate: 5 });
   const monthlyPayment = React.useMemo(() => {
     const principal = Math.max(loan.total - loan.down, 0);
     const r = loan.rate / 100 / 12;
@@ -275,85 +161,161 @@ export default function PropertyDetail({
   }, [loan]);
 
   const [showFullDesc, setShowFullDesc] = React.useState(false);
+  const descriptionParas = React.useMemo(() => {
+    if (!property?.description) return [];
+    return String(property.description).split(/\n{2,}|\r?\n/).filter(Boolean);
+  }, [property?.description]);
+
+  React.useEffect(() => {
+    if (propertyId) dispatch(fetchPropertyDetailsAPI(propertyId));
+  }, [dispatch, propertyId]);
+
+  if (!property) {
+    // Skeleton
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-2/3 rounded bg-muted" />
+          <div className="h-64 rounded bg-muted" />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="lg:col-span-8 space-y-3">
+              <div className="h-40 rounded bg-muted" />
+              <div className="h-40 rounded bg-muted" />
+            </div>
+            <div className="lg:col-span-4 space-y-3">
+              <div className="h-32 rounded bg-muted" />
+              <div className="h-60 rounded bg-muted" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const bedrooms = property.rooms?.bedrooms;
+  const bathrooms = property.rooms?.bathrooms;
+  const area = property.area;
+  const addressText =
+    property.address?.fullAddress ||
+    [
+      property.address?.street,
+      property.address?.ward,
+      property.address?.district,
+      property.address?.province,
+      property.address?.country,
+    ].filter(Boolean).join(", ");
+
+  const mediaImages = Array.isArray(property.media) && property.media.length
+    ? property.media
+        .filter((m) => m?.url && (m.type === "image" || !m.type))
+        .map((m) => m.url)
+    : defaultImages;
+
+  const [lng, lat] = property.address?.location?.coordinates || [];
+  const gmapSrc = (lng != null && lat != null)
+    ? `https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`
+    : null;
 
   return (
     <div className="w-full">
-      {/* Header: title + price + quick meta */}
+      {/* Header */}
       <div className="container mx-auto px-4">
         <div className="flex flex-col gap-4 border-b py-6 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{property.title}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <Badge variant="secondary" className="gap-1">
-                <Bed className="h-4 w-4" /> {property.meta.beds} Beds
-              </Badge>
-              <Badge variant="secondary" className="gap-1">
-                <Bath className="h-4 w-4" /> {property.meta.baths} Baths
-              </Badge>
-              <Badge variant="secondary" className="gap-1">
-                <Ruler className="h-4 w-4" /> {property.meta.sqft} sqft
-              </Badge>
+              {typeof bedrooms === "number" && (
+                <Badge variant="secondary" className="gap-1">
+                  <Bed className="h-4 w-4" /> {bedrooms} Beds
+                </Badge>
+              )}
+              {typeof bathrooms === "number" && (
+                <Badge variant="secondary" className="gap-1">
+                  <Bath className="h-4 w-4" /> {bathrooms} Baths
+                </Badge>
+              )}
+              {typeof area === "number" && (
+                <Badge variant="secondary" className="gap-1">
+                  <Ruler className="h-4 w-4" /> {area} m²
+                </Badge>
+              )}
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{property.address}</span>
+                <span className="line-clamp-1">{addressText}</span>
               </div>
             </div>
           </div>
-          <PriceTag value={property.price} unit={property.priceUnit} />
+
+          <PriceTag
+            value={property.price?.value}
+            currency={property.price?.currency}
+            unit={property.purpose === "rent" ? `/${property.price?.period || "month"}` : ""}
+          />
         </div>
       </div>
 
-      {/* GALLERY */}
+      {/* Gallery */}
       <div className="container mx-auto px-4 py-6">
-        {/* ✅ render component */}
-        <ImagesCarousel />
+        <ImagesCarousel images={mediaImages} />
       </div>
 
       <div className="container mx-auto grid grid-cols-1 gap-6 px-4 pb-10 lg:grid-cols-12">
-        {/* LEFT COLUMN */}
+        {/* LEFT */}
         <div className="lg:col-span-8 space-y-6">
           {/* Description */}
           <Card>
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Description</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {(showFullDesc ? property.description : property.description.slice(0, 1)).map((p, i) => (
+              {(showFullDesc ? descriptionParas : descriptionParas.slice(0, 1)).map((p, i) => (
                 <p key={i} className="text-muted-foreground">{p}</p>
               ))}
-              <Button variant="link" className="px-0" onClick={() => setShowFullDesc((v) => !v)}>
-                {showFullDesc ? "Show less" : "View more"}
-              </Button>
+              {descriptionParas.length > 1 && (
+                <Button variant="link" className="px-0" onClick={() => setShowFullDesc((v) => !v)}>
+                  {showFullDesc ? "Show less" : "View more"}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
-          {/* Overview */}
+          {/* Map (nếu có toạ độ) */}
+          {gmapSrc && (
+            <Card>
+              <CardHeader><CardTitle>Map location</CardTitle></CardHeader>
+              <CardContent>
+                <div className="overflow-hidden rounded-lg border">
+                  <iframe
+                    title="property-map"
+                    src={gmapSrc}
+                    className="h-[380px] w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Amenities */}
           <Card>
-            <CardHeader>
-              <CardTitle>Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {property.overview.map((it) => (
-                  <div key={it.key} className="flex items-center gap-3 rounded-lg border p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                      <it.icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground">{it.key}</div>
-                      <div className="font-medium">{it.value}</div>
-                    </div>
+            <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {Array.isArray(property.amenities) && property.amenities.length ? (
+                property.amenities.map((feat) => (
+                  <div key={feat} className="flex items-center gap-2 text-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    {feat}
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground">No amenities listed.</div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Video */}
+          {/* Video placeholder */}
           <Card>
-            <CardHeader>
-              <CardTitle>Video</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Video</CardTitle></CardHeader>
             <CardContent>
               <div className="relative overflow-hidden rounded-lg border">
                 <div className="aspect-video w-full bg-muted" />
@@ -364,160 +326,9 @@ export default function PropertyDetail({
             </CardContent>
           </Card>
 
-          {/* Property Details grid */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Property Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {property.details.map((d) => (
-                <div key={d.key} className="flex items-center justify-between rounded-md bg-muted/50 p-3">
-                  <span className="text-sm text-muted-foreground">{d.key}</span>
-                  <span className="font-medium">{d.value}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Amenities */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Amenities and features</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {property.amenities.map((col, idx) => (
-                <ul key={idx} className="space-y-2">
-                  {col.map((feat) => (
-                    <li key={feat} className="flex items-center gap-2 text-sm">
-                      <span className="h-1.5 w-1.5 rounded-full bg-foreground"></span>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Map */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Map location</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="overflow-hidden rounded-lg border">
-                <iframe
-                  title="property-map"
-                  src={property.map.iframeSrc}
-                  className="h-[380px] w-full"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  allowFullScreen
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ul className="space-y-2">
-                  {property.map.infoLeft.map((i) => (
-                    <li key={i.label} className="flex justify-between text-sm">
-                      <span className="font-semibold">{i.label}</span>
-                      <span className="text-muted-foreground">{i.value}</span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className="space-y-2">
-                  {property.map.infoRight.map((i) => (
-                    <li key={i.label} className="flex justify-between text-sm">
-                      <span className="font-semibold">{i.label}</span>
-                      <span className="text-muted-foreground">{i.value}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Floor plans */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Floor plans</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                {property.floors.map((f, idx) => (
-                  <AccordionItem key={f.title} value={`floor-${idx}`}>
-                    <AccordionTrigger className="text-left">
-                      <div className="flex w-full items-center justify-between">
-                        <span>{f.title}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {f.beds} Bedroom • {f.baths} Bathroom
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="overflow-hidden rounded-lg border">
-                        <div className="w-full bg-muted">
-                          <img
-                            src={f.image}
-                            alt={f.title}
-                            className="h-auto w-full"
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-
-          {/* Attachments */}
-          <Card>
-            <CardHeader>
-              <CardTitle>File Attachments</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {property.attachments.map((a) => (
-                <a
-                  key={a.name}
-                  href={a.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-lg border p-3 transition hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                      <Download className="h-5 w-5" />
-                    </div>
-                    <span className="font-medium">{a.name}</span>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                </a>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Explore 360 (placeholder) */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Explore Property</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative overflow-hidden rounded-lg border">
-                <div className="aspect-video w-full bg-muted" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="rounded-full border bg-background/70 px-4 py-2 text-sm font-medium shadow">
-                    360° Viewer (coming soon)
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Loan Calculator */}
           <Card>
-            <CardHeader>
-              <CardTitle>Loan Calculator</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Loan Calculator</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <div className="space-y-2">
@@ -567,52 +378,40 @@ export default function PropertyDetail({
                 <div className="text-sm">
                   <span className="font-semibold">Monthly Payment: </span>
                   <span className="font-bold text-primary">
-                    ${monthlyPayment.toFixed(2)}
+                    {new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(monthlyPayment)}{" "}
+                    {property.price?.currency === "VND" ? "VND" : property.price?.currency || ""}
                   </span>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Reviews */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Guest reviews</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {property.reviews.map((r, idx) => (
-                <div key={idx} className="flex gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={r.avatar} alt={r.name} />
-                    <AvatarFallback>{r.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-semibold">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.date}</div>
-                    </div>
-                    <div className="mt-1"><Stars value={r.rating} /></div>
-                    <p className="mt-3 text-sm text-muted-foreground">{r.text}</p>
-                    {r.photos?.length ? (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        {r.photos.map((src, i) => (
-                          <img key={i} src={src} alt={`review-${i}`} className="h-20 w-full rounded-md object-cover" />
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
         </div>
 
-        {/* RIGHT COLUMN */}
+        {/* RIGHT */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Owner card (nếu có ownerInfo) */}
+          {(property.ownerInfo?.avatar || property.ownerInfo?.fullName) && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Owner</CardTitle></CardHeader>
+              <CardContent className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={property.ownerInfo?.avatar} alt={property.ownerInfo?.fullName} />
+                  <AvatarFallback>
+                    {(property.ownerInfo?.fullName || "U").slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium">{property.ownerInfo?.fullName}</div>
+                  {property.ownerInfo?.phone && (
+                    <div className="text-sm text-muted-foreground">{property.ownerInfo.phone}</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Quick actions</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Quick actions</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               <Button variant="outline">Save</Button>
               <Button variant="outline">Share</Button>
@@ -622,9 +421,7 @@ export default function PropertyDetail({
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Schedule a visit</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Schedule a visit</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label>Name</Label>

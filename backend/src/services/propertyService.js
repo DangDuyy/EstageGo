@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes"
+import { Types } from "mongoose"
 import userModel from "~/models/users"
 import { pagingSkipValue } from "~/utils/algorithms"
 import ApiError from "~/utils/ApiError"
@@ -76,7 +77,6 @@ const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     // Chuẩn hóa filter: _destroy và owner (nếu truyền string)
     const match = { _destroy: { $ne: true }, ...(queryFilter || {}) };
     if (match.owner && typeof match.owner === 'string') {
-      const { Types } = require('mongoose');
       try { match.owner = new Types.ObjectId(match.owner); } catch {}
     }
 
@@ -98,8 +98,6 @@ const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
             },
             { $unwind: { path: '$ownerInfo', preserveNullAndEmptyArrays: true } },
             // sort an toàn kể cả khi không có owner
-            { $addFields: { ownerName: { $ifNull: ['$ownerInfo.fullName', ''] } } },
-            { $sort: { ownerName: 1 } },
             { $skip: pagingSkipValue(p, limit) },
             { $limit: limit }
           ],
@@ -123,9 +121,51 @@ const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
   }
 }
 
+const getPropertyDetails = async (propertyId) => {
+  try {
+    if (!Types.ObjectId.isValid(propertyId))
+      throw new Error('Invalid propertyId')
+
+    const pineline = [
+      { 
+        $match : {
+        _id: new Types.ObjectId(propertyId),
+        _destroy: { $ne: true }
+        } 
+      },
+      { 
+        $lookup: {
+          from: userModel.collection.name,
+          localField: 'owner',
+          foreignField: '_id',
+          as: 'ownerInfo'
+        }
+      },
+      {
+        $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true } 
+      },
+      {
+        $project: {
+          "ownerInfo.password": 0,
+          "ownerInfo.verifyToken": 0,
+          "ownerInfo.__v": 0
+        }
+      }
+    ]
+
+    const [result] = await propertyModel
+      .aggregate(pineline)
+
+    return result || null
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
     getPropertyById,
-    getProperties
+    getProperties,
+    getPropertyDetails
 }

@@ -3,6 +3,7 @@ import { persistStore } from 'redux-persist'
 import persistReducer from 'redux-persist/es/persistReducer'
 import storage from 'redux-persist/lib/storage'
 import { userReducer } from './user/userSlice'
+import { activePropertyReducer } from './activeProperty/activePropertySlice'
 
 //cau hinh persist
 const rootPersistConfig = {
@@ -13,7 +14,8 @@ const rootPersistConfig = {
 
 //combine cac reducer vao 1 bien
 const reducers = combineReducers({
-  user: userReducer
+  user: userReducer,
+  activeProperty: activePropertyReducer
 })
 
 //thuc hien persist reducer
