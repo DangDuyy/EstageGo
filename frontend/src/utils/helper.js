@@ -25,3 +25,17 @@ export function createPropertyMarkers(properties = []) {
     .map(createPropertyMarker)
     .filter(marker => marker !== null);
 }
+
+export function formatPrice(price) {
+  if (price == null) return null;
+  if (typeof price === "number") return `$${price.toLocaleString()}`;
+  if (typeof price === "string") return price;
+  if (typeof price === "object") {
+    const { value, currency, period } = price;
+    const symbolMap = { USD: "$", VND: "₫", EUR: "€" };
+    const symbol = symbolMap[currency] ?? (currency ? `${currency} ` : "");
+    const num = Number(value ?? 0);
+    return `${symbol}${num.toLocaleString()}${period ? `/${period}` : ""}`;
+  }
+  return String(price);
+}
