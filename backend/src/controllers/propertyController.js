@@ -69,8 +69,19 @@ const getProperties = async (req, res, next) => {
         next(error)
     }
 }
+
+const getPropertyDetails = async (req, res, next) => {
+    try {
+        const propertyId = req.params.id
+        const result = await propertyService.getPropertyDetails(propertyId)
+        return res.status(StatusCodes.OK).json(result)
+    } catch (error) {
+        next(error)
+    }
+}
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
-    getProperties
+    getProperties,
+    getPropertyDetails
 }

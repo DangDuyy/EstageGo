@@ -6,9 +6,11 @@ import { propertyValidation } from '~/validations/propertyValidation'
 
 const router = express.Router()
 
-router.post('/',authMiddleware.isAuthorized, uploadFiles, propertyController.createProperty)
-
 router.route('/')
   .get(propertyController.getProperties, propertyValidation.getProperties)
+  .post(authMiddleware.isAuthorized, uploadFiles, propertyController.createProperty)
+
+router.route('/:id')
+  .get(propertyController.getPropertyDetails)
 
 export const propertyRoutes = router
