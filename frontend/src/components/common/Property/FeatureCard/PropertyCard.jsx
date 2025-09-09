@@ -4,11 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Bed, Bath, Ruler } from "lucide-react";
 import { Link } from "react-router-dom";
+import { formatPrice } from "@/utils/helper";
+import { Separator } from "@/components/ui/separator";
 
-function Stat({ icon: Icon, label, value }) {
+function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" }) {
+  if (value == null) return null;
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Icon className="h-8 w-8" />
+    <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
+      <Icon className={iconClass} />
       <span>{label}:</span>
       <span className="font-semibold text-foreground">{value}</span>
     </div>
@@ -16,80 +19,143 @@ function Stat({ icon: Icon, label, value }) {
 }
 
 export default function PropertyCard({ item, variant = "grid" }) {
-  const price =
-    typeof item.price === "number" ? item.price.toLocaleString() : item.price;
+  // Fallbacks theo schema mới
+  const imageUrl = item.image || item.media?.[0]?.url || "/images/placeholder.jpg";
+  const locationText = item.location || item.address?.fullAddress;
+  const beds = item.beds ?? item.rooms?.bedrooms;
+  const baths = item.baths ?? item.rooms?.bathrooms;
+  const area = item.sqft ?? item.area;
+  const priceText = formatPrice(item.price);
+
+  const statIconClass = variant === "grid" ? "h-8 w-8" : "h-6 w-6"; // list to hơn
+  const statTextClass = variant === "grid" ? "" : "text-base md:text-lg"; // list to hơn
+  const statGapClass  = variant === "grid" ? "gap-4" : "gap-6";           // list nới gap
+
+  // Badge: Featured + purpose (sale/rent)
+  const mapPurpose = (p) => {
+    if (!p) return null;
+    const v = String(p).toLowerCase();
+    if (v === "sale") return "For Sale";
+    if (v === "rent") return "For Rent";
+    return p;
+  };
+  const badges = ["Featured"];
+  const purposeLabel = mapPurpose(item.purpose);
+  if (purposeLabel) badges.push(purposeLabel);
 
   return (
     <Card
-      className={`py-0 ${variant === "list" ? "flex gap-5 overflow-hidden" : "overflow-hidden group"}`}
+      className={`py-0 ${
+        variant === "list" ? "flex flex-row gap-5 overflow-hidden" : "overflow-hidden group"
+      }`}
     >
-      <div className={variant === "list" ? "relative w-64 shrink-0" : "relative"}>
+      {/* Image */}
+      <div className={variant === "list" ? "relative w-[300px] md:w-[400px] shrink-0" : "relative"}>
         <Link to={item.href ?? "#"} className="block">
           <img
-            src={item.image}
+            src={imageUrl}
             alt={item.title}
             className="h-full w-full object-cover transition"
           />
         </Link>
 
         {/* Badges */}
-        {item.tags?.length ? (
-          <div className="absolute inset-x-3 top-3 flex flex-wrap gap-2">
-            {item.tags.map((t) => (
-              <Badge
-                key={t}
-                className={
-                  t === "Featured"
-                    ? "bg-blue-600 text-white text-xl"
-                    : "bg-gray-700 text-white text-xl"
-                }
-              >
-                {t}
-              </Badge>
-            ))}
-          </div>
-        ) : null}
+        <div className="absolute inset-x-5 top-5 flex flex-wrap gap-2">
+          {badges.map((t, idx) => (
+            <Badge
+              key={`${t}-${idx}`}
+              className={`text-md ${t === "Featured" ? "bg-blue-600 text-white" : "bg-gray-700 text-white"} `}
+            >
+              {t}
+            </Badge>
+          ))}
+        </div>
 
-        {/* Location */}
-        {item.location ? (
-          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-full px-3 py-1 text-xl text-white">
+        {/* Location overlay: chỉ giữ cho GRID để không trùng với dòng địa chỉ bên phải */}
+        {variant !== "list" && locationText ? (
+          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-full px-3 py-1 text-md text-white bg-black/40 backdrop-blur">
             <MapPin className="h-3.5 w-3.5" />
-            <span className="line-clamp-1">{item.location}</span>
+            <span className="line-clamp-1">{locationText}</span>
           </div>
         ) : null}
       </div>
 
+      {/* Content */}
       <CardContent
-        className={
-          variant === "list"
-            ? "flex flex-1 flex-col justify-between py-5"
-            : "p-5"
-        }
+        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10" : "p-5"}
       >
-        <div className="space-y-3">
-          <Link
-            to={item.href ?? "#"}
-            className="text-left text-2xl font-semibold no-underline hover:no-underline line-clamp-1"
-          >
-            {item.title}
-          </Link>
-          <div className="flex flex-wrap items-center gap-4">
-            {item.beds != null && <Stat icon={Bed} label="Beds" value={item.beds} />}
-            {item.baths != null && <Stat icon={Bath} label="Baths" value={item.baths} />}
-            {item.sqft && <Stat icon={Ruler} label="Sqft" value={item.sqft} />}
-          </div>
-        </div>
+        {variant === "list" ? (
+          <>
+            {/* Top block: title + stats + location line */}
+            <div className="space-y-3">
+              <Link
+                to={item.href ?? "#"}
+                className="text-left text-2xl font-semibold no-underline hover:underline line-clamp-1"
+              >
+                {item.title}
+              </Link>
 
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={item.agent?.avatar} alt={item.agent?.name} />
-              <AvatarFallback>{item.agent?.name?.[0] ?? "A"}</AvatarFallback>
-            </Avatar>
-            <span className="text-xl text-muted-foreground">{item.agent?.name}</span>
-          </div>
-          {price && <div className="text-xl font-semibold">${price}</div>}
-        </div>
+             <div className={`flex flex-wrap items-center ${statGapClass}`}>
+                <Stat icon={Bed}  label="Beds"  value={beds}  iconClass={statIconClass} className={statTextClass} />
+                <Stat icon={Bath} label="Baths" value={baths} iconClass={statIconClass} className={statTextClass} />
+                <Stat icon={Ruler} label={item.sqft ? "Sqft" : "Area"} value={area} iconClass={statIconClass} className={statTextClass} />
+              </div>
+
+              {locationText && (
+                <div className="mt-1 flex items-center gap-2 text-xl text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span className="line-clamp-1">{locationText}</span>
+                </div>
+              )}
+            </div>
+
+            <Separator className="my-4" />
+
+            {/* Bottom row: owner + price */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-xl gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={item.ownerInfo?.avatar} alt={item.ownerInfo?.fullName} />
+                  <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
+                </Avatar>
+                {item.ownerInfo?.fullName && (
+                  <span className="text-md text-muted-foreground">{item.ownerInfo.fullName}</span>
+                )}
+              </div>
+              {priceText && <div className="text-xl font-semibold">{priceText}</div>}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-3">
+              <Link
+                to={item.href ?? "#"}
+                className="text-left text-2xl font-semibold no-underline hover:no-underline line-clamp-1"
+              >
+                {item.title}
+              </Link>
+              <div className="flex flex-wrap items-center gap-4">
+                <Stat icon={Bed}  label="Beds" value={beds}  iconClass={statIconClass} />
+                <Stat icon={Bath} label="Baths" value={baths} iconClass={statIconClass} />
+                <Stat icon={Ruler} label={item.sqft ? "Sqft" : "Area"} value={area} iconClass={statIconClass} />
+              </div>
+            </div>
+
+            <Separator className="my-4" />
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={item.ownerInfo?.avatar} alt={item.ownerInfo?.fullName} />
+                  <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
+                </Avatar>
+                {item.ownerInfo?.fullName && (
+                  <span className="text-xl text-muted-foreground">{item.ownerInfo.fullName}</span>
+                )}
+              </div>
+              {priceText && <div className="text-xl font-semibold">{priceText}</div>}
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
