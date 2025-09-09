@@ -89,7 +89,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
             {/* Top block: title + stats + location line */}
             <div className="space-y-3">
               <Link
-                to={item.href ?? "#"}
+                to={`/properties/${item._id}`}
                 className="text-left text-2xl font-semibold no-underline hover:underline line-clamp-1"
               >
                 {item.title}
@@ -129,8 +129,8 @@ export default function PropertyCard({ item, variant = "grid" }) {
           <>
             <div className="space-y-3">
               <Link
-                to={item.href ?? "#"}
-                className="text-left text-2xl font-semibold no-underline hover:no-underline line-clamp-1"
+                to={`/properties/${item._id}`}
+                className="text-left text-2xl font-semibold no-underline hover:underline line-clamp-1"
               >
                 {item.title}
               </Link>
