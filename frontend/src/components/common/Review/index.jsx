@@ -62,10 +62,10 @@ const ReviewForm = () => (
   <div className="min-h-screen flex justify-center items-center px-6">
     <div>
       <h2
-        className="mb-8 sm:mb-14 text-5xl md:text-6xl font-bold text-center tracking-tight">
+        className="mb-8 lg:mb-4 text-5xl lg:text-4xl font-bold text-center tracking-tight">
         Our customer's review
       </h2>
-      <div className="w-full max-w-screen-xl mx-auto">
+      <div className="w-full max-w-screen-lg mx-auto">
         <div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 overflow-hidden border-r border-background">
           {Review.map((testimonial) => (
