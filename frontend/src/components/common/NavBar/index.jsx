@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
+import DialogAuth from "../Modal/authModal";
 
 
 const NavBar = ({ hideLogo = false }) => {
@@ -133,7 +134,8 @@ const NavBar = ({ hideLogo = false }) => {
         </div>
       </nav>
 
-      <LoginModal open={openModal} onOpenChange={setOpenModal} />
+      {/* <LoginModal open={openModal} onOpenChange={setOpenModal} /> */}
+      <DialogAuth open={openModal} onOpenChange={setOpenModal} />
 
     </div>
   );
