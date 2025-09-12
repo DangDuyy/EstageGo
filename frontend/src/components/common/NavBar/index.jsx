@@ -47,18 +47,18 @@ const NavBar = ({ hideLogo = false }) => {
           // when the sidebar opened), we reserve horizontal space using left padding. This keeps
           // the navbar full width so the user avatar & theme toggle are always visible.
           "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-10",
-          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-72" : "lg:pl-[90px]")
+          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-80" : "lg:pl-[90px]")
         )}
       >
-        <div className="h-full flex items-center justify-between mx-auto px-6 sm:px-10 2xl:px-20">
+        <div className="h-full flex items-center justify-between lg:px-10">
           {!hideLogo && <Logo />}
 
           {/* Desktop Menu */}
-          <NavMenu className="hidden md:block" />
+          <NavMenu className="hidden md:block lg:max-w-lg" />
 
-          <div className="flex items-center gap-8 shrink-0">
-            <ToogleMode />
-            <Bell size={30}/>
+          <div className="flex items-center gap-8 shrink-0 lg:gap-4">
+            <ToogleMode/>
+            <Bell className="lg:h-6 lg:w-6 hidden md:block"/>
             { currentUser 
               ? 
               <>
