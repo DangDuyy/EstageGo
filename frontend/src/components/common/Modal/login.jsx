@@ -35,8 +35,7 @@ function LoginModal({ open, onOpenChange }) {
       <DialogContent
         className="
           p-0 gap-0 rounded-[28px] h-[800px] overflow-hidden border-0 shadow-2xl
-          w-[95vw] lg:w-[1200px]
-          sm:max-w-[95vw] lg:max-w-[1200px]
+          w-[95vw] lg:max-w-[800px] lg:max-h-[600px]
         "
       >
         {/* dùng 10 cột: 4 (ảnh) + 6 (form) */}
@@ -51,7 +50,7 @@ function LoginModal({ open, onOpenChange }) {
           </div>
 
           {/* Right form panel = 6/10 */}
-          <div className="md:col-span-6 h-full overflow-auto p-8 md:p-12">
+          <div className="lg:col-span-6 h-full overflow-auto p-8 lg:p-12">
             <DialogHeader className="mb-20">
               <div className="flex items-start justify-between">
                 <DialogTitle className="text-4xl font-semibold tracking-tight">
@@ -60,7 +59,7 @@ function LoginModal({ open, onOpenChange }) {
               </div>
             </DialogHeader>
 
-            <form className="space-y-6" onSubmit={handleSubmit(submitLogin)}>
+            <form className="space-y-6 lg:space-y-2" onSubmit={handleSubmit(submitLogin)}>
               {/* Account */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-muted-foreground">
@@ -109,7 +108,7 @@ function LoginModal({ open, onOpenChange }) {
                 </Button>
               </div>
 
-              <Button type="submit" className="h-14 rounded-full text-base w-full">Login</Button>
+              <Button type="submit" className="h-14 rounded-full text-base w-full hover:cursor-pointer">Login</Button>
 
               <div className="text-center text-sm text-muted-foreground">
                 Don’t you have an account?
