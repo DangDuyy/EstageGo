@@ -47,7 +47,7 @@ const NavBar = ({ hideLogo = false }) => {
           // when the sidebar opened), we reserve horizontal space using left padding. This keeps
           // the navbar full width so the user avatar & theme toggle are always visible.
           "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-10",
-          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-80" : "lg:pl-[90px]")
+          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-90" : "lg:pl-[90px]")
         )}
       >
         <div className="h-full flex items-center justify-between lg:px-10">
@@ -62,15 +62,15 @@ const NavBar = ({ hideLogo = false }) => {
             { currentUser 
               ? 
               <>
-                <Heart size={30}/>
+                <Heart size={30} className="lg:h-6 lg:w-6"/>
                 <DropdownMenu>
                     <TooltipProvider disableHoverableContent>
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="relative h-8 w-8 rounded-full">
-                              <Avatar className="h-13 w-13">
-                                <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
+                              <Avatar className="h-13 w-13 lg:h-8 lg:w-8">
+                                <AvatarImage src={currentUser.avatar} alt="Avatar" />
                                 <AvatarFallback className="bg-transparent">{currentUser.fullName}</AvatarFallback>
                               </Avatar>
                             </Button>
@@ -118,12 +118,12 @@ const NavBar = ({ hideLogo = false }) => {
                 <User />
                 Sign In
               </Button> }
-              {!hideLogo && (<Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer"
-                onClick={() => {}}
-              >
-              <Folders />
-              Submit Property
-            </Button>)}
+              {!hideLogo && (
+                <Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer" onClick={() => {}}
+                >
+                  <Folders />
+                  Submit Property
+              </Button>)}
             
             {/* Mobile Menu */}
             <div className="md:hidden">
