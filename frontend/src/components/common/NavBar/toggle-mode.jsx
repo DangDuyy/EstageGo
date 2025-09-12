@@ -62,8 +62,8 @@ const ToogleMode = () => {
       }
       checked={isDarkMode}
       onCheckedChange={setIsDarkMode}
-      className="h-8 w-20"
-      thumbClassName="h-8 w-15 data-[state=checked]:translate-x-5" />
+      className="h-8 w-20 lg:h-6 lg:w-18"
+      thumbClassName="h-8 w-15 lg:h-6 lg:w-12 data-[state=checked]:translate-x-6" />
   );
 };
 

@@ -16,7 +16,7 @@ export const Logo = ({ className, showText = true, ...props }) => (
         fontWeight="700"
         letterSpacing="1"
         fill="currentColor"
-        className="text-primary dark:text-white"
+        className="text-primary dark:text-white lg:text-xl"
       >
         EstageGo
       </text>
