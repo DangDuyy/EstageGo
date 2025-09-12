@@ -27,7 +27,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
   const area = item.sqft ?? item.area;
   const priceText = formatPrice(item.price);
 
-  const statIconClass = variant === "grid" ? "h-8 w-8" : "h-6 w-6"; // list to hơn
+  const statIconClass = variant === "grid" ? "h-4 w-4" : "h-6 w-6"; // list to hơn
   const statTextClass = variant === "grid" ? "" : "text-base md:text-lg"; // list to hơn
   const statGapClass  = variant === "grid" ? "gap-4" : "gap-6";           // list nới gap
 
@@ -75,14 +75,14 @@ export default function PropertyCard({ item, variant = "grid" }) {
         {variant !== "list" && locationText ? (
           <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-full px-3 py-1 text-md text-white bg-black/40 backdrop-blur">
             <MapPin className="h-3.5 w-3.5" />
-            <span className="line-clamp-1">{locationText}</span>
+            <span className="line-clamp-1 lg:text-sm">{locationText}</span>
           </div>
         ) : null}
       </div>
 
       {/* Content */}
       <CardContent
-        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10" : "p-5"}
+        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10" : "p-4 pt-0"}
       >
         {variant === "list" ? (
           <>
@@ -130,7 +130,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
             <div className="space-y-3">
               <Link
                 to={`/properties/${item._id}`}
-                className="text-left text-2xl font-semibold no-underline hover:underline line-clamp-1"
+                className="text-left text-2xl lg:text-lg font-semibold no-underline hover:underline line-clamp-1"
               >
                 {item.title}
               </Link>
@@ -152,7 +152,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
                   <span className="text-xl text-muted-foreground">{item.ownerInfo.fullName}</span>
                 )}
               </div>
-              {priceText && <div className="text-xl font-semibold">{priceText}</div>}
+              {priceText && <div className="text-xl font-semibold lg:text-lg ">{priceText}</div>}
             </div>
           </>
         )}

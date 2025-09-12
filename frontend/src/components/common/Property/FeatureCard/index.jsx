@@ -22,8 +22,8 @@ export function FeatureCard() {
     <section className="py-32">
       <div className="w-full">
         <div className="mx-auto flex max-w-8xl flex-col items-center gap-6 text-center">
-          <p className="mb-6 text-3xl font-semibold">Featured Properties</p>
-          <h1 className="mb-6 text-6xl font-semibold">Recommended For You</h1>
+          <p className="text-3xl font-semibold lg:mb-0 lg:text-2xl">Featured Properties</p>
+          <h1 className="mb-6 text-6xl font-semibold lg:text-3xl">Recommended For You</h1>
 
           {/* Categories */}
           <div className="flex flex-wrap justify-center gap-3">
@@ -40,11 +40,17 @@ export function FeatureCard() {
           </div>
 
           {/* Grid cards */}
-          <div className="mx-auto mt-10 grid max-w-[3000px] lg:px-20 grid-cols-1 place-items-center gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {properties.map((p) => (
-              <PropertyCard key={p.id} item={p} />
-            ))}
-          </div>
+        <div className="mx-auto mt-10 grid max-w-[1350px] gap-y-5 lg:px-20 grid-cols-1 place-items-center space-x-0 sm:grid-cols-2 lg:grid-cols-3">
+          {properties.map((p) => (
+            <div
+              key={p.id}
+              className="w-full lg:w-[90%] max-w-[2000px]" // ↓ thu nhỏ card ở lg
+            >
+              <PropertyCard item={p} />
+            </div>
+          ))}
+        </div>
+
         </div>
 
         {/* CTA */}
