@@ -41,13 +41,13 @@ const NavBar = ({ hideLogo = false }) => {
   const currentUser = useSelector(selectCurrentUser)
 
   return (
-    <div className="min-h-[95px] bg-muted">
+    <div className="bg-muted">
       <nav
         className={cn(
           // Instead of shifting the whole navbar width (which caused right-side items to overflow
           // when the sidebar opened), we reserve horizontal space using left padding. This keeps
           // the navbar full width so the user avatar & theme toggle are always visible.
-          "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-10",
+          "fixed left-0 right-0 h-20 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-10",
           hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-90" : "lg:pl-[90px]")
         )}
       >

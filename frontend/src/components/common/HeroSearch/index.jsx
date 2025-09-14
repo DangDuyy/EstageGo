@@ -80,7 +80,7 @@ export default function HeroSearch({
       className="relative isolate overflow-hidden bg-no-repeat bg-cover bg-center"
       style={{
         backgroundImage: `url(${backgroundUrl})`,
-        minHeight: "50vh"
+        minHeight: "92vh"
       }}
     >
 
