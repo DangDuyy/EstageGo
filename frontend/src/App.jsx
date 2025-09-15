@@ -12,6 +12,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 import MapPage from './pages/MapPage'
 import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
+import PropertiesMap from './pages/MapPage/index_v2'
 function App() {
   return (
     <Routes>
@@ -23,6 +24,7 @@ function App() {
       <Route path="/home" element={<HomePage/>} />
       <Route path="/properties" element={<PropertyPages/>} />
       <Route path="/properties/:propertyId" element={<PropertyPage/>} />
+      <Route path="/propertiesmap" element={<PropertiesMap/>}/>
       <Route path="/map" element={<MapPage/>} />
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<DashboardPage/>} />
