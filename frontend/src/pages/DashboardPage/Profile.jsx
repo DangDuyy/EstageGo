@@ -39,7 +39,7 @@ export default function Profile() {
             <DialogTrigger asChild>
               <Avatar className="size-50 cursor-pointer hover:opacity-80 transition">
                 <AvatarImage
-                  src={user.avatarUrl}
+                  src={user.avatar}
                   className="h-full w-full object-cover"
                 />
                 <AvatarFallback className="text-xl">
@@ -50,7 +50,7 @@ export default function Profile() {
 
             <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none">
               <img
-                src={user.avatarUrl}
+                src={user.avatar}
                 alt="Zoomed Avatar"
                 className="max-w-full max-h-[85vh] object-contain rounded-lg"
               />

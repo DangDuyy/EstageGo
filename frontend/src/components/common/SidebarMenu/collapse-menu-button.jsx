@@ -49,7 +49,7 @@ export function CollapseMenuButton({
                 <Icon size={18} />
               </span>
               <p
-                className={cn("max-w-[150px] truncate text-xl", isOpen
+                className={cn("max-w-[150px] truncate text-lg", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -81,7 +81,7 @@ export function CollapseMenuButton({
                 <Dot size={18} />
               </span>
               <p
-                className={cn("max-w-[170px] truncate text-xl", isOpen
+                className={cn("max-w-[170px] truncate text-lg", isOpen
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-96 opacity-0")}>
                 {label}
@@ -111,7 +111,7 @@ export function CollapseMenuButton({
         </Tooltip>
       </TooltipProvider>
       <DropdownMenuContent side="right" sideOffset={25} align="start">
-  <DropdownMenuLabel className="max-w-[190px] truncate text-xl">
+    <DropdownMenuLabel className="max-w-[190px] truncate text-xl">
           {label}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -71,7 +71,7 @@ export function Menu({ isOpen }) {
                     <span className={cn(isOpen ? "mr-4" : "")}> <Icon size={18} /> </span>
                     <p
                       className={cn(
-                        "max-w-[200px] truncate text-xl transition-all",
+                        "max-w-[200px] truncate text-lg transition-all",
                         !isOpen && "hidden"
                       )}>
                       {label}
@@ -117,7 +117,7 @@ export function Menu({ isOpen }) {
               <Button
                 onClick={() => {}}
                 variant="outline"
-                className="w-full justify-center h-12 mt-5  text-xl" >
+                className="w-full justify-center h-12 mt-5  text-lg" >
                 <span className={cn(isOpen === false ? "" : "mr-4")}>
                   <LogOut size={18} />
                 </span>
