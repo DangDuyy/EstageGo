@@ -28,7 +28,6 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import DialogAuth from "../Modal/authModal";
 
 
 const NavBar = ({ hideLogo = false }) => {
@@ -41,14 +40,11 @@ const NavBar = ({ hideLogo = false }) => {
   const currentUser = useSelector(selectCurrentUser)
 
   return (
-    <div className="bg-muted">
+    <div className="min-h-[95px] bg-muted">
       <nav
         className={cn(
-          // Instead of shifting the whole navbar width (which caused right-side items to overflow
-          // when the sidebar opened), we reserve horizontal space using left padding. This keeps
-          // the navbar full width so the user avatar & theme toggle are always visible.
-          "fixed left-0 right-0 h-20 bg-background border dark:border-slate-700/70 shadow-md w-full transition-[padding-left] ease-in-out duration-300 z-10",
-          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-90" : "lg:pl-[90px]")
+          "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-[90]", // giảm z-index để sidebar nổi trên
+          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-[400px]" : "lg:pl-[200px]")
         )}
       >
         <div className="h-full flex items-center justify-between lg:px-10">
@@ -120,7 +116,7 @@ const NavBar = ({ hideLogo = false }) => {
                 Sign In
               </Button> }
               {!hideLogo && (
-                <Button className="rounded-full text-md px-7 py-3 h-14 min-w-[200px] cursor-pointer" onClick={() => {}}
+                <Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer" onClick={() => {}}
                 >
                   <Folders />
                   Submit Property
@@ -134,8 +130,7 @@ const NavBar = ({ hideLogo = false }) => {
         </div>
       </nav>
 
-      {/* <LoginModal open={openModal} onOpenChange={setOpenModal} /> */}
-      <DialogAuth open={openModal} onOpenChange={setOpenModal} />
+      <LoginModal open={openModal} onOpenChange={setOpenModal} />
 
     </div>
   );

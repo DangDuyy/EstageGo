@@ -120,10 +120,8 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* luôn giữ rãnh scrollbar cố định */
     scrollbar-gutter: stable right-edges;
     overflow-y: scroll;
-    /* tránh xuất hiện scrollbar ngang khi lock/unlock làm dịch layout */
     overflow-x: hidden;
   }
   body {
@@ -131,6 +129,15 @@
     @apply font-sans;
     font-family: var(--font-sans);
   }
+}
+
+/* Hide scrollbar for all browsers */
+html, body, * {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+  display: none;
 }
 .keep-scrollbar { scrollbar-gutter: stable; }
 

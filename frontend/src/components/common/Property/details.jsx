@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { MapPin, Bed, Bath, Ruler, Star, Play } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Star, Play, Phone, Mail, Share, Heart, GitCompare, Printer, House, SlidersHorizontal, Sofa, Hammer } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -22,6 +22,8 @@ import {
   fetchPropertyDetailsAPI,
   selectCurrentActiveProperty
 } from "@/redux/activeProperty/activePropertySlice";
+import { Textarea } from "@/components/ui/textarea";
+import { capitalizeFirstLetter } from "@/utils/formatters";
 
 /* ============ Small utils ============ */
 function PriceTag({ value, currency, unit }) {
@@ -217,40 +219,57 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     : null;
 
   return (
-    <div className="w-full">
+    <div className="w-full pt-20">
       {/* Header */}
       <div className="container mx-auto px-4">
-        <div className="flex flex-col gap-4 border-b py-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{property.title}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              {typeof bedrooms === "number" && (
-                <Badge variant="secondary" className="gap-1">
-                  <Bed className="h-4 w-4" /> {bedrooms} Beds
-                </Badge>
-              )}
-              {typeof bathrooms === "number" && (
-                <Badge variant="secondary" className="gap-1">
-                  <Bath className="h-4 w-4" /> {bathrooms} Baths
-                </Badge>
-              )}
-              {typeof area === "number" && (
-                <Badge variant="secondary" className="gap-1">
-                  <Ruler className="h-4 w-4" /> {area} m²
-                </Badge>
-              )}
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="line-clamp-1">{addressText}</span>
-              </div>
-            </div>
+        <div className="flex flex-col gap-4 py-6 md:flex-col md:justify-between">
+          <div className="flex justify-between">
+            <h1 className="text-4xl font-bold tracking-tight">{property.title}</h1>
+            <PriceTag
+              value={property.price?.value}
+              currency={property.price?.currency}
+              unit={property.purpose === "rent" ? `/${property.price?.period || "month"}` : ""}
+            />
           </div>
 
-          <PriceTag
-            value={property.price?.value}
-            currency={property.price?.currency}
-            unit={property.purpose === "rent" ? `/${property.price?.period || "month"}` : ""}
-          />
+          <Separator/>
+
+          <div className="flex flex-row justify-between items-center">
+            <div className="mt-2 flex flex-wrap items-center gap-10 text-sm text-muted-foreground">
+              <span>
+                <h1 className="text-neutral-900 text-md py-2">Features</h1>
+                {typeof bedrooms === "number" && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Bed className="h-4 w-4" /> {bedrooms} Beds
+                  </Badge>
+                )}
+                {typeof bathrooms === "number" && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Bath className="h-4 w-4" /> {bathrooms} Baths
+                  </Badge>
+                )}
+                {typeof area === "number" && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Ruler className="h-4 w-4" /> {area} m²
+                  </Badge>
+                )}
+              </span>
+              <span>
+                <h1 className="text-neutral-900 text-md py-2">Location</h1>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="line-clamp-1">{addressText}</span>
+                </div>
+              </span>
+            </div>
+            <div className="flex flex-row gap-4 text-muted-foreground cursor-pointer">
+              <Heart/>
+              <GitCompare/>
+              <Share/>
+              <Printer/>
+            </div>
+          </div>
+          
         </div>
       </div>
 
@@ -263,19 +282,54 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
         {/* LEFT */}
         <div className="lg:col-span-8 space-y-6">
           {/* Description */}
-          <Card>
-            <CardHeader><CardTitle>Description</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+          <section className="space-y-3 border-b pb-6">
+            <h3 className="text-xl font-semibold">Description</h3>
+            <div className="space-y-3">
               {(showFullDesc ? descriptionParas : descriptionParas.slice(0, 1)).map((p, i) => (
                 <p key={i} className="text-muted-foreground">{p}</p>
               ))}
               {descriptionParas.length > 1 && (
-                <Button variant="link" className="px-0" onClick={() => setShowFullDesc((v) => !v)}>
-                  {showFullDesc ? "Show less" : "View more"}
-                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowFullDesc(v => !v)}
+                  className="text-primary hover:underline text-sm"
+                >
+                  {showFullDesc ? "Show less" : "View More"}
+                </button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
+          <section className="space-y-4 border-b pb-6">
+            <h3 className="text-xl font-semibold">Overview</h3>
+            {(() => {
+              const items = [
+                { label: "ID", value: property?._id?.slice(-4) || "-", Icon: House },
+                { label: "Type", value: property?.type || "-", Icon: SlidersHorizontal },
+                { label: "Bedrooms", value: property?.rooms?.bedrooms ?? "-", Icon: Bed },
+                { label: "Bathrooms", value: property?.rooms?.bathrooms ?? "-", Icon: Bath },
+                { label: "LivingRooms", value: property?.rooms?.livingrooms ?? "-", Icon: Sofa},
+                { label: "Land Size", value: property?.area ? `${property.area} Sqft` : "-", Icon: Ruler },
+                { label: "Year Built", value: property?.yearBuilt ?? "-" , Icon: Hammer },
+                { label: "Size", value: property?.area ? `${property.area} Sqft` : "-", Icon: Ruler },
+              ]
+
+              return (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {items.map((it, idx) => (
+                    <div key={idx} className="flex items-center gap-3 rounded-lg border px-3 py-2">
+                      {it.Icon ? <it.Icon className="h-5 w-5 text-primary" /> : <span className="h-5 w-5" />}
+                      <div className="min-w-0">
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{it.label}</div>
+                        <div className="text-sm font-medium truncate">
+                          {capitalizeFirstLetter(String(it.value))}
+                        </div>                      
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+          </section>
 
           {/* Map (nếu có toạ độ) */}
           {gmapSrc && (
@@ -388,54 +442,45 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
         </div>
 
         {/* RIGHT */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Owner card (nếu có ownerInfo) */}
-          {(property.ownerInfo?.avatar || property.ownerInfo?.fullName) && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Owner</CardTitle></CardHeader>
-              <CardContent className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={property.ownerInfo?.avatar} alt={property.ownerInfo?.fullName} />
-                  <AvatarFallback>
-                    {(property.ownerInfo?.fullName || "U").slice(0, 1).toUpperCase()}
-                  </AvatarFallback>
+        <div className="lg:col-span-4">
+          <Card className="rounded-2xl shadow-md">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">Contact Sellers</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Owner Info */}
+              <div className="flex flex-row items-center space-y-2 space-x-6">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={property.ownerInfo.avatar} alt={property.ownerInfo.fullName} />
+                  <AvatarFallback>{(property.ownerInfo.fullName || "U").slice(0, 1)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{property.ownerInfo?.fullName}</div>
-                  {property.ownerInfo?.phone && (
-                    <div className="text-sm text-muted-foreground">{property.ownerInfo.phone}</div>
+                  <div className="font-medium text-lg">{property.ownerInfo.fullName || "Seller name"}</div>
+                  {property.ownerInfo.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
+                      <span>{property.ownerInfo.phone}</span>
+                    </div>
+                  )}
+                  {property.ownerInfo.email && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{property.ownerInfo.email}</span>
+                    </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
 
-          <Card>
-            <CardHeader><CardTitle className="text-base">Quick actions</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
-              <Button variant="outline">Save</Button>
-              <Button variant="outline">Share</Button>
-              <Button variant="outline">Compare</Button>
-              <Button>Contact</Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle className="text-base">Schedule a visit</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <Label>Name</Label>
+              {/* Form */}
+              <div className="space-y-3">
                 <Input placeholder="Your name" />
+                <Input placeholder="ex 0123456789" />
+                <Input placeholder="your@email.com" />
+                <Textarea placeholder="Message" className="min-h-[100px]" />
+                <Button className="w-full rounded-full">
+                  Find Properties →
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input placeholder="(+84) ..." />
-              </div>
-              <div className="space-y-2">
-                <Label>Message</Label>
-                <Input placeholder="I am interested in this property..." />
-              </div>
-              <Button className="w-full">Send request</Button>
             </CardContent>
           </Card>
         </div>
