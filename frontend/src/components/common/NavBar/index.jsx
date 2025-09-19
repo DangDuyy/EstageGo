@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 
 const NavBar = ({ hideLogo = false }) => {
@@ -36,6 +36,8 @@ const NavBar = ({ hideLogo = false }) => {
   const sidebarOpen = hideLogo && sidebar ? sidebar.getOpenState() : false;
   const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
+
+  const navigate = useNavigate()
 
   const currentUser = useSelector(selectCurrentUser)
 
@@ -116,7 +118,7 @@ const NavBar = ({ hideLogo = false }) => {
                 Sign In
               </Button> }
               {!hideLogo && (
-                <Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer" onClick={() => {}}
+                <Button className="rounded-full text-lg px-7 py-3 h-14 min-w-[200px] cursor-pointer" onClick={() => navigate('/dashboard/posts/new')}
                 >
                   <Folders />
                   Submit Property
