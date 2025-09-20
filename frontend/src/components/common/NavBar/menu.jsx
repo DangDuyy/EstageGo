@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -11,40 +11,78 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavLink, useLocation, Link } from "react-router-dom";
 
-// Base styles
+/* ========== Styles ========== */
 const linkBase = "px-6 py-3 transition";
 const activeClass = "!text-blue-600 !underline underline-offset-8 decoration-2";
 const inactiveClass = "text-foreground hover:text-blue-600";
 
-// Top-level items (except AI Trend)
-const menuItems = [
-  { to: "/", label: "Home", end: true },
-  { to: "/listing", label: "Listing" },
-  { to: "/properties", label: "Properties" },
-  { to: "/pages", label: "Pages" },
-  { to: "/blog", label: "Blog" },
-  { to: "/dashboard", label: "Dashboard" },
+/* ========== Menu Model ========== */
+const MENU = [
+  { label: "Home", to: "/", end: true },
+
+  {
+    label: "Listing",
+    to: "/listing",
+    children: [
+      { label: "Property Map", to: "/listing/map" },
+      { label: "Property Grid", to: "/listing/grid" },
+    ],
+  },
+
+  { label: "Properties", to: "/properties" },
+  { label: "Pages", to: "/pages" },
+  { label: "Blog", to: "/blog" },
+  { label: "Dashboard", to: "/dashboard" },
+
+  {
+    label: "AI Trend",
+    to: "/ai",
+    type: "mega",
+    columns: [
+      {
+        heading: "Search & Recommend",
+        items: [
+          { label: "Natural Language Search", to: "/ai/nl-search", desc: 'Type "3BR near schools, under 3B"' },
+          { label: "Behavioral Recommendations", to: "/ai/semantic-recommend", desc: "Personalized results from your browsing" },
+          { label: "Fuzzy & Semantic Search", to: "/ai/fuzzy-search", desc: "Handle typos and near-meaning terms" },
+        ],
+      },
+      {
+        heading: "Pricing & Analytics",
+        items: [
+          { label: "Automated Valuation (AVM)", to: "/ai/price-estimator", desc: "Estimate price from area, size, amenities" },
+          { label: "Price Trend Forecast", to: "/ai/price-forecast", desc: "Short-term predictions by location" },
+          { label: "Fraud Detection", to: "/ai/fraud-detection", desc: "Risk scoring for listings & sellers" },
+        ],
+      },
+      {
+        heading: "Media & Assistant",
+        items: [
+          { label: "Image Tagging", to: "/ai/image-tagging", desc: "Auto-detect kitchen, living room, balcony…" },
+          { label: "AI Listing Description", to: "/ai/auto-description", desc: "Generate compelling copy from raw data" },
+          { label: "Virtual Tour 360°/3D", to: "/ai/virtual-tour", desc: "View properties remotely from images/video" },
+          { label: "Chatbot / Assistant", to: "/ai/assistant", desc: "24/7 Q&A, mortgage calc, viewing schedule" },
+        ],
+      },
+    ],
+  },
 ];
 
-// Standard item
-const Item = ({ to, children, end, currentPath }) => (
-  <NavigationMenuItem>
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) => {
-        if (to === "/" && (currentPath === "/" || currentPath === "/home")) {
-          isActive = true;
-        }
-        return `${linkBase} ${isActive ? activeClass : inactiveClass}`;
-      }}
-    >
-      {children}
-    </NavLink>
-  </NavigationMenuItem>
-);
+/* ========== Helpers ========== */
+function isParentActive(item, pathname) {
+  if (!item) return false;
+  // Home: "/" hoặc "/home"
+  if (item.to === "/") return pathname === "/" || pathname === "/home";
+  // Parent active khi path bắt đầu bằng chính nó hoặc bất kỳ child nào trùng
+  if (pathname === item.to || pathname.startsWith(item.to + "/")) return true;
+  if (item.children?.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))) return true;
+  if (item.type === "mega") {
+    const all = item.columns?.flatMap((col) => col.items) || [];
+    if (all.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))) return true;
+  }
+  return false;
+}
 
-// AI submenu entry
 function AiSubItem({ to, title, desc }) {
   return (
     <li className="min-w-[240px]">
@@ -63,133 +101,160 @@ function AiSubItem({ to, title, desc }) {
   );
 }
 
-export const NavMenu = (props) => {
-  const { pathname } = useLocation();
-  const isAiActive = pathname === "/ai" || pathname.startsWith("/ai/");
-  const [aiOpen, setAiOpen] = useState(false);
-  const aiRef = useRef(null);
+/* ========== Renderers ========== */
+function PlainItem({ item, pathname }) {
+  return (
+    <NavigationMenuItem>
+      <NavLink
+        to={item.to}
+        end={item.end}
+        className={({ isActive }) => {
+          // force active cho Home khi / hoặc /home
+          if (item.to === "/" && (pathname === "/" || pathname === "/home")) {
+            isActive = true;
+          }
+          return `${linkBase} ${isActive ? activeClass : inactiveClass}`;
+        }}
+      >
+        {item.label}
+      </NavLink>
+    </NavigationMenuItem>
+  );
+}
 
-  // Open on hover; close when mouse leaves the whole item area
-  const handleMouseEnter = () => setAiOpen(true);
-  const handleMouseLeave = () => setAiOpen(false);
+function DropdownItem({ item, pathname }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const parentActive = isParentActive(item, pathname);
+
+  return (
+    <NavigationMenuItem
+      ref={ref}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger
+          asChild
+          className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${
+            parentActive ? activeClass : inactiveClass
+          }`}
+        >
+          <button
+            type="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setOpen((v) => !v);
+              }
+            }}
+          >
+            {item.label}
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="start" side="bottom" className="p-2 mt-5">
+          <ul className="space-y-1 min-w-[200px]">
+            {item.children?.map((c) => (
+              <li key={c.to}>
+                <NavLink
+                  to={c.to}
+                  className={({ isActive }) =>
+                    `${linkBase} block text-left w-full ${
+                      isActive ? activeClass : inactiveClass
+                    }`
+                  }
+                >
+                  {c.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </NavigationMenuItem>
+  );
+}
+
+function MegaItem({ item, pathname }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const parentActive = isParentActive(item, pathname);
+
+  return (
+    <NavigationMenuItem
+      ref={ref}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger
+          asChild
+          className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${
+            parentActive ? activeClass : inactiveClass
+          }`}
+        >
+          <button
+            type="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setOpen((v) => !v);
+              }
+            }}
+          >
+            {item.label}
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="start" side="bottom" className="p-4 mt-5">
+          <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+            {item.columns?.map((col, idx) => (
+              <ul key={idx} className="space-y-2">
+                {col.heading && (
+                  <li className="px-1 text-xs uppercase tracking-wider text-muted-foreground">
+                    {col.heading}
+                  </li>
+                )}
+                {col.items?.map((it) => (
+                  <AiSubItem
+                    key={it.to}
+                    to={it.to}
+                    title={it.label}
+                    desc={it.desc}
+                  />
+                ))}
+              </ul>
+            ))}
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </NavigationMenuItem>
+  );
+}
+
+/* ========== Main Component ========== */
+export function NavMenu(props) {
+  const { pathname } = useLocation();
+
+  const items = useMemo(() => MENU, []);
 
   return (
     <NavigationMenu {...props}>
       <NavigationMenuList className="gap-5 lg:gap-2 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start font-semibold md:text-lg texl-4xl">
-        {menuItems.map((it) => (
-          <Item key={it.to} to={it.to} end={it.end} currentPath={pathname}>
-            {it.label}
-          </Item>
-        ))}
-
-        {/* AI Trend as a dropdown that opens on hover OR click */}
-        <NavigationMenuItem
-          ref={aiRef}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          <DropdownMenu open={aiOpen} onOpenChange={setAiOpen}>
-            <DropdownMenuTrigger
-              className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${
-                isAiActive ? activeClass : inactiveClass
-              }`}
-              // Prevent navigation; this is a button-like trigger
-              asChild
-            >
-              <button
-                type="button"
-                // Keyboard: open on Enter/Space when focused
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setAiOpen((v) => !v);
-                  }
-                }}
-              >
-                AI Trend
-              </button>
-            </DropdownMenuTrigger>
-
-            {/* Appears directly under the trigger */}
-            <DropdownMenuContent
-              align="start"
-              side="bottom"
-              className="p-4"
-              // Keep it wide and structured
-            >
-              <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
-                <ul className="space-y-2">
-                  <li className="px-1 text-xs uppercase tracking-wider text-muted-foreground">
-                    Search & Recommend
-                  </li>
-                  <AiSubItem
-                    to="/ai/nl-search"
-                    title="Natural Language Search"
-                    desc='Type "3BR near schools, under 3B"'
-                  />
-                  <AiSubItem
-                    to="/ai/semantic-recommend"
-                    title="Behavioral Recommendations"
-                    desc="Personalized results from your browsing"
-                  />
-                  <AiSubItem
-                    to="/ai/fuzzy-search"
-                    title="Fuzzy & Semantic Search"
-                    desc="Handle typos and near-meaning terms"
-                  />
-                </ul>
-
-                <ul className="space-y-2">
-                  <li className="px-1 text-xs uppercase tracking-wider text-muted-foreground">
-                    Pricing & Analytics
-                  </li>
-                  <AiSubItem
-                    to="/ai/price-estimator"
-                    title="Automated Valuation (AVM)"
-                    desc="Estimate price from area, size, amenities"
-                  />
-                  <AiSubItem
-                    to="/ai/price-forecast"
-                    title="Price Trend Forecast"
-                    desc="Short-term predictions by location"
-                  />
-                  <AiSubItem
-                    to="/ai/fraud-detection"
-                    title="Fraud Detection"
-                    desc="Risk scoring for listings & sellers"
-                  />
-                </ul>
-
-                <ul className="space-y-2">
-                  <li className="px-1 text-xs uppercase tracking-wider text-muted-foreground">
-                    Media & Assistant
-                  </li>
-                  <AiSubItem
-                    to="/ai/image-tagging"
-                    title="Image Tagging"
-                    desc="Auto-detect kitchen, living room, balcony…"
-                  />
-                  <AiSubItem
-                    to="/ai/auto-description"
-                    title="AI Listing Description"
-                    desc="Generate compelling copy from raw data"
-                  />
-                  <AiSubItem
-                    to="/ai/virtual-tour"
-                    title="Virtual Tour 360°/3D"
-                    desc="View properties remotely from images/video"
-                  />
-                  <AiSubItem
-                    to="/ai/assistant"
-                    title="Chatbot / Assistant"
-                    desc="24/7 Q&A, mortgage calc, viewing schedule"
-                  />
-                </ul>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </NavigationMenuItem>
+        {items.map((item) => {
+          // AI Trend (mega)
+          if (item.type === "mega") {
+            return <MegaItem key={item.label} item={item} pathname={pathname} />;
+          }
+          // Dropdown thường
+          if (item.children?.length) {
+            return <DropdownItem key={item.label} item={item} pathname={pathname} />;
+          }
+          // Link thường
+          return <PlainItem key={item.label} item={item} pathname={pathname} />;
+        })}
       </NavigationMenuList>
     </NavigationMenu>
   );
-};
+}

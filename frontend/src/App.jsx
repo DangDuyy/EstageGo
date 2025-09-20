@@ -22,9 +22,11 @@ function App() {
       }/>
 
       <Route path="/home" element={<HomePage/>} />
-      <Route path="/properties" element={<PropertyPages/>} />
       <Route path="/properties/:propertyId" element={<PropertyPage/>} />
-      <Route path="/propertiesmap" element={<PropertiesMap/>}/>
+
+      <Route path="/listing/grid" element={<PropertyPages/>} />
+      <Route path="/listing/map" element={<PropertiesMap/>}/>
+      
       <Route path="/map" element={<MapPage/>} />
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<DashboardPage/>} />

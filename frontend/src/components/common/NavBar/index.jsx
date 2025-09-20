@@ -73,7 +73,8 @@ const NavBar = ({ hideLogo = false }) => {
                 className="rounded-full p-2 hover:bg-muted transition"
               >
                 <Heart className="h-6 w-6" />
-              </button>                <DropdownMenu>
+              </button>                
+              <DropdownMenu>
                     <TooltipProvider disableHoverableContent>
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>
