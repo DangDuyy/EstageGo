@@ -1,54 +1,76 @@
 "use client"
 
 import { useState } from "react"
-import { useChat } from '@ai-sdk/react';
-
 import { Chat } from "@/components/ui/chat"
+import { sendOllamaMessage } from '@/apis/ollama'
+
+// Feature toggle: when VITE_USE_OLLAMA === 'true' the component will
+// send messages to the local /api/ollama-chat endpoint using our helper.
+const USE_OLLAMA = import.meta.env.VITE_USE_OLLAMA === 'true'
 
 export function ChatBot() {
-  // useChat provides the chat state and a sendMessage method.
-  // It does NOT provide input/handleInputChange/handleSubmit — manage input locally
-  const { messages, sendMessage, status, stop, setMessages } = useChat()
-
   const [input, setInput] = useState("")
+  // local state for Ollama flow
+  const [messagesLocal, setMessagesLocal] = useState([])
+  const [statusLocal, setStatusLocal] = useState('idle')
 
   const handleInputChange = (e) => setInput(e.target.value)
 
-  // ChatForm may call handleSubmit(event) or handleSubmit(event, { experimental_attachments })
-  const handleSubmit = (event, options) => {
+  // Ollama flow (managed locally)
+  const handleSubmit = async (event, options) => {
     event?.preventDefault?.()
     if (!input && !(options && options.experimental_attachments)) return
 
-    // sendMessage expects an object like { text: string }
-    // forward experimental attachments (if any) under the same key so the SDK can handle them
-    const payload = {
-      text: input,
-      ...(options?.experimental_attachments ? { experimental_attachments: options.experimental_attachments } : {}),
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input,
     }
 
-    // call the SDK
-    try {
-      sendMessage(payload)
-    } catch (err) {
-      // swallow here - SDK surfaces errors on the chat state
-      console.error("sendMessage error:", err)
-    }
-
-    // clear the input after sending
+    setMessagesLocal((m) => [...m, userMessage])
     setInput("")
+
+    setStatusLocal('submitted')
+    try {
+      const payload = { text: userMessage.content }
+      const data = await sendOllamaMessage(payload)
+
+      const assistantText = data?.text || data?.response || data?.message || JSON.stringify(data)
+
+      const assistantMessage = {
+        id: `a-${Date.now()}`,
+        role: 'assistant',
+        content: assistantText,
+      }
+
+      setMessagesLocal((m) => [...m, assistantMessage])
+    } catch (err) {
+      console.error('Ollama chat error:', err)
+      const errorMessage = {
+        id: `e-${Date.now()}`,
+        role: 'assistant',
+        content: 'Sorry, I could not reach the chat service. Please try again later.',
+      }
+      setMessagesLocal((m) => [...m, errorMessage])
+    } finally {
+      setStatusLocal('idle')
+    }
   }
 
-  const isLoading = status === "submitted" || status === "streaming"
+  const isLoading = statusLocal === 'submitted' || statusLocal === 'streaming'
+
+  // stop is a no-op for the simple Ollama flow
+  const stop = () => {}
 
   return (
     <Chat
-      messages={messages}
+      messages={messagesLocal}
       input={input}
       handleInputChange={handleInputChange}
       handleSubmit={handleSubmit}
       isGenerating={isLoading}
       stop={stop}
-      setMessages={setMessages}
+      setMessages={setMessagesLocal}
     />
   )
 }
