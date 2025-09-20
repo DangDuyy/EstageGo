@@ -1,8 +1,8 @@
 import express from 'express'
 import { StatusCodes } from 'http-status-codes'
+import { propertyRoutes } from './propertyRoute'
 import { userRoutes } from './userRoute'
-import {propertyRoutes} from './propertyRoute'
-import { chatRoutes } from './chatRoute'
+import { ollamaChatRoutes } from './ollamaChatRoute'
 
 const Router = express.Router()
 
@@ -14,6 +14,6 @@ Router.use('/users', userRoutes)
 
 Router.use('/properties', propertyRoutes)
 
-Router.use('/chat', chatRoutes)
+Router.use('/ollama-chat', ollamaChatRoutes)
 
 export const APIs_V1 = Router
