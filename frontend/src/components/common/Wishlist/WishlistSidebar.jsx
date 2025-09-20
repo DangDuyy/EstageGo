@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
+import { createPortal } from 'react-dom';
 import { X, ShoppingBag, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,39 +8,20 @@ import { useWishlist } from "@/contexts/WishlistContext";
 
 export default function WishlistSidebar() {
   const { items, isOpen, toggleWishlist, removeItem, clearWishlist } = useWishlist();
-  const ref = useRef(null);
 
-  useEffect(() => {
-    const dlg = ref.current;
-    if (!dlg) return;
-    if (isOpen && !dlg.open) dlg.showModal();
-    if (!isOpen && dlg.open) dlg.close();
-  }, [isOpen]);
+  if (!isOpen) return null;
 
-  const handleCancel = (e) => {
-    e.preventDefault();
-    toggleWishlist();
-  };
+  const jsx = (
+    <div className="fixed inset-0 z-[9999] flex items-stretch">
+      {/* Backdrop */}
+      <div
+        className="flex-1 bg-black/80 backdrop-blur-sm"
+        onClick={toggleWishlist}
+        aria-hidden="true"
+      />
 
-  return (
-    <dialog
-      ref={ref}
-      onCancel={handleCancel}
-      className="
-        m-0 p-0 min-w-screen min-h-screen 
-        bg-transparent 
-        flex
-        backdrop:bg-black/60
-      "
-    >
-      {/* Sidebar */}
-      <div className="     
-        ml-auto           
-        h-screen          
-        w-full max-w-md   
-        bg-background shadow-2xl 
-        flex flex-col
-        animate-slide-in">
+      {/* Sidebar (flush right, full viewport height) */}
+  <aside className="fixed right-0 top-0 h-screen w-full max-w-md bg-background shadow-2xl flex flex-col animate-slide-in">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-2">
@@ -134,7 +116,13 @@ export default function WishlistSidebar() {
             </Button>
           </div>
         )}
-      </div>
-    </dialog>
+      </aside>
+    </div>
   );
+
+  if (typeof document !== 'undefined' && document.body) {
+    return createPortal(jsx, document.body);
+  }
+
+  return jsx;
 }

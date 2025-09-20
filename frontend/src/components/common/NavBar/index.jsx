@@ -37,7 +37,7 @@ const NavBar = ({ hideLogo = false }) => {
   const sidebarOpen = hideLogo && sidebar ? sidebar.getOpenState() : false;
   const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
-
+  const { toggleWishlist } = useWishlist()
   const navigate = useNavigate()
 
   const currentUser = useSelector(selectCurrentUser)
@@ -65,8 +65,15 @@ const NavBar = ({ hideLogo = false }) => {
             { currentUser 
               ? 
               <>
-                <Heart size={30} className="lg:h-6 lg:w-6"/>
-                <DropdownMenu>
+              <button
+                type="button"
+                onClick={toggleWishlist}
+                title="Open wishlist"
+                aria-label="Open wishlist"
+                className="rounded-full p-2 hover:bg-muted transition"
+              >
+                <Heart className="h-6 w-6" />
+              </button>                <DropdownMenu>
                     <TooltipProvider disableHoverableContent>
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>

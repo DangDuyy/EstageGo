@@ -44,18 +44,18 @@ function PriceTag({ value, currency, unit }) {
   );
 }
 
-function Stars({ value = 0 }) {
-  return (
-    <div className="flex">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className={cn("h-4 w-4", i < value ? "fill-foreground" : "fill-muted stroke-muted-foreground")}
-        />
-      ))}
-    </div>
-  );
-}
+// function Stars({ value = 0 }) {
+//   return (
+//     <div className="flex">
+//       {Array.from({ length: 5 }).map((_, i) => (
+//         <Star
+//           key={i}
+//           className={cn("h-4 w-4", i < value ? "fill-foreground" : "fill-muted stroke-muted-foreground")}
+//         />
+//       ))}
+//     </div>
+//   );
+// }
 
 /* ============ Gallery ============ */
 const defaultImages = [
