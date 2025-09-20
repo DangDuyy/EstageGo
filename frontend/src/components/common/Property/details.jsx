@@ -24,6 +24,7 @@ import {
 } from "@/redux/activeProperty/activePropertySlice";
 import { Textarea } from "@/components/ui/textarea";
 import { capitalizeFirstLetter } from "@/utils/formatters";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 /* ============ Small utils ============ */
 function PriceTag({ value, currency, unit }) {
@@ -151,6 +152,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const dispatch = useDispatch();
   const { propertyId } = useParams();
   const property = useSelector(selectCurrentActiveProperty);
+  const { toggleWishlist } = useWishlist()
 
   // loan calculator
   const [loan, setLoan] = React.useState({ total: 10000, down: 3000, months: 12, rate: 5 });
@@ -262,14 +264,30 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                 </div>
               </span>
             </div>
-            <div className="flex flex-row gap-4 text-muted-foreground cursor-pointer">
-              <Heart/>
-              <GitCompare/>
-              <Share/>
-              <Printer/>
+            <div className="flex flex-row gap-4 text-muted-foreground">
+              <button
+                type="button"
+                onClick={toggleWishlist}
+                title="Open wishlist"
+                aria-label="Open wishlist"
+                className="rounded-full p-2 hover:bg-muted transition"
+              >
+                <Heart className="h-5 w-5" />
+              </button>
+
+              <button type="button" title="Compare" aria-label="Compare" className="rounded-full p-2 hover:bg-muted transition">
+                <GitCompare className="h-5 w-5" />
+              </button>
+
+              <button type="button" title="Share" aria-label="Share" className="rounded-full p-2 hover:bg-muted transition">
+                <Share className="h-5 w-5" />
+              </button>
+
+              <button type="button" title="Print" aria-label="Print" className="rounded-full p-2 hover:bg-muted transition">
+                <Printer className="h-5 w-5" />
+              </button>
             </div>
           </div>
-          
         </div>
       </div>
 
@@ -448,28 +466,39 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
               <CardTitle className="text-xl font-semibold">Contact Sellers</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Owner Info */}
-              <div className="flex flex-row items-center space-y-2 space-x-6">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={property.ownerInfo.avatar} alt={property.ownerInfo.fullName} />
-                  <AvatarFallback>{(property.ownerInfo.fullName || "U").slice(0, 1)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium text-lg">{property.ownerInfo.fullName || "Seller name"}</div>
-                  {property.ownerInfo.phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      <span>{property.ownerInfo.phone}</span>
-                    </div>
-                  )}
-                  {property.ownerInfo.email && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span>{property.ownerInfo.email}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                  {/* Owner Info */}
+                  {(() => {
+                    const owner = property.ownerInfo || {};
+                    const ownerName = owner.fullName || "Seller name";
+                    const ownerAvatar = owner.avatar || null;
+
+                    return (
+                      <div className="flex flex-row items-center space-y-2 space-x-6">
+                        <Avatar className="h-20 w-20">
+                          {ownerAvatar ? (
+                            <AvatarImage src={ownerAvatar} alt={ownerName} />
+                          ) : (
+                            <AvatarFallback>{ownerName.slice(0, 1)}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-lg">{ownerName}</div>
+                          {owner.phone && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Phone className="h-4 w-4" />
+                              <span>{owner.phone}</span>
+                            </div>
+                          )}
+                          {owner.email && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Mail className="h-4 w-4" />
+                              <span>{owner.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
               {/* Form */}
               <div className="space-y-3">
