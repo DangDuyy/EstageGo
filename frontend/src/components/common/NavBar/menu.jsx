@@ -61,7 +61,7 @@ const MENU = [
           { label: "Image Tagging", to: "/ai/image-tagging", desc: "Auto-detect kitchen, living room, balcony…" },
           { label: "AI Listing Description", to: "/ai/auto-description", desc: "Generate compelling copy from raw data" },
           { label: "Virtual Tour 360°/3D", to: "/ai/virtual-tour", desc: "View properties remotely from images/video" },
-          { label: "Chatbot / Assistant", to: "/ai/assistant", desc: "24/7 Q&A, mortgage calc, viewing schedule" },
+          { label: "Chatbot / Assistant", to: "/ai/chatbot", desc: "24/7 Q&A, mortgage calc, viewing schedule" },
         ],
       },
     ],

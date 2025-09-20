@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 "use client";
 import { forwardRef, useCallback, useRef, useState } from "react";
 import { ArrowDown, ThumbsDown, ThumbsUp } from "lucide-react"

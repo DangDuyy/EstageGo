@@ -24,6 +24,8 @@ const START_SERVER = () => {
   app.use(cookieParser())
 
   app.use('/V1', APIs_V1)
+  // also mount under /api for frontend compatibility (e.g. /api/chat)
+  app.use('/api', APIs_V1)
 
   //tranh loi 500
   app.use(errorHandlingMiddleware)

@@ -15,7 +15,10 @@
     "dev": "cross-env BUILD_MODE=dev nodemon --exec babel-node ./src/server.js"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.32",
+    "@ai-sdk/react": "^2.0.47",
     "@babel/runtime": "^7.27.6",
+    "ai": "^5.0.47",
     "async-exit-hook": "^2.0.1",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
@@ -35,7 +38,8 @@
     "multer-storage-cloudinary": "^4.0.0",
     "resend": "^4.7.0",
     "streamifier": "^0.1.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^4.1.9"
   },
   "devDependencies": {
     "@babel/cli": "^7.27.6",

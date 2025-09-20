@@ -13,6 +13,7 @@ import MapPage from './pages/MapPage'
 import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
 import PropertiesMap from './pages/MapPage/index_v2'
+import { ChatBot } from './components/common/AITrend/ChatBot'
 function App() {
   return (
     <Routes>
@@ -26,6 +27,8 @@ function App() {
 
       <Route path="/listing/grid" element={<PropertyPages/>} />
       <Route path="/listing/map" element={<PropertiesMap/>}/>
+
+      <Route path="/ai/chatbot" element={<ChatBot/>} />
       
       <Route path="/map" element={<MapPage/>} />
       <Route path="/dashboard" element={<DashboardLayout/>}>
