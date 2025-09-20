@@ -1,12 +1,7 @@
-"use client"
-
 import { useState } from "react"
 import { Chat } from "@/components/ui/chat"
 import { sendOllamaMessage } from '@/apis/ollama'
-
-// Feature toggle: when VITE_USE_OLLAMA === 'true' the component will
-// send messages to the local /api/ollama-chat endpoint using our helper.
-const USE_OLLAMA = import.meta.env.VITE_USE_OLLAMA === 'true'
+import NavBar from "../../NavBar"
 
 export function ChatBot() {
   const [input, setInput] = useState("")
@@ -35,8 +30,6 @@ export function ChatBot() {
       const payload = { text: userMessage.content }
       const data = await sendOllamaMessage(payload)
 
-      // Prefer raw string responses so newlines are preserved and no extra
-      // surrounding quotes appear. If the backend returned an object, pick
       // likely fields. If it's already a string, use it directly.
       let assistantText = ''
       if (typeof data === 'string') {
@@ -81,14 +74,17 @@ export function ChatBot() {
   const stop = () => {}
 
   return (
-    <Chat
-      messages={messagesLocal}
-      input={input}
-      handleInputChange={handleInputChange}
-      handleSubmit={handleSubmit}
-      isGenerating={isLoading}
-      stop={stop}
-      setMessages={setMessagesLocal}
-    />
+    <>
+      <NavBar/>
+      <Chat
+        messages={messagesLocal}
+        input={input}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        isGenerating={isLoading}
+        stop={stop}
+        setMessages={setMessagesLocal}
+      />
+    </>
   )
 }

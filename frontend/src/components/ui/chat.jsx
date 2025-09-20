@@ -182,7 +182,7 @@ export function ChatMessages({
 
   return (
     <div
-      className="grid grid-cols-1 overflow-y-auto pb-4"
+      className="grid grid-cols-1 overflow-y-auto pb-28"
       ref={containerRef}
       onScroll={handleScroll}
       onTouchStart={handleTouchStart}>
@@ -211,7 +211,9 @@ export const ChatContainer = forwardRef(({ className, ...props }, ref) => {
   return (
     <div
       ref={ref}
-      className={cn("grid max-h-full w-full grid-rows-[1fr_auto]", className)}
+      // make the chat container fill the viewport so the bottom row sits at the bottom
+      // add top padding so the chat view doesn't overlap with a fixed navbar
+        className={cn("grid h-[90vh] w-full grid-rows-[1fr_auto] px-20 py-10", className)}
       {...props} />
   );
 })
