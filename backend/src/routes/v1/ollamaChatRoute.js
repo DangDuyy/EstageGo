@@ -9,10 +9,27 @@ ollamaChatRoutes.get('/', (_req, res) => {
   res.json({ ok: true, route: 'POST /api/ollama-chat' })
 })
 
+const SYSTEM_PROMPT = `
+Bạn là chuyên gia bất động sản tại Việt Nam, có nhiều năm kinh nghiệm.
+Nguyên tắc trả lời:
+- Súc tích, dễ hiểu, có gạch đầu dòng khi cần.
+- Tư vấn thực tế: vị trí, tiện ích, ngân sách, pháp lý, thanh khoản, rủi ro.
+- Không bịa số liệu; nếu thiếu dữ liệu, nói rõ giả định.
+`.trim()
+
+const GREETING = 'Chào bạn, tôi là một chuyên gia trong lĩnh vực bất động sản nhiều năm ở Việt Nam, bạn cần hỗ trợ gì không ?\n\n'
+
+
 ollamaChatRoutes.post('/', async (req, res) => {
   try {
     const { input } = req.body || {}
-    if (!input) return res.status(400).json({ error: 'Missing "input"' })
+
+    // ✅ Nếu chưa nhập input → trả lời chào sẵn
+    if (!input) {
+      return res
+        .type('text/plain; charset=utf-8')
+        .send('Chào bạn, tôi là một chuyên gia trong lĩnh vực bất động sản nhiều năm ở Việt Nam, bạn cần hỗ trợ gì không ?')
+    }
 
     const r = await fetch(`${env.OLLAMA_HOST}/api/generate`, {
       method: 'POST',
@@ -20,17 +37,21 @@ ollamaChatRoutes.post('/', async (req, res) => {
       body: JSON.stringify({
         model: env.OLLAMA_MODEL,
         prompt: String(input),
+        system: SYSTEM_PROMPT,
         stream: true,
-        keep_alive: '5m',
-        options: { num_predict: -1}
+        keep_alive: '10m',
+        options: { num_predict: -1 }
       })
     })
-    if (!r.ok) return res.status(r.status).send(await r.text())
+    if (!r.ok) {
+      const raw = await r.text()
+      return res.status(r.status).type('text/plain; charset=utf-8').send(raw)
+    }
 
-    const body = r.body
     let full = ''
+    const body = r.body
 
-    // Web ReadableStream (Node 18+ fetch / node-fetch v3)
+    // Web ReadableStream (Node 18+ / undici / node-fetch v3)
     if (body && typeof body.getReader === 'function') {
       const reader = body.getReader()
       const decoder = new TextDecoder()
@@ -39,7 +60,6 @@ ollamaChatRoutes.post('/', async (req, res) => {
         const { value, done } = await reader.read()
         if (done) break
         buf += decoder.decode(value, { stream: true })
-        // NDJSON: tách theo newline
         let idx
         while ((idx = buf.indexOf('\n')) >= 0) {
           const line = buf.slice(0, idx).trim()
@@ -49,13 +69,12 @@ ollamaChatRoutes.post('/', async (req, res) => {
             const obj = JSON.parse(line)
             if (obj.response) full += obj.response
             if (obj.done) {
-              return res.json({ output: full, usage: { eval: obj.eval_count, prompt: obj.prompt_eval_count } })
+              return res.type('text/plain; charset=utf-8').send(GREETING + full.trim())
             }
           } catch {}
         }
       }
-      // fallback nếu không thấy done
-      return res.json({ output: full })
+      return res.type('text/plain; charset=utf-8').send(full.trim())
     }
 
     // Node Readable stream (node-fetch v2)
@@ -71,26 +90,25 @@ ollamaChatRoutes.post('/', async (req, res) => {
           try {
             const obj = JSON.parse(line)
             if (obj.response) full += obj.response
-            if (obj.done) {
-              res.json({ output: full, usage: { eval: obj.eval_count, prompt: obj.prompt_eval_count } })
+            if (obj.done && !res.headersSent) {
+              res.type('text/plain; charset=utf-8').send(full.trim())
             }
           } catch {}
         }
       })
       body.on('end', () => {
-        if (!res.headersSent) res.json({ output: full })
+        if (!res.headersSent) res.type('text/plain; charset=utf-8').send(full.trim())
       })
       body.on('error', err => {
-        if (!res.headersSent) res.status(500).json({ error: String(err) })
+        if (!res.headersSent) res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(String(err))
       })
       return
     }
 
-    // fallback
+    // Fallback
     const txt = await r.text()
-    res.send(txt)
+    res.type('text/plain; charset=utf-8').send(txt)
   } catch (e) {
-    res.status(500).json({ error: String(e) })
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(String(e))
   }
 })
-
