@@ -1,5 +1,6 @@
 import { date } from "joi"
 import { mediaService } from "~/services/mediaService"
+import { toArr, toNum, toStr } from "~/utils/formatter"
 
 const { StatusCodes } = require("http-status-codes")
 const { propertyService } = require("~/services/propertyService")
@@ -59,15 +60,66 @@ const uploadPropertyMedia = async (req, res, next) => {
 }
 
 const getProperties = async (req, res, next) => {
-    try {
-        //pagination
-        const { page, itemsPerPage, q} = req.query
-        const queryFilter = q
-        const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
-        return res.status(StatusCodes.OK).json(result)
-    } catch (error) {
-        next(error)
+  try {
+    const { page, itemsPerPage, ...raw } = req.query
+
+    const queryFilter = {
+      // search
+      q: toStr(raw.q),
+
+      // type / types
+      types: toArr(raw.types).map(s => String(s).trim().toLowerCase()),
+      type: raw.type ? String(raw.type).trim().toLowerCase() : undefined,
+
+      // location
+      province: toStr(raw.province),
+      provinces: toArr(raw.provinces).map(toStr).filter(Boolean),
+      district: toStr(raw.district),
+      ward: toStr(raw.ward),
+
+      // purpose / status
+      purpose: raw.purpose ? String(raw.purpose).trim().toLowerCase() : undefined,
+      status:  raw.status ? String(raw.status).trim().toLowerCase() : undefined,
+
+      // rooms
+      bedrooms: raw.bedrooms !== undefined ? Number(raw.bedrooms) : undefined,
+      bedroomsMin: toNum(raw.bedroomsMin),
+      bedroomsMax: toNum(raw.bedroomsMax),
+      bathrooms: raw.bathrooms !== undefined ? Number(raw.bathrooms) : undefined,
+      bathroomsMin: toNum(raw.bathroomsMin),
+      bathroomsMax: toNum(raw.bathroomsMax),
+
+      // area & price
+      area: raw.area !== undefined ? Number(raw.area) : undefined,
+      areaMin: toNum(raw.areaMin),
+      areaMax: toNum(raw.areaMax),
+      price: raw.price !== undefined ? Number(raw.price) : undefined,
+      priceMin: toNum(raw.priceMin),
+      priceMax: toNum(raw.priceMax),
+
+      // amenities
+      amenitiesAll: toArr(raw.amenitiesAll).map(toStr).filter(Boolean),
+      amenitiesAny: toArr(raw.amenitiesAny).map(toStr).filter(Boolean),
+
+      // owner
+      owner: toStr(raw.owner),
+
+      // sort
+      sortBy: toStr(raw.sortBy),
+      sortDir: toStr(raw.sortDir)
     }
+
+    // gộp type đơn lẻ vào types (nếu cả hai cùng có)
+    if (queryFilter.type) {
+      queryFilter.types = Array.from(new Set([...(queryFilter.types || []), queryFilter.type]))
+      delete queryFilter.type
+    }
+
+    const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
 }
 
 const getPropertyDetails = async (req, res, next) => {
