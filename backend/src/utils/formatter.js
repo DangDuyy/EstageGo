@@ -16,3 +16,10 @@ export const slugify = (val) => {
     .replace(/\s+/g, '-') // replace spaces with hyphens
     .replace(/-+/g, '-') // remove consecutive hyphens
 }
+
+export const escapeRegex = (s = "") => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+
+export const toArr = (v) => Array.isArray(v) ? v : (v != null ? [v] : [])
+export const toNum = (v) => (v !== undefined ? Number(v) : undefined)
+export const toStr = (v) => (v !== undefined ? String(v).trim() : undefined)

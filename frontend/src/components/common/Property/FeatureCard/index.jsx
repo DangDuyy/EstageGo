@@ -56,7 +56,7 @@ export function FeatureCard() {
         {/* CTA */}
         <div className="my-10 flex items-center justify-center">
           <Button className="flex items-center justify-center rounded-full border border-gray-400 px-7 py-7 text-2xl">
-            <Link to="/properties" className="flex flex-row items-center gap-3">
+            <Link to="/listing/grid" className="flex flex-row items-center gap-3">
               <span>View all properties</span>
               <ArrowUpRight className="!h-8 !w-8" />
             </Link>

@@ -5,6 +5,7 @@ import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
 import { Bell, Folders, Heart, LayoutGrid, LogOut, User } from "lucide-react";
 import { useState } from "react";
+import { useWishlist } from '@/contexts/WishlistContext'
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
@@ -36,16 +37,19 @@ const NavBar = ({ hideLogo = false }) => {
   const sidebarOpen = hideLogo && sidebar ? sidebar.getOpenState() : false;
   const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
-
+  const { toggleWishlist } = useWishlist()
   const navigate = useNavigate()
 
   const currentUser = useSelector(selectCurrentUser)
+
+  const { isOpen: wishlistOpen } = useWishlist();
 
   return (
     <div className="min-h-[95px] bg-muted">
       <nav
         className={cn(
-          "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-[90]", // giảm z-index để sidebar nổi trên
+          // when wishlist is open, lower nav z-index and disable interactions so overlay can sit above
+          (wishlistOpen ? "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-0 pointer-events-none" : "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-[90]"),
           hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-[400px]" : "lg:pl-[200px]")
         )}
       >
@@ -61,8 +65,16 @@ const NavBar = ({ hideLogo = false }) => {
             { currentUser 
               ? 
               <>
-                <Heart size={30} className="lg:h-6 lg:w-6"/>
-                <DropdownMenu>
+              <button
+                type="button"
+                onClick={toggleWishlist}
+                title="Open wishlist"
+                aria-label="Open wishlist"
+                className="rounded-full p-2 hover:bg-muted transition"
+              >
+                <Heart className="h-6 w-6" />
+              </button>                
+              <DropdownMenu>
                     <TooltipProvider disableHoverableContent>
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>
