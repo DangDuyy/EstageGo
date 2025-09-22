@@ -6,7 +6,7 @@ import ApiError from "~/utils/ApiError"
 import { DEFAULT_ITEM_PER_PAGE, DEFAULT_PAGE } from "~/utils/constants"
 
 const { default: propertyModel } = require("~/models/properties")
-const { slugify } = require("~/utils/formatter")
+const { slugify, escapeRegex } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
     try {

@@ -41,7 +41,6 @@ export default function SidebarCard() {
   const [sortBy, setSortBy] = useState("default");
   const [showCount, setShowCount] = useState(8);
 
-  // ✅ Khởi tạo mảng rỗng để có thể spread/map an toàn
   const [properties, setProperties] = useState([]);
   const [totalProperties, setTotalProperties] = useState(0);
   const [loading, setLoading] = useState(true);   // ✅ loading riêng
@@ -96,10 +95,10 @@ export default function SidebarCard() {
   }
 
   return (
-    <section className="container mx-auto px-4 py-10">
+    <section className="container mx-auto px-40 py-10">
       {/* Header */}
       <div className="mb-6 flex justify-between">
-        <h3 className="text-2xl font-bold">Property Listing</h3>
+        <h3 className="text-3xl font-bold">Property Listing</h3>
         <div className="flex gap-2">
           <Button variant={view === "grid" ? "default" : "ghost"} onClick={() => setView("grid")}>
             <Grid2X2 className="h-4 w-4" />
