@@ -50,7 +50,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
       }`}
     >
       {/* Image */}
-      <div className={variant === "list" ? "relative w-[300px] md:w-[400px] shrink-0" : "relative"}>
+      <div className={variant === "list" ? "relative w-[200px] md:w-[300px] shrink-0" : "relative"}>
         <Link to={item.href ?? "#"} className="block">
           <img
             src={imageUrl}
@@ -82,15 +82,15 @@ export default function PropertyCard({ item, variant = "grid" }) {
 
       {/* Content */}
       <CardContent
-        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10" : "p-4 pt-0"}
+        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10 pl-0" : "p-4 pt-0"}
       >
         {variant === "list" ? (
           <>
             {/* Top block: title + stats + location line */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <Link
                 to={`/properties/${item._id}`}
-                className="text-left text-2xl font-semibold no-underline hover:underline line-clamp-1"
+                className="text-left text-lg font-semibold no-underline hover:underline line-clamp-1"
               >
                 {item.title}
               </Link>
@@ -102,7 +102,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
               </div>
 
               {locationText && (
-                <div className="mt-1 flex items-center gap-2 text-xl text-muted-foreground">
+                <div className="mt-1 flex items-center gap-2 text-md text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   <span className="line-clamp-1">{locationText}</span>
                 </div>
@@ -113,8 +113,8 @@ export default function PropertyCard({ item, variant = "grid" }) {
 
             {/* Bottom row: owner + price */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center text-xl gap-3">
-                <Avatar className="h-10 w-10">
+              <div className="flex items-center text-md gap-3">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={item.ownerInfo?.avatar} alt={item.ownerInfo?.fullName} />
                   <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
                 </Avatar>
@@ -122,7 +122,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
                   <span className="text-md text-muted-foreground">{item.ownerInfo.fullName}</span>
                 )}
               </div>
-              {priceText && <div className="text-xl font-semibold">{priceText}</div>}
+              {priceText && <div className="text-md font-semibold">{priceText}</div>}
             </div>
           </>
         ) : (
@@ -130,7 +130,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
             <div className="space-y-3">
               <Link
                 to={`/properties/${item._id}`}
-                className="text-left text-2xl lg:text-lg font-semibold no-underline hover:underline line-clamp-1"
+                className="text-left text-lg font-semibold no-underline hover:underline line-clamp-1"
               >
                 {item.title}
               </Link>
@@ -144,15 +144,15 @@ export default function PropertyCard({ item, variant = "grid" }) {
             <Separator className="my-4" />
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={item.ownerInfo?.avatar} alt={item.ownerInfo?.fullName} />
                   <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
                 </Avatar>
                 {item.ownerInfo?.fullName && (
-                  <span className="text-xl text-muted-foreground">{item.ownerInfo.fullName}</span>
+                  <span className="text-md text-muted-foreground">{item.ownerInfo.fullName}</span>
                 )}
               </div>
-              {priceText && <div className="text-xl font-semibold lg:text-lg ">{priceText}</div>}
+              {priceText && <div className="text-md font-semibold lg:text-lg ">{priceText}</div>}
             </div>
           </>
         )}
