@@ -1,0 +1,25 @@
+{
+  "name": "estagego",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install:fe": "cd frontend && yarn install",
+    "install:be": "cd backend && yarn install",
+    "install:all": "yarn install:fe && yarn install:be",
+
+    "dev:fe": "cd frontend && yarn dev",
+    "dev:be": "cd backend && yarn dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DangDuyy/EstageGo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DangDuyy/EstageGo/issues"
+  },
+  "homepage": "https://github.com/DangDuyy/EstageGo#readme",
+  "description": ""
+}
