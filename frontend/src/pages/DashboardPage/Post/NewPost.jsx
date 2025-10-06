@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
+import ImageUploadComponent from "@/components/common/Upload/uploadImage";
 
 // ----- Mock data -----
 const countries = ["United States", "United Kingdom", "Viet Nam", "Singapore"];
@@ -238,26 +239,8 @@ export default function AddPropertyWizard() {
           </Card>
 
           {/* Upload media */}
-          <Card className="mb-8">
-            <CardHeader><CardTitle>Upload Media</CardTitle></CardHeader>
-            <CardContent>
-              <div className="rounded-lg border border-dashed p-6">
-                <Label htmlFor="images" className="mb-2 block text-sm">Select photos (up to 10)</Label>
-                <Input
-                  id="images"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handleImagesChange(e.target.files)}
-                />
-                {images.length > 0 && (
-                  <div className="mt-3 text-sm text-muted-foreground">
-                    {images.length} image(s) selected
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+
+          <ImageUploadComponent className="mb-8" />
 
           {/* Information */}
           <Card className="mb-8">
@@ -265,7 +248,7 @@ export default function AddPropertyWizard() {
             <CardContent className="space-y-6">
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label>Title *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</Label>
                   <Input
                     placeholder="3-bedroom townhouse with garden"
                     value={title}
@@ -286,7 +269,7 @@ export default function AddPropertyWizard() {
 
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="grid gap-2">
-                  <Label>Full Address *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Full Address</Label>
                   <Input
                     placeholder="Enter property full address"
                     value={address}
@@ -294,7 +277,7 @@ export default function AddPropertyWizard() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Zip Code *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Zip Code</Label>
                   <Input
                     placeholder="700000"
                     value={zip}
@@ -302,9 +285,9 @@ export default function AddPropertyWizard() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Country *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Country</Label>
                   <Select value={country} onValueChange={setCountry}>
-                    <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+                    <SelectTrigger className='w-full'><SelectValue placeholder="Select country" /></SelectTrigger>
                     <SelectContent>
                       {countries.map((c) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -316,7 +299,7 @@ export default function AddPropertyWizard() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label>Province/State *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Province/State</Label>
                   <Input
                     placeholder="e.g., Ho Chi Minh"
                     value={stateText}
@@ -324,7 +307,7 @@ export default function AddPropertyWizard() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Neighborhood *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Neighborhood</Label>
                   <Input
                     placeholder="e.g., District 10"
                     value={neighborhood}
@@ -350,7 +333,7 @@ export default function AddPropertyWizard() {
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label>Price *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Price</Label>
                   <Input
                     placeholder="Example value: 12345"
                     value={price}
@@ -369,9 +352,9 @@ export default function AddPropertyWizard() {
 
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="grid gap-2">
-                  <Label>Property Type *</Label>
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Property Type</Label>
                   <Select value={type} onValueChange={setType}>
-                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectTrigger className='w-full'><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       {propertyTypes.map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -380,13 +363,13 @@ export default function AddPropertyWizard() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label>Property Status *</Label>
-                  <Input value={listingMode === "sale" ? "For Sale" : "For Rent"} readOnly />
+                  <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Property Status</Label>
+                  <Input value={listingMode === "sale" ? "For Sale" : "For Rent"} readOnly disabled/>
                 </div>
                 <div className="grid gap-2">
                   <Label>Property Label</Label>
                   <Select value={label} onValueChange={setLabel}>
-                    <SelectTrigger><SelectValue placeholder="Select label" /></SelectTrigger>
+                    <SelectTrigger className='w-full'><SelectValue placeholder="Select label" /></SelectTrigger>
                     <SelectContent>
                       {labels.map((l) => (
                         <SelectItem key={l} value={l}>{l}</SelectItem>
