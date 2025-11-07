@@ -1,8 +1,6 @@
-import { Link } from "react-router-dom";
 import { MenuIcon, PanelsTopLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Menu } from "@/components/common/SidebarMenu/menu";
 import {
   Sheet,
   SheetHeader,
@@ -10,6 +8,8 @@ import {
   SheetTrigger,
   SheetTitle
 } from "@/components/ui/sheet";
+import { Link } from "react-router-dom";
+import { Menu } from "./menu";
 
 export function SheetMenu() {
   return (
@@ -24,8 +24,9 @@ export function SheetMenu() {
           <Button
             className="flex justify-center items-center pb-2 pt-1"
             variant="link"
-            asChild>
-            <Link to="/dashboard" className="flex items-center gap-2">
+            asChild
+          >
+            <Link href="/dashboard" className="flex items-center gap-2">
               <PanelsTopLeft className="w-6 h-6 mr-1" />
               <SheetTitle className="font-bold text-lg">Brand</SheetTitle>
             </Link>

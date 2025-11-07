@@ -5,7 +5,7 @@ import { Outlet } from "react-router-dom";
 export default function DashboardLayout() {
   return (
     <AdminPanelLayout>
-      <NavBar hideLogo />
+      {/* <NavBar hideLogo /> */}
       <Outlet />
     </AdminPanelLayout>
   );
