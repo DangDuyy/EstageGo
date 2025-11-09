@@ -1,18 +1,47 @@
+import PropertyTable from '@/components/common/Property/PropertyTable'
 import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Download, Funnel, Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { fetchAllPropertiesAPI } from '@/apis'
 
 export default function Post() {
   const [activeTab, setActiveTab] = useState("all")
+  const [propertiesData, setPropertiesData] = useState()
+  const [searchValue, setSearchValue] = useState("") // 💡 Lưu nội dung người dùng nhập
+  const location = useLocation()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
 
   const createHref = useMemo(() => {
     const base = pathname.replace(/\/$/, '')
     return `${base}/new`
   }, [pathname])
+
+  // Fetch data theo query string
+  useEffect(() => {
+    const callAPI = async () => {
+      const data = await fetchAllPropertiesAPI(location.search)
+      setPropertiesData(data)
+    }
+
+    callAPI()
+  }, [location.search]);
+
+  // 🔍 Hàm xử lý khi người dùng nhấn Enter hoặc click search
+  const handleSearch = () => {
+    // Tạo query mới (?search=...)
+    const query = searchValue ? `?page=1&q=${encodeURIComponent(searchValue)}` : ""
+    navigate(`${pathname}${query}`)
+  }
+
+  // ⌨️ Cho phép nhấn Enter để tìm
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleSearch()
+  }
+
 
   return (
     <ContentLayout title="Posts">
@@ -24,7 +53,7 @@ export default function Post() {
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                 <Search className="w-5 h-5" />
               </span>
-              <Input placeholder="Type your post title..." className="pl-10" />
+              <Input value={searchValue} onChange={(e) => setSearchValue(e.target.value)} onKeyDown={handleKeyDown} placeholder="Type your post title..." className="pl-10" />
             </div>
 
             <Button variant="outline" className="inline-flex items-center gap-2">
@@ -50,7 +79,7 @@ export default function Post() {
 
       {/* Tabs */}
       <div className="mt-6 flex gap-3">
-        {["all","drafts","published","archived"].map(tab => (
+        {["all", "drafts", "published", "archived"].map(tab => (
           <Button
             key={tab}
             variant={activeTab === tab ? "default" : "outline"}
@@ -63,7 +92,7 @@ export default function Post() {
 
       {/* Nội dung tab */}
       <div className="mt-6">
-        {activeTab === "all" && <p>Danh sách tất cả bài viết ở đây...</p>}
+        {activeTab === "all" && <PropertyTable data={propertiesData} />}
         {activeTab === "drafts" && <p>Danh sách các bài viết nháp ở đây...</p>}
         {activeTab === "published" && <p>Danh sách các bài viết đã xuất bản ở đây...</p>}
         {activeTab === "archived" && <p>Danh sách các bài viết đã lưu trữ ở đây...</p>}
