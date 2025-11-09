@@ -75,12 +75,10 @@ const propertySchema = new mongoose.Schema({
     }],
     address: {
         fullAddress: {
-            type: String,
-            required: true
+            type: String
         },
         country: {
-            type: String,
-            required: true
+            type: String
         },
         province: {
             type: String,

@@ -1,36 +1,25 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-const ImageUploadComponent = ({className}) => {
-    const [images, setImages] = useState([]);
+const ImageUploadComponent = ({ form, onChange, className }) => {
+    const [images, setImages] = useState([])
     const [dragOverUpload, setDragOverUpload] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const fileInputRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
-    // Sample images để demo
-    // const sampleImages = [
-    //     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop",
-    //     "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-    //     "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop",
-    //     "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
-    //     "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=300&fit=crop",
-    //     "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=300&fit=crop"
-    // ];
+    useEffect(() => {
+        if (images) {
+            // Gửi danh sách file thật (hoặc object chứa cả file và URL) ra ngoài
+            onChange(images.map(img => img.file));
+        }
+    }, [images]);
 
-    // React.useEffect(() => {
-    //     // Load sample images
-    //     const loadedImages = sampleImages.map((url, index) => ({
-    //         id: Date.now() + index,
-    //         url: url,
-    //         name: `image-${index + 1}.jpg`
-    //     }));
-    //     setImages(loadedImages);
-    // }, []);
 
     const handleFileSelect = (files) => {
         const newImages = Array.from(files).map(file => ({
@@ -148,6 +137,7 @@ const ImageUploadComponent = ({className}) => {
                     >
                         <div className="flex flex-col items-center">
                             <Button
+                                type='button'
                                 onClick={handleUploadClick}
                             >
                                 <Upload size={20} />
@@ -159,13 +149,28 @@ const ImageUploadComponent = ({className}) => {
                             </p>
                         </div>
 
-                        <Input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleFileInputChange}
-                            className="hidden"
+                        <FormField
+                            control={form.control}
+                            name="files"
+                            render={({ field }) => (
+                                <FormItem>
+                                    {/* <FormLabel>Upload Files</FormLabel> */}
+                                    <FormControl>
+                                        <Input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            multiple
+                                            onChange={(e) => {
+                                                // Lấy file list và set vào form
+                                                handleFileInputChange(e)
+                                                // field.onChange(e.target.files);
+                                            }}
+                                            className="hidden"
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                     </div>
 
