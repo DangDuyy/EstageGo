@@ -10,8 +10,8 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import LoginModal from "../Modal/login";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "@/redux/user/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -39,8 +39,18 @@ const NavBar = ({ hideLogo = false }) => {
   const [openModal, setOpenModal] = useState(false)
   const { toggleWishlist, items } = useWishlist()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const currentUser = useSelector(selectCurrentUser)
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserAPI()).unwrap()
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   const { isOpen: wishlistOpen } = useWishlist();
 
@@ -120,7 +130,7 @@ const NavBar = ({ hideLogo = false }) => {
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+                      <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
                         <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
                         Sign out
                       </DropdownMenuItem>
