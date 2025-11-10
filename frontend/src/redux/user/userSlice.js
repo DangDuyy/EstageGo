@@ -1,11 +1,28 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { toast } from 'react-toastify'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import authorizeAxiosInstance from '@/utils/authorizeAxios'
 import { API_ROOT } from '@/utils/constants'
 
 const initialState = {
-  currentUser: null
+  currentUser: null,
+  loading: false,
+  error: null
 }
+
+export const registerUserAPI = createAsyncThunk(
+  'user/register',
+  async (data) => {
+    const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/register`, data)
+    return response
+  }
+)
+
+export const verifyUserAPI = createAsyncThunk(
+  'user/verify',
+  async (data) => {
+    const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/verify`, data)
+    return response.data
+  }
+)
 
 export const loginUserAPI = createAsyncThunk(
   'users/loginUserAPI',
@@ -17,18 +34,8 @@ export const loginUserAPI = createAsyncThunk(
 
 export const logoutUserAPI = createAsyncThunk(
   'users/logoutUserAPI',
-  async (showSuccessMessage = true) => {
+  async () => {
     const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/users/logout`)
-    if (showSuccessMessage)
-      toast.success('Logged out successfully')
-    return response.data
-  }
-)
-
-export const registerUserAPI = createAsyncThunk(
-  'users/registerUserAPI',
-  async (data) => {
-    const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/register`, data)
     return response.data
   }
 )
@@ -40,17 +47,24 @@ export const userSlice = createSlice({
   reducers: {},
   //func bat dong bo
   extraReducers: (builder) => {
-    builder.addCase(loginUserAPI.fulfilled, (state, action) => {
-      state.currentUser = action.payload
-    }),
-    builder.addCase(registerUserAPI.fulfilled, (state, action) => {
-      // tuỳ API: nếu API trả về user sau khi register thì lưu, nếu không bỏ qua
-      state.currentUser = action.payload || state.currentUser
-    }),
-    // eslint-disable-next-line no-unused-vars
-    builder.addCase(logoutUserAPI.fulfilled, (state, action) => {
-      state.currentUser = null
-    })
+    builder
+      // Register - không lưu user
+      .addCase(registerUserAPI.fulfilled, () => {
+      })
+      // Login - lưu user vào state
+      .addCase(loginUserAPI.fulfilled, (state, action) => {
+        state.currentUser = action.payload
+      })
+      // Logout - xóa user
+      .addCase(logoutUserAPI.fulfilled, (state) => {
+        state.currentUser = null
+      })
+      // Verify - không lưu user, chỉ verify
+      .addCase(verifyUserAPI.fulfilled, () => {
+      })
+      .addCase(verifyUserAPI.rejected, (state, action) => {
+        state.error = action.error.message
+      })
   }
 })
 

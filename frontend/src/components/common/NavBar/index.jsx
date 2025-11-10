@@ -11,8 +11,8 @@ import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import LoginModal from "../Modal/login";
 import RegisterModal from "../Modal/register";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "@/redux/user/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
 const NavBar = ({ hideLogo = false }) => {
@@ -41,13 +42,24 @@ const NavBar = ({ hideLogo = false }) => {
   const [openRegisterModal, setOpenRegisterModal] = useState(false)
   const { toggleWishlist } = useWishlist()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const currentUser = useSelector(selectCurrentUser)
-
   const { isOpen: wishlistOpen } = useWishlist();
 
   // Check if any modal is open
   const isAnyModalOpen = openModal || openRegisterModal;
+
+  // Hàm xử lý logout
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserAPI()).unwrap()
+      toast.success('Đăng xuất thành công!')
+      navigate('/home')
+    } catch {
+      toast.error('Đăng xuất thất bại. Vui lòng thử lại!')
+    }
+  }
 
   return (
     <div className="min-h-[95px] bg-muted">
@@ -127,8 +139,11 @@ const NavBar = ({ hideLogo = false }) => {
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
-                        <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
+                      <DropdownMenuItem 
+                        className="hover:cursor-pointer text-red-600 focus:text-red-600" 
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="w-4 h-4 mr-3" />
                         Sign out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -159,7 +174,10 @@ const NavBar = ({ hideLogo = false }) => {
       <LoginModal 
         open={openModal} 
         onOpenChange={setOpenModal}
-        onOpenRegister={() => setOpenRegisterModal(true)}
+        onOpenRegister={() => {
+          setOpenModal(false)
+          setOpenRegisterModal(true)
+        }}
       />
       
       <RegisterModal 
