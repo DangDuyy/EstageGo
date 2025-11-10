@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import FieldErrorAlert from "../Form/FieldErrorAlert";
 
-function LoginModal({ open, onOpenChange }) {
+function LoginModal({ open, onOpenChange, onOpenRegister }) {
   const dispatch = useDispatch()
   const { register, handleSubmit, formState: { errors } } = useForm()
 
@@ -30,12 +30,18 @@ function LoginModal({ open, onOpenChange }) {
     })
   }
 
+  const handleRegisterClick = () => {
+    onOpenChange(false) // đóng login modal
+    if (onOpenRegister) onOpenRegister() // mở register modal
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="
           p-0 gap-0 rounded-[28px] h-[800px] overflow-hidden border-0 shadow-2xl
           w-[95vw] lg:max-w-[800px] lg:max-h-[600px]
+          z-[100]
         "
       >
         {/* dùng 10 cột: 4 (ảnh) + 6 (form) */}
@@ -111,8 +117,8 @@ function LoginModal({ open, onOpenChange }) {
               <Button type="submit" className="h-14 rounded-full text-base w-full hover:cursor-pointer">Login</Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Don’t you have an account?
-                <Button type="button" variant="link" className="p-1 text-primary">Register</Button>
+                Don't you have an account?
+                <Button type="button" variant="link" className="p-1 text-primary" onClick={handleRegisterClick}>Register</Button>
               </div>
 
               <div className="relative py-2">
