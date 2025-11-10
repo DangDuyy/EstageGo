@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { PROVINCE_API_ROOT } from "@/utils/constants";
 import { Home, LocateFixed, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Divider() {
   return <span className="hidden h-8 w-px bg-neutral-200 md:block" />;
@@ -15,6 +16,8 @@ export default function HeroSearch({
   backgroundUrl = "/hero-house.jpg", // change to your image path
   onSearch,
 }) {
+  const navigate = useNavigate();
+  
   const [mode, setMode] = useState("rent");
   const [type, setType] = useState("all");
   const [keyword, setKeyword] = useState("");
@@ -56,18 +59,38 @@ export default function HeroSearch({
   },[provinceCode, provinces])
 
   const handleSearch = () => {
-    const payload = { 
-      mode, 
-      type, 
-      //tra ve ca code lan ten cho backend
-      provinceCode: provinceCode || null,
-      provinceName: provinces.find(p => String(p.code) === String(provinceCode))?.name || null,
-      districtCode: districtCode || null,
-      districtName: districts.find(d => String(d.code) === String(districtCode))?.name || null,
-      keyword 
-    };
-    if (typeof onSearch === "function") onSearch(payload);
-    else console.log("Search:", payload);
+    const params = new URLSearchParams();
+    params.set("page", "1");
+    
+    if (keyword.trim()) params.set("q", keyword.trim());
+    if (mode) params.set("purpose", mode);
+    
+    // Type
+    if (type && type !== "all") params.set("types", type);
+    
+    // Province
+    const provinceName = provinces.find(p => String(p.code) === String(provinceCode))?.name;
+    if (provinceName) params.set("province", provinceName);
+    
+    // District
+    const districtName = districts.find(d => String(d.code) === String(districtCode))?.name;
+    if (districtName) params.set("district", districtName);
+    
+    // Navigate to map page with search params
+    navigate(`/map?${params.toString()}`);
+    
+    // Call onSearch callback if provided
+    if (typeof onSearch === "function") {
+      onSearch({ 
+        mode, 
+        type, 
+        provinceCode: provinceCode || null,
+        provinceName: provinceName || null,
+        districtCode: districtCode || null,
+        districtName: districtName || null,
+        keyword 
+      });
+    }
   };
 
   //reset huyen di doi tinh

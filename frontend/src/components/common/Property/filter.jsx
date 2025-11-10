@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,8 @@ const PRICE_MAX = 5000     // triệu VND
 export default function FiltersPanel() {
   const navigate = useNavigate()
   const location = useLocation()
+  const isFirstRender = useRef(true)
+  const isInitializing = useRef(true)
 
   // state filter đơn giản
   const [q, setQ] = useState("")
@@ -27,6 +29,53 @@ export default function FiltersPanel() {
   const [bedroomsRange, setBedroomsRange] = useState([BED_MIN, BED_MAX])
   const [priceRange, setPriceRange] = useState([PRICE_MIN, PRICE_MAX])
   const [amenitiesAny, setAmenitiesAny] = useState([])
+  
+  // ✅ Initialize state from URL params ONLY ONCE on mount
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    
+    // Restore keyword
+    const qParam = params.get("q")
+    if (qParam) setQ(qParam)
+    
+    // Restore types (array)
+    const typesParam = params.getAll("types")
+    if (typesParam.length > 0) setTypes(typesParam)
+    
+    // Restore purpose
+    const purposeParam = params.get("purpose")
+    if (purposeParam) setPurpose(purposeParam)
+    
+    // Restore bedrooms range
+    const bedroomsMinParam = params.get("bedroomsMin")
+    const bedroomsMaxParam = params.get("bedroomsMax")
+    if (bedroomsMinParam || bedroomsMaxParam) {
+      setBedroomsRange([
+        bedroomsMinParam ? Number(bedroomsMinParam) : BED_MIN,
+        bedroomsMaxParam ? Number(bedroomsMaxParam) : BED_MAX
+      ])
+    }
+    
+    // Restore price range
+    const priceMinParam = params.get("priceMin")
+    const priceMaxParam = params.get("priceMax")
+    if (priceMinParam || priceMaxParam) {
+      setPriceRange([
+        priceMinParam ? Number(priceMinParam) : PRICE_MIN,
+        priceMaxParam ? Number(priceMaxParam) : PRICE_MAX
+      ])
+    }
+    
+    // Restore amenities
+    const amenitiesParam = params.getAll("amenitiesAny")
+    if (amenitiesParam.length > 0) setAmenitiesAny(amenitiesParam)
+    
+    // Mark initialization complete AFTER all setState calls
+    setTimeout(() => {
+      isInitializing.current = false
+    }, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty deps - chỉ chạy 1 lần khi mount
 
   const toggleInArray = (arr, v, set) => {
     if (arr.includes(v)) set(arr.filter(x => x !== v))
@@ -44,10 +93,26 @@ export default function FiltersPanel() {
     navigate(`${location.pathname}?page=1`, { replace: false })
   }
 
-  const applyFilters = () => {
-    const qs = new URLSearchParams()
-    qs.set("page", "1")
+  // Helper function để build query params
+  const buildQueryParams = useCallback((resetPage = true) => {
+    const qs = new URLSearchParams(location.search)
+    
+    // Reset page về 1 nếu filter thay đổi
+    if (resetPage) {
+      qs.set("page", "1")
+    }
 
+    // Clear old filter params
+    qs.delete("q")
+    qs.delete("types")
+    qs.delete("purpose")
+    qs.delete("bedroomsMin")
+    qs.delete("bedroomsMax")
+    qs.delete("priceMin")
+    qs.delete("priceMax")
+    qs.delete("amenitiesAny")
+
+    // Set new values
     if (q.trim()) qs.set("q", q.trim())
 
     // types là mảng -> append nhiều lần
@@ -67,8 +132,42 @@ export default function FiltersPanel() {
     // amenitiesAny là mảng -> append nhiều lần
     amenitiesAny.forEach(a => qs.append("amenitiesAny", a))
 
-    navigate(`${location.pathname}?${qs.toString()}`, { replace: false })
+    return qs.toString()
+  }, [q, types, purpose, bedroomsRange, priceRange, amenitiesAny, location.search])
+  
+  // Manual apply filters (for button click)
+  const applyFilters = () => {
+    navigate(`${location.pathname}?${buildQueryParams()}`, { replace: false })
   }
+  
+  // Auto-apply filters cho checkboxes/radios/sliders (instant)
+  useEffect(() => {
+    // Skip if still initializing from URL
+    if (isFirstRender.current || isInitializing.current) {
+      isFirstRender.current = false
+      return
+    }
+    
+    const qs = buildQueryParams()
+    navigate(`${location.pathname}?${qs}`, { replace: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [types, purpose, bedroomsRange, priceRange, amenitiesAny])
+  
+  // Debounce cho search keyword (delay 500ms)
+  useEffect(() => {
+    // Skip if still initializing from URL
+    if (isFirstRender.current || isInitializing.current) {
+      return
+    }
+    
+    const timer = setTimeout(() => {
+      const qs = buildQueryParams()
+      navigate(`${location.pathname}?${qs}`, { replace: false })
+    }, 500)
+    
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q])
 
   return (
     <Card className="sticky top-24">

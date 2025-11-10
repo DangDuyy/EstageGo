@@ -21,7 +21,7 @@ let conversationSchema = new mongoose.Schema({
             type: String,
             default: 'New Group'
         },
-        avatarUrl: {
+        avatar: {
             type: String,
             default: 'https://example.com/default-group-avatar.png' // Default group avatar URL
         }

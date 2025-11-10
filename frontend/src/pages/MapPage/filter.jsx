@@ -1,14 +1,31 @@
-import { Search, MapPin, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, MapPin, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 function Filter() {
-    const [mode, setMode] = useState("rent");
-    const [searchKeyword, setSearchKeyword] = useState("");
-    const [searchLocation, setSearchLocation] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
+    const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Initialize from URL params
+    const params = new URLSearchParams(location.search);
+    
+    const [mode, setMode] = useState(params.get("purpose") || "rent");
+    const [searchKeyword, setSearchKeyword] = useState(params.get("q") || "");
+    const [searchLocation, setSearchLocation] = useState(params.get("province") || "");
+    
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+        params.set("page", "1");
+        
+        if (searchKeyword.trim()) params.set("q", searchKeyword.trim());
+        if (searchLocation.trim()) params.set("province", searchLocation.trim());
+        if (mode) params.set("purpose", mode);
+        
+        navigate(`${location.pathname}?${params.toString()}`, { replace: false });
+    };
 
     return (
         <>
@@ -80,11 +97,7 @@ function Filter() {
                     {/* Divider */}
                     <div className="h-8 w-px bg-gray-200" />
 
-                    {/* Category Dropdown */}
-                    <Button size="lg" variant="ghost" className="flex items-center px-3 py-2 cursor-pointer rounded-lg">
-                        <span className="text-sm font-medium mr-1 whitespace-nowrap">{selectedCategory}</span>
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
+                    {/* Category Dropdown - Removed for now */}
 
                     {/* Advanced Search Button */}
                     <Button
@@ -100,6 +113,7 @@ function Filter() {
                     <Button
                         size="lg"
                         className="rounded-full px-6 py-2 ml-1 whitespace-nowrap"
+                        onClick={handleSearch}
                     >
                         <Search className="h-4 w-4 mr-2" />
                         Search
@@ -162,19 +176,15 @@ function Filter() {
                             />
                         </div>
 
-                        {/* Category and Advanced Search Row */}
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center flex-1 rounded-xl px-4 py-3 cursor-pointer">
-                                <span className="font-medium mr-auto">{selectedCategory}</span>
-                                <ChevronDown className="h-4 w-4" />
-                            </div>
-
+                        {/* Advanced Search Button */}
+                        <div className="flex items-center justify-center">
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 className="px-4 py-3 rounded-xl"
                             >
-                                <SlidersHorizontal className="h-4 w-4" />
+                                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                                Advanced
                             </Button>
                         </div>
 
@@ -182,6 +192,7 @@ function Filter() {
                         <Button
                             size="lg"
                             className="w-full rounded-xl py-3"
+                            onClick={handleSearch}
                         >
                             <Search className="h-5 w-5 mr-2" />
                             Search
