@@ -18,8 +18,12 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "@/redux/user/userSlice";
 
 export function UserNav() {
+  const currentUser = useSelector(selectCurrentUser)
+
   return (
     <DropdownMenu>
       <TooltipProvider disableHoverableContent>
@@ -31,8 +35,8 @@ export function UserNav() {
                 className="relative h-8 w-8 rounded-full"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="#" alt="Avatar" />
-                  <AvatarFallback className="bg-transparent">JD</AvatarFallback>
+                  <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
+                  <AvatarFallback className="bg-transparent">User</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
