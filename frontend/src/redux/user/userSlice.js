@@ -29,7 +29,11 @@ export const userSlice = createSlice({
   name: 'user',
   initialState,
   //func dong bo
-  reducers: {},
+  reducers: {
+    updateUser: (state, action) => {
+      state.currentUser = { ...state.currentUser, ...action.payload }
+    }
+  },
   //func bat dong bo
   extraReducers: (builder) => {
     builder.addCase(loginUserAPI.fulfilled, (state, action) => {
@@ -45,6 +49,9 @@ export const userSlice = createSlice({
 export const selectCurrentUser = (state) => {
   return state.user.currentUser
 }
+
+// Export actions
+export const { updateUser } = userSlice.actions
 
 //store nay chua co du lieu dong bo nen chua can dung
 export const userReducer = userSlice.reducer
