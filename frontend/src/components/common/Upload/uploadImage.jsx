@@ -6,7 +6,15 @@ import { Input } from '@/components/ui/input';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const ImageUploadComponent = ({ form, onChange, className }) => {
-    const [images, setImages] = useState([])
+    // Khởi tạo state từ form nếu form đã có dữ liệu
+    const initialImages = form.getValues('files')?.map(file => ({
+        id: Date.now() + Math.random(),
+        url: URL.createObjectURL(file),
+        name: file.name,
+        file: file
+    })) || [];
+    
+    const [images, setImages] = useState(initialImages)
     const [dragOverUpload, setDragOverUpload] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -152,7 +160,7 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                         <FormField
                             control={form.control}
                             name="files"
-                            render={({ field }) => (
+                            render={() => (
                                 <FormItem>
                                     {/* <FormLabel>Upload Files</FormLabel> */}
                                     <FormControl>

@@ -64,4 +64,6 @@ export const propertySchema = z.object({
   files: z
     .any()
     .refine((files) => files?.length > 0, "At least one file is required"), // validate file
+  
+  tour_link: z.string().url("Link không hợp lệ. Vui lòng nhập đúng URL.").optional()
 });

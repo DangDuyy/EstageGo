@@ -24,6 +24,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import MapComponent from "@/components/common/Map/map-component";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@radix-ui/react-tabs";
+import TourLinkModal from "@/components/common/Upload/tour-link-modal";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
@@ -327,20 +330,30 @@ export default function AddPropertyWizard() {
                 </CardContent>
               </Card>
 
-              {/* Upload media */}
-
-              <Controller
-                name="files"
-                control={form.control}
-                render={({ field }) => (
-                  <ImageUploadComponent
-                    className={"mb-8"}
-                    form={form}
-                    files={field.value}             // value từ form
-                    onChange={field.onChange}  // update value form
+              <Tabs defaultValue='photos'>
+                <TabsList>
+                  <TabsTrigger value='photos'>Add Photos</TabsTrigger>
+                  <TabsTrigger value='3D'>3D Tour</TabsTrigger>
+                </TabsList>
+                <TabsContent value="photos">
+                  {/* Upload media */}
+                  <Controller
+                    name="files"
+                    control={form.control}
+                    render={({ field }) => (
+                      <ImageUploadComponent
+                        className={"mb-8"}
+                        form={form}
+                        files={field.value}             // value từ form
+                        onChange={field.onChange}  // update value form
+                      />
+                    )}
                   />
-                )}
-              />
+                </TabsContent>
+                <TabsContent value="3D">
+                  <TourLinkModal form={form} className={"mb-8"}/>
+                </TabsContent>
+              </Tabs>
 
 
               {/* Information */}
@@ -844,7 +857,7 @@ export default function AddPropertyWizard() {
               <div className="flex items-center justify-between">
                 <div></div>
                 <div className="flex gap-3">
-                  <Button variant="default" disabled = {form.formState.isSubmitting} type="submit">
+                  <Button variant="default" disabled={form.formState.isSubmitting} type="submit">
                     {form.formState.isSubmitting ? 'Saving...' : 'Save'}
                   </Button>
                   {/* <Button type="button" disabled={!canNextFromStep1()} onClick={() => setStep(2)}>

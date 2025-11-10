@@ -143,6 +143,9 @@ const propertySchema = new mongoose.Schema({
             mimetype: String // loại MIME (image/png, application/pdf, ...).
         }
     }],
+    tour_link: {
+        type: String
+    },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
