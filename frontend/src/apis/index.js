@@ -165,3 +165,19 @@ export const checkWishlistAPI = async (propertyId) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/wishlist/check/${propertyId}`)
   return response.data
 }
+
+// ========== USER PROFILE APIs ==========
+
+// Update user profile
+export const updateUserProfileAPI = async (profileData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/profile`, profileData)
+  toast.success('Profile updated successfully!')
+  return response.data
+}
+
+// Change password
+export const changePasswordAPI = async (passwordData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/change-password`, passwordData)
+  toast.success('Password changed successfully!')
+  return response.data
+}
