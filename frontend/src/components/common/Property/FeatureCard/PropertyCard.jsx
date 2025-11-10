@@ -2,10 +2,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Bed, Bath, Ruler } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/utils/helper";
 import { Separator } from "@/components/ui/separator";
+import { useWishlist } from "@/contexts/WishlistContext";
+import { Button } from "@/components/ui/button";
 
 function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" }) {
   if (value == null) return null;
@@ -19,6 +21,10 @@ function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" 
 }
 
 export default function PropertyCard({ item, variant = "grid" }) {
+  const { toggleItem, isInWishlist } = useWishlist();
+  const propertyId = item._id || item.id;
+  const inWishlist = isInWishlist(propertyId);
+  
   // Fallbacks theo schema mới
   const imageUrl = item.image || item.media?.[0]?.url || "/images/placeholder.jpg";
   const locationText = item.location || item.address?.fullAddress;
@@ -26,6 +32,12 @@ export default function PropertyCard({ item, variant = "grid" }) {
   const baths = item.baths ?? item.rooms?.bathrooms;
   const area = item.sqft ?? item.area;
   const priceText = formatPrice(item.price);
+  
+  const handleToggleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleItem(propertyId);
+  };
 
   const statIconClass = variant === "grid" ? "h-4 w-4" : "h-6 w-6"; // list to hơn
   const statTextClass = variant === "grid" ? "" : "text-base md:text-lg"; // list to hơn
@@ -60,15 +72,33 @@ export default function PropertyCard({ item, variant = "grid" }) {
         </Link>
 
         {/* Badges */}
-        <div className="absolute inset-x-5 top-5 flex flex-wrap gap-2">
-          {badges.map((t, idx) => (
-            <Badge
-              key={`${t}-${idx}`}
-              className={`text-md ${t === "Featured" ? "bg-blue-600 text-white" : "bg-gray-700 text-white"} `}
-            >
-              {t}
-            </Badge>
-          ))}
+        <div className="absolute inset-x-5 top-5 flex flex-wrap gap-2 justify-between items-start">
+          <div className="flex flex-wrap gap-2">
+            {badges.map((t, idx) => (
+              <Badge
+                key={`${t}-${idx}`}
+                className={`text-md ${t === "Featured" ? "bg-blue-600 text-white" : "bg-gray-700 text-white"} `}
+              >
+                {t}
+              </Badge>
+            ))}
+          </div>
+          
+          {/* Heart Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleWishlist}
+            className="h-9 w-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm transition-all hover:scale-110"
+          >
+            <Heart 
+              className={`h-5 w-5 transition-colors ${
+                inWishlist 
+                  ? 'fill-red-500 text-red-500' 
+                  : 'text-gray-700'
+              }`}
+            />
+          </Button>
         </div>
 
         {/* Location overlay: chỉ giữ cho GRID để không trùng với dòng địa chỉ bên phải */}
