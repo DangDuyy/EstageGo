@@ -1,0 +1,708 @@
+{
+    "properties": [
+        {
+            "_id": "690b170895d8fcfde86678da",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-26",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": null,
+            "area": 1234,
+            "rooms": {
+                "bedrooms": null,
+                "bathrooms": null,
+                "livingrooms": 0,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Viet Nam",
+                "province": "Thành phố Hồ Chí Minh",
+                "district": "dinh doc lap",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 12345
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [],
+            "createdAt": "2025-11-05T09:21:12.212Z",
+            "updatedAt": "2025-11-05T09:21:12.344Z",
+            "__v": 1,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68d642b86af479531c4c5fcb",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-25",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingrooms": 0,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [
+                {
+                    "url": "http://res.cloudinary.com/dwtuewicl/image/upload/v1758872251/real-estate/properties/68d642b86af479531c4c5fcb/images/zpd1elqoy2jgmyojoybd.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "download.jpg",
+                        "size": 12582,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-26T07:37:32.658Z"
+                    },
+                    "_id": "68d642bc6af479531c4c5fce"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dwtuewicl/image/upload/v1758872252/real-estate/properties/68d642b86af479531c4c5fcb/images/ykzdhssdodqb4rqq5g2b.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "image-3.jpg",
+                        "size": 154290,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-26T07:37:32.658Z"
+                    },
+                    "_id": "68d642bc6af479531c4c5fcf"
+                }
+            ],
+            "createdAt": "2025-09-26T07:37:28.891Z",
+            "updatedAt": "2025-09-26T07:37:32.661Z",
+            "__v": 1,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdd3f3c2c4579e93e94071",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-24",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [
+                {
+                    "url": "http://res.cloudinary.com/dwtuewicl/image/upload/v1757271030/real-estate/properties/68bdd3f3c2c4579e93e94071/images/qhjbr69gnwkwhhsyq021.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "z6233055411456_754c9e23a08cc4743d747c4059589ea2.jpg",
+                        "size": 418525,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-07T18:50:31.582Z"
+                    },
+                    "_id": "68bdd3f7c2c4579e93e94074"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dwtuewicl/image/upload/v1757271030/real-estate/properties/68bdd3f3c2c4579e93e94071/images/tdq45tizlesdhqah4ypt.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "z6233114252526_9e6ec93bd6eba11308d9a0c94b3ae2b1.jpg",
+                        "size": 117927,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-07T18:50:31.582Z"
+                    },
+                    "_id": "68bdd3f7c2c4579e93e94075"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dwtuewicl/image/upload/v1757271030/real-estate/properties/68bdd3f3c2c4579e93e94071/images/dchq0q9aqu3daaoz1bb6.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "z6399150956577_21df076c3dc7c44955245b85984fc10a.jpg",
+                        "size": 622600,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-07T18:50:31.583Z"
+                    },
+                    "_id": "68bdd3f7c2c4579e93e94076"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dwtuewicl/raw/upload/v1757271029/real-estate/properties/68bdd3f3c2c4579e93e94071/images/d3lx98f0vmic8ryd0d2a",
+                    "type": "raw",
+                    "metadata": {
+                        "filename": "Group Assignment 04b.doc",
+                        "size": 44544,
+                        "mimetype": "application/msword",
+                        "uploadedAt": "2025-09-07T18:50:31.583Z"
+                    },
+                    "_id": "68bdd3f7c2c4579e93e94077"
+                }
+            ],
+            "createdAt": "2025-09-07T18:50:27.505Z",
+            "updatedAt": "2025-09-07T18:50:31.587Z",
+            "__v": 1,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdd2cd3ffca27a2ca29491",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-23",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [
+                {
+                    "url": "http://res.cloudinary.com/dfcnz3uuh/image/upload/v1757270738/real-estate/properties/68bdd2cd3ffca27a2ca29491/images/kh2buv3ezwjajoeimdgi.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "z6233055411456_754c9e23a08cc4743d747c4059589ea2.jpg",
+                        "size": 418525,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-07T18:45:37.233Z"
+                    },
+                    "_id": "68bdd2d13ffca27a2ca29494"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dfcnz3uuh/image/upload/v1757270738/real-estate/properties/68bdd2cd3ffca27a2ca29491/images/kutaswmyjseplcutace6.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "z6233114252526_9e6ec93bd6eba11308d9a0c94b3ae2b1.jpg",
+                        "size": 117927,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-07T18:45:37.234Z"
+                    },
+                    "_id": "68bdd2d13ffca27a2ca29495"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dfcnz3uuh/image/upload/v1757270738/real-estate/properties/68bdd2cd3ffca27a2ca29491/images/gc1gl02ksdwqqinc99dc.jpg",
+                    "type": "image",
+                    "metadata": {
+                        "filename": "z6399150956577_21df076c3dc7c44955245b85984fc10a.jpg",
+                        "size": 622600,
+                        "mimetype": "image/jpeg",
+                        "uploadedAt": "2025-09-07T18:45:37.234Z"
+                    },
+                    "_id": "68bdd2d13ffca27a2ca29496"
+                },
+                {
+                    "url": "http://res.cloudinary.com/dfcnz3uuh/raw/upload/v1757270737/real-estate/properties/68bdd2cd3ffca27a2ca29491/images/j8fqmdjiikc5b0smvn0r",
+                    "type": "raw",
+                    "metadata": {
+                        "filename": "Group Assignment 04b.doc",
+                        "size": 44544,
+                        "mimetype": "application/msword",
+                        "uploadedAt": "2025-09-07T18:45:37.234Z"
+                    },
+                    "_id": "68bdd2d13ffca27a2ca29497"
+                }
+            ],
+            "createdAt": "2025-09-07T18:45:33.271Z",
+            "updatedAt": "2025-09-07T18:45:37.235Z",
+            "__v": 1,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdd26a3ffca27a2ca2944d",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-22",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [
+                {
+                    "url": "http://res.cloudinary.com/dfcnz3uuh/raw/upload/v1757270639/real-estate/properties/68bdd26a3ffca27a2ca2944d/images/i38tcjgz7sayfhv9yhcg",
+                    "type": "raw",
+                    "metadata": {
+                        "filename": "Group Assignment 04b.doc",
+                        "size": 44544,
+                        "mimetype": "application/msword",
+                        "uploadedAt": "2025-09-07T18:43:57.648Z"
+                    },
+                    "_id": "68bdd26d3ffca27a2ca29450"
+                }
+            ],
+            "createdAt": "2025-09-07T18:43:54.587Z",
+            "updatedAt": "2025-09-07T18:43:57.649Z",
+            "__v": 1,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdd226634a74f362c45b26",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-21",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [],
+            "createdAt": "2025-09-07T18:42:46.996Z",
+            "updatedAt": "2025-09-07T18:42:46.996Z",
+            "__v": 0,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdc2f9447985b50190424e",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-20",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [],
+            "createdAt": "2025-09-07T17:38:01.450Z",
+            "updatedAt": "2025-09-07T17:38:01.450Z",
+            "__v": 0,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdc2bc0c800c3f8f98d351",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-19",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [],
+            "createdAt": "2025-09-07T17:37:00.774Z",
+            "updatedAt": "2025-09-07T17:37:00.774Z",
+            "__v": 0,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        },
+        {
+            "_id": "68bdc2500c800c3f8f98d315",
+            "title": "Căn hộ cao cấp Landmark 81",
+            "description": "Căn hộ 3 phòng ngủ, view sông Sài Gòn, nội thất đầy đủ, tầng cao.",
+            "slug": "can-ho-cao-cap-landmark-81-18",
+            "status": "active",
+            "visibility": "public",
+            "purpose": "sale",
+            "type": "apartment",
+            "yearBuilt": 2021,
+            "area": 120,
+            "rooms": {
+                "bedrooms": 3,
+                "bathrooms": 2,
+                "livingRooms": 1,
+                "kitchens": 1
+            },
+            "amenities": [
+                "gym",
+                "swimming pool",
+                "parking",
+                "24/7 security"
+            ],
+            "address": {
+                "location": {
+                    "type": "Point",
+                    "coordinates": [
+                        106.7214,
+                        10.7942
+                    ]
+                },
+                "fullAddress": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM",
+                "country": "Vietnam",
+                "province": "Hồ Chí Minh",
+                "district": "Bình Thạnh",
+                "ward": "22",
+                "street": "Điện Biên Phủ"
+            },
+            "price": {
+                "currency": "VND",
+                "period": "other",
+                "value": 8500000000
+            },
+            "owner": "68bd181fc9119fda03f989fe",
+            "media": [],
+            "createdAt": "2025-09-07T17:35:12.609Z",
+            "updatedAt": "2025-09-07T17:35:12.609Z",
+            "__v": 0,
+            "ownerInfo": {
+                "_id": "68bd181fc9119fda03f989fe",
+                "email": "vovantuan.tech@gmail.com",
+                "userName": "tuan",
+                "fullName": "Võ Văn Tuấn",
+                "avatar": "https://res.cloudinary.com/dfcnz3uuh/image/upload/v1753369654/users/na8i6s7o5sd2qw4x0ch9.jpg",
+                "phone": "+84912345678",
+                "gender": "male",
+                "role": "doctor",
+                "address": "Phường Bến Nghé, Quận 1, TP.HCM",
+                "dob": 1752586703255,
+                "isActive": true,
+                "createdAt": 1752586703255,
+                "_destroy": false
+            }
+        }
+    ],
+    "totalProperties": 27,
+    "page": 1,
+    "itemsPerPage": 9
+}
