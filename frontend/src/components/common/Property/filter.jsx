@@ -101,8 +101,13 @@ export default function FiltersPanel() {
     if (resetPage) {
       qs.set("page", "1")
     }
+    
+    // ✅ Ensure itemsPerPage is always in URL (preserve or use default)
+    if (!qs.has("itemsPerPage")) {
+      qs.set("itemsPerPage", "9") // DEFAULT_ITEMS_PER_PAGE from constants
+    }
 
-    // Clear old filter params
+    // Clear old filter params (but keep page and itemsPerPage)
     qs.delete("q")
     qs.delete("types")
     qs.delete("purpose")

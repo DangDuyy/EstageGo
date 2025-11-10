@@ -1,7 +1,7 @@
-/* eslint-disable no-unused-vars */
+ 
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,17 +82,19 @@ function LatestItem({ p }) {
 }
 
 export default function SidebarCard() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const query = new URLSearchParams(location.search);
+  
+  const page = parseInt(query.get("page") || "1", 10);
+  const itemsPerPage = parseInt(query.get("itemsPerPage") || "8", 10);
+  
   const [view, setView] = useState("grid");
   const [sort, setSort] = useState("default"); // "default" | "asc" | "desc"
-  const [show, setShow] = useState("8"); // Select value là string -> ép sang number khi dùng
 
   const [properties, setProperties] = useState([]);
   const [totalProperties, setTotalProperties] = useState(0);
   const [loading, setLoading] = useState(true);
-
-  const location = useLocation();
-  const query = new URLSearchParams(location.search);
-  const page = parseInt(query.get("page") || "1", 10);
 
   const updateStateData = (res) => {
     setProperties(Array.isArray(res?.properties) ? res.properties : []);
@@ -125,7 +127,7 @@ export default function SidebarCard() {
     };
   }, [location.search]);
 
-  // Tính filtered theo sort + show
+  // Tính filtered theo sort
   const filtered = useMemo(() => {
     const list = Array.isArray(properties) ? [...properties] : [];
 
@@ -134,9 +136,52 @@ export default function SidebarCard() {
     } else if (sort === "desc") {
       list.sort((a, b) => getPriceValue(b) - getPriceValue(a));
     }
-    const showCount = Number(show) || 8;
-    return list.slice(0, showCount);
-  }, [properties, sort, show]);
+    // Backend handles pagination
+    return list;
+  }, [properties, sort]);
+  
+  // Calculate total pages
+  const totalPages = totalProperties > 0 ? Math.ceil(totalProperties / itemsPerPage) : 0;
+  
+  // Navigate to different page
+  const goToPage = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    const params = new URLSearchParams(location.search);
+    params.set("page", String(newPage));
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
+  
+  // Change items per page
+  const changeItemsPerPage = (value) => {
+    const params = new URLSearchParams(location.search);
+    params.set("itemsPerPage", value);
+    params.set("page", "1");
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
+  
+  // Get page numbers array for display
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      let start = Math.max(2, page - 1);
+      let end = Math.min(totalPages - 1, page + 1);
+      if (start > 2) pages.push("...");
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (end < totalPages - 1) pages.push("...");
+      if (totalPages > 1) pages.push(totalPages);
+    }
+    
+    return pages;
+  };
 
   if (loading) {
     return (
@@ -186,14 +231,15 @@ export default function SidebarCard() {
           </Button>
 
           {/* Show Select */}
-          <Select value={show} onValueChange={setShow}>
+          <Select value={String(itemsPerPage)} onValueChange={changeItemsPerPage}>
             <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Show: 8" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="8">Show: 8</SelectItem>
               <SelectItem value="10">Show: 10</SelectItem>
               <SelectItem value="12">Show: 12</SelectItem>
+              <SelectItem value="20">Show: 20</SelectItem>
             </SelectContent>
           </Select>
 
@@ -251,23 +297,50 @@ export default function SidebarCard() {
             </div>
           )}
 
-          {/* Pagination (demo) */}
-          <div className="mt-8 flex justify-center gap-2">
-            <Button variant="outline" size="icon" aria-label="Prev page">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            {[1, 2, 3].map((n) => (
-              <Button
-                key={`page-${n}`}
-                variant={n === page ? "default" : "outline"}
-              >
-                {n}
-              </Button>
-            ))}
-            <Button variant="outline" size="icon" aria-label="Next page">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Pagination */}
+          {totalPages > 0 && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-600">
+                Page {page} of {totalPages} ({totalProperties} total)
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  aria-label="Prev page"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                {getPageNumbers().map((n, idx) => (
+                  n === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 flex items-center">...</span>
+                  ) : (
+                    <Button
+                      key={`page-${n}`}
+                      variant={n === page ? "default" : "outline"}
+                      onClick={() => goToPage(n)}
+                    >
+                      {n}
+                    </Button>
+                  )
+                ))}
+                
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  aria-label="Next page"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
