@@ -6,17 +6,98 @@ import { DropzoneContent, DropzoneEmptyState, Dropzone } from '@/components/ui/d
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { selectCurrentUser } from '@/redux/user/userSlice'
-import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
+import { selectCurrentUser, updateUser } from '@/redux/user/userSlice'
+import React, { useState, useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { updateUserProfileAPI, changePasswordAPI } from '@/apis'
+import { toast } from 'react-toastify'
 
 export default function Profile() {
+  const dispatch = useDispatch()
   const user = useSelector(selectCurrentUser)
   const [files, setFiles] = useState()
+  const [loading, setLoading] = useState(false)
+  
+  // Profile form state
+  const [profileData, setProfileData] = useState({
+    fullName: '',
+    gender: 'male',
+    address: ''
+  })
+
+  // Password form state
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+
+  // Initialize form with user data
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        fullName: user.fullName || '',
+        gender: user.gender || 'male',
+        address: user.address || ''
+      })
+    }
+  }, [user])
 
   const handleDrop = (files) => {
     console.log(files)
     setFiles(files)
+  }
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      setLoading(true)
+      const updatedUser = await updateUserProfileAPI(profileData)
+      
+      // Update Redux store
+      dispatch(updateUser(updatedUser))
+    } catch (error) {
+      console.error('Update profile error:', error)
+      toast.error(error.response?.data?.message || 'Failed to update profile')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault()
+
+    // Validate
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match')
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters')
+      return
+    }
+
+    try {
+      setLoading(true)
+      await changePasswordAPI({
+        oldPassword: passwordData.oldPassword,
+        newPassword: passwordData.newPassword
+      })
+      
+      // Clear form
+      setPasswordData({
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+    } catch (error) {
+      console.error('Change password error:', error)
+      toast.error(error.response?.data?.message || 'Failed to change password')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -74,66 +155,114 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="mt-10 py-10">
+      <form onSubmit={handleProfileSubmit} className="mt-10 py-10">
         <p className="text-2xl font-semibold mb-5">Information</p>
         <div className="flex flex-col gap-8">
           <span>
             <p>Full name:*</p>
-            <Input type="text" placeholder="Type your full name..."></Input>
+            <Input 
+              type="text" 
+              placeholder="Type your full name..."
+              value={profileData.fullName}
+              onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+              required
+            />
           </span>
-          <span>
-            <p>Bio:*</p>
-            <Input type="text" placeholder="Type your bio..."></Input>
-          </span>
+          
           <div className="flex flex-row gap-12">
             <span className='flex flex-row gap-5'>
               <p>Gender:*</p>
-              <RadioGroup defaultValue="option-one">
+              <RadioGroup 
+                value={profileData.gender}
+                onValueChange={(value) => setProfileData({ ...profileData, gender: value })}
+              >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="option-one" id="option-one" />
-                  <Label htmlFor="option-one">Male</Label>
+                  <RadioGroupItem value="male" id="male" />
+                  <Label htmlFor="male">Male</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="option-two" id="option-two" />
-                  <Label htmlFor="option-two">Female</Label>
+                  <RadioGroupItem value="female" id="female" />
+                  <Label htmlFor="female">Female</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="option-three" id="option-two" />
-                  <Label htmlFor="option-two">Others</Label>
+                  <RadioGroupItem value="other" id="other" />
+                  <Label htmlFor="other">Others</Label>
                 </div>
               </RadioGroup> 
             </span>
             <span>
-              <p>Phone:*</p>
-              <Input type="text" placeholder="Type your phone number.."></Input>
+              <p>Phone: (Cannot be changed)</p>
+              <Input 
+                type="text" 
+                value={user?.phone || 'Not set'}
+                disabled
+                className="bg-gray-100 cursor-not-allowed"
+              />
             </span>
           </div>
           <span>
-            <p>Location:*</p>
-            <Input type="text" placeholder="Type your address..."></Input>
+            <p>Location:</p>
+            <Input 
+              type="text" 
+              placeholder="Type your address..."
+              value={profileData.address}
+              onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+            />
           </span>
-          <Button className="max-w-[150px] rounded-3xl">Save and update</Button>
+          <Button 
+            type="submit"
+            className="max-w-[150px] rounded-3xl"
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save and update'}
+          </Button>
         </div>
-      </div>
+      </form>
 
-      <div className="mt-10">
+      <form onSubmit={handlePasswordSubmit} className="mt-10">
         <p className="text-2xl font-semibold mb-10">Change password</p>
-        <div className="flex flex-row gap-30 mb-10">
-          <span>
+        <div className="flex flex-col md:flex-row gap-8 mb-10">
+          <span className="flex-1">
             <p>Old Password:*</p>
-            <Input type="password" placeholder="Type password..."></Input>
+            <Input 
+              type="password" 
+              placeholder="Type old password..."
+              value={passwordData.oldPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+              required
+            />
           </span>
-          <span>
+          <span className="flex-1">
             <p>New Password:*</p>
-            <Input type="password" placeholder="Type password..."></Input>
+            <Input 
+              type="password" 
+              placeholder="Type new password..."
+              value={passwordData.newPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              required
+              minLength={6}
+            />
           </span>
-          <span>
+          <span className="flex-1">
             <p>Confirm New Password:*</p>
-            <Input type="password" placeholder="Type password..."></Input>
+            <Input 
+              type="password" 
+              placeholder="Confirm new password..."
+              value={passwordData.confirmPassword}
+              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              required
+              minLength={6}
+            />
           </span>
         </div>
-        <Button className="max-w-[150px] rounded-3xl">Change password</Button>
-      </div>
+        <Button 
+          type="submit"
+          className="max-w-[150px] rounded-3xl"
+          disabled={loading}
+        >
+          {loading ? 'Changing...' : 'Change password'}
+        </Button>
+      </form>
     </ContentLayout>
   )
 }

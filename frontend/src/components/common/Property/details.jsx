@@ -152,7 +152,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const dispatch = useDispatch();
   const { propertyId } = useParams();
   const property = useSelector(selectCurrentActiveProperty);
-  const { toggleWishlist } = useWishlist()
+  const { toggleItem, isInWishlist } = useWishlist()
+  const inWishlist = isInWishlist(propertyId)
 
   // loan calculator
   const [loan, setLoan] = React.useState({ total: 10000, down: 3000, months: 12, rate: 5 });
@@ -267,12 +268,18 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
             <div className="flex flex-row gap-4 text-muted-foreground">
               <button
                 type="button"
-                onClick={toggleWishlist}
-                title="Open wishlist"
-                aria-label="Open wishlist"
-                className="rounded-full p-2 hover:bg-muted transition"
+                onClick={() => toggleItem(propertyId)}
+                title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                className={cn(
+                  "rounded-full p-2 hover:bg-muted transition",
+                  inWishlist && "bg-red-50 dark:bg-red-950"
+                )}
               >
-                <Heart className="h-5 w-5" />
+                <Heart className={cn(
+                  "h-5 w-5 transition-colors",
+                  inWishlist ? "fill-red-500 text-red-500" : ""
+                )} />
               </button>
 
               <button type="button" title="Compare" aria-label="Compare" className="rounded-full p-2 hover:bg-muted transition">

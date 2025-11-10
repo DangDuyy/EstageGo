@@ -10,12 +10,25 @@ import {
   TooltipProvider
 } from "@/components/ui/tooltip";
 import { CollapseMenuButton } from "./collapse-menu-button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logoutUserAPI } from "@/redux/user/userSlice";
 
 export function Menu({ isOpen }) {
   const location = useLocation();
   const pathname = location.pathname;
   const menuList = getMenuList(pathname);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserAPI()).unwrap()
+      navigate('/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  };
 
   return (
     <ScrollArea className="[&>div>div[style]]:!block">
@@ -111,7 +124,7 @@ export function Menu({ isOpen }) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => {}}
+                    onClick={handleLogout}
                     variant="outline"
                     className="w-full justify-center h-10 mt-5"
                   >

@@ -10,8 +10,8 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import LoginModal from "../Modal/login";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "@/redux/user/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -37,10 +37,20 @@ const NavBar = ({ hideLogo = false }) => {
   const sidebarOpen = hideLogo && sidebar ? sidebar.getOpenState() : false;
   const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
-  const { toggleWishlist } = useWishlist()
+  const { toggleWishlist, items } = useWishlist()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const currentUser = useSelector(selectCurrentUser)
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserAPI()).unwrap()
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   const { isOpen: wishlistOpen } = useWishlist();
 
@@ -70,9 +80,14 @@ const NavBar = ({ hideLogo = false }) => {
                 onClick={toggleWishlist}
                 title="Open wishlist"
                 aria-label="Open wishlist"
-                className="rounded-full p-2 hover:bg-muted transition"
+                className="rounded-full p-2 hover:bg-muted transition relative"
               >
                 <Heart className="h-6 w-6" />
+                {items.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {items.length > 99 ? '99+' : items.length}
+                  </span>
+                )}
               </button>                
               <DropdownMenu>
                     <TooltipProvider disableHoverableContent>
@@ -115,7 +130,7 @@ const NavBar = ({ hideLogo = false }) => {
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+                      <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
                         <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
                         Sign out
                       </DropdownMenuItem>

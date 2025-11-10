@@ -82,10 +82,40 @@ const refreshToken = async (req, res, next) => {
     next(new ApiError(StatusCodes.FORBIDDEN, 'Please Sign in again! (Error from refreshToken) '))
   }
 }
+const updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.updateProfile(userId, req.body)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Old password and new password are required')
+    }
+
+    const result = await userService.changePassword(userId, oldPassword, newPassword)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const userController = {
   createNew,
   login,
   verifyAccount,
   logout,
-  refreshToken
+  refreshToken,
+  updateProfile,
+  changePassword
 }

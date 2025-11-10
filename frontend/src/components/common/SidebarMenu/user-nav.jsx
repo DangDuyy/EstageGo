@@ -17,12 +17,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "@/redux/user/userSlice";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
 
 export function UserNav() {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
   const currentUser = useSelector(selectCurrentUser)
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserAPI()).unwrap()
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
     <DropdownMenu>
@@ -35,7 +46,7 @@ export function UserNav() {
                 className="relative h-8 w-8 rounded-full"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={currentUser.avatarUrl} alt="Avatar" />
+                  <AvatarImage src={currentUser.avatar} alt="Avatar" />
                   <AvatarFallback className="bg-transparent">User</AvatarFallback>
                 </Avatar>
               </Button>
@@ -48,9 +59,9 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">John Doe</p>
+            <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              johndoe@example.com
+              {currentUser.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -70,7 +81,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+        <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
           <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
           Sign out
         </DropdownMenuItem>

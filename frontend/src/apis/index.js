@@ -133,3 +133,51 @@ export const searchPropertiesAPI = async (filters) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties${queryString ? '?' + queryString : ''}`)
   return response.data
 }
+
+// ========== WISHLIST APIs ==========
+
+// Get user's wishlist
+export const getWishlistAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/wishlist`)
+  return response.data
+}
+
+// Toggle property in wishlist (add if not exists, remove if exists)
+export const toggleWishlistAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/wishlist/toggle`, { propertyId })
+  return response.data
+}
+
+// Add property to wishlist
+export const addToWishlistAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/wishlist`, { propertyId })
+  return response.data
+}
+
+// Remove property from wishlist
+export const removeFromWishlistAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/wishlist/${propertyId}`)
+  return response.data
+}
+
+// Check if property is in wishlist
+export const checkWishlistAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/wishlist/check/${propertyId}`)
+  return response.data
+}
+
+// ========== USER PROFILE APIs ==========
+
+// Update user profile
+export const updateUserProfileAPI = async (profileData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/profile`, profileData)
+  toast.success('Profile updated successfully!')
+  return response.data
+}
+
+// Change password
+export const changePasswordAPI = async (passwordData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/change-password`, passwordData)
+  toast.success('Password changed successfully!')
+  return response.data
+}

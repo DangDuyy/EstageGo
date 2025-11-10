@@ -82,9 +82,58 @@ const refreshToken = async (clientRefreshToken) => {
   }
 }
 
+const updateProfile = async (userId, updateData) => {
+  try {
+    // Remove fields that should not be updated
+    const { password, email, phone, userName, role, isActive, verifyToken, ...allowedUpdates } = updateData
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: allowedUpdates },
+      { new: true, runValidators: true }
+    )
+
+    if (!updatedUser) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    return pickUser(updatedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
+const changePassword = async (userId, oldPassword, newPassword) => {
+  try {
+    const user = await userModel.findById(userId)
+    
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    // Verify old password
+    const isPasswordValid = bcryptjs.compareSync(oldPassword, user.password)
+    if (!isPasswordValid) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Old password is incorrect')
+    }
+
+    // Hash new password
+    const hashedPassword = bcryptjs.hashSync(newPassword, 10)
+
+    // Update password
+    await userModel.findByIdAndUpdate(userId, { password: hashedPassword })
+
+    return { message: 'Password changed successfully' }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
-  refreshToken
+  refreshToken,
+  updateProfile,
+  changePassword
 }
