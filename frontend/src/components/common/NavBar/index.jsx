@@ -40,11 +40,12 @@ const NavBar = ({ hideLogo = false }) => {
   const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
   const [openRegisterModal, setOpenRegisterModal] = useState(false)
-  const { toggleWishlist } = useWishlist()
+  const { toggleWishlist, items } = useWishlist()
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const currentUser = useSelector(selectCurrentUser)
+
   const { isOpen: wishlistOpen } = useWishlist();
 
   // Check if any modal is open
@@ -94,9 +95,14 @@ const NavBar = ({ hideLogo = false }) => {
                 onClick={toggleWishlist}
                 title="Open wishlist"
                 aria-label="Open wishlist"
-                className="rounded-full p-2 hover:bg-muted transition"
+                className="rounded-full p-2 hover:bg-muted transition relative"
               >
                 <Heart className="h-6 w-6" />
+                {items.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {items.length > 99 ? '99+' : items.length}
+                  </span>
+                )}
               </button>                
               <DropdownMenu>
                     <TooltipProvider disableHoverableContent>

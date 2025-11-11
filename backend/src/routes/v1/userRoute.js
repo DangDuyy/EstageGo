@@ -1,6 +1,7 @@
 import express from 'express'
 import { userController } from '~/controllers/userController'
 import { userValidation } from '~/validations/userValidation'
+import { authMiddleware } from '~/middlewares/authMiddleware'
 
 const Router = express.Router()
 
@@ -18,5 +19,12 @@ Router.route('/refresh-token')
 
 Router.route('/logout')
   .delete(userController.logout)
+
+// Protected routes (require authentication)
+Router.route('/profile')
+  .put(authMiddleware.isAuthorized, userController.updateProfile)
+
+Router.route('/change-password')
+  .put(authMiddleware.isAuthorized, userController.changePassword)
 
 export const userRoutes = Router

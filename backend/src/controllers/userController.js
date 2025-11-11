@@ -91,9 +91,37 @@ const sendVerificationCode = async (req, res, next) => {
   }
 }
 
+const updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.updateProfile(userId, req.body)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 const verifyCode = async (req, res, next) => {
   try {
     const result = await userService.verifyCode(req.body)
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Old password and new password are required')
+    }
+
+    const result = await userService.changePassword(userId, oldPassword, newPassword)
+    
     res.status(StatusCodes.OK).json(result)
   } catch (error) {
     next(error)
@@ -107,5 +135,7 @@ export const userController = {
   logout,
   refreshToken,
   sendVerificationCode,
-  verifyCode
+  verifyCode,
+  updateProfile,
+  changePassword,
 }
