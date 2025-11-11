@@ -27,6 +27,7 @@ import MapComponent from "@/components/common/Map/map-component";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import TourLinkModal from "@/components/common/Upload/tour-link-modal";
+import MapContainer from "@/components/common/GoogleMap/MapContainer";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
@@ -280,6 +281,36 @@ export default function AddPropertyWizard() {
     form.setValue('visibility', visibility)
   }, [visibility])
 
+
+  // ============ Sử dụng map =======================
+  const { loaded } = useMaps();
+  const [center, setCenter] = useState({ lat: 10.762622, lng: 106.660172 });
+  const [results, setResults] = useState([]);
+
+  useEffect(() => {
+    if (!fullAddress || !window.google || !loaded) return;
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address }, (results, status) => {
+      // if (status === "OK" && results[0]) {
+      //   const location = results[0].geometry.location;
+      //   // trả về lat và lng
+      //   onResult?.({
+      //     lat: location.lat(),
+      //     lng: location.lng(),
+      //   });
+      // } 
+      if (status === "OK") {
+        setResults[results]
+        const loc = p.geometry.location;
+        setCenter({ lat: loc.lat(), lng: loc.lng() });
+      }
+      else {
+        console.error("Geocode failed: ", status);
+      }
+    });
+  }, [fullAddress, onResult]);
+
   // ----- Render -----
   return (
     <ContentLayout title="Add Property">
@@ -351,7 +382,7 @@ export default function AddPropertyWizard() {
                   />
                 </TabsContent>
                 <TabsContent value="3D">
-                  <TourLinkModal form={form} className={"mb-8"}/>
+                  <TourLinkModal form={form} className={"mb-8"} />
                 </TabsContent>
               </Tabs>
 
@@ -553,6 +584,9 @@ export default function AddPropertyWizard() {
                     />
                   </div>
 
+                  <MapContainer center={center} zoom={13}>
+                    <MarkerLayer items={results} onMarkerClick={(it) => console.log(it)} />
+                  </MapContainer>
                   <div>
                     <MapComponent form={form} address={fullAddress} />
                   </div>

@@ -14,38 +14,45 @@ import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
 import PropertiesMap from './pages/MapPage/index_v2'
 import { ChatBot } from './components/common/AITrend/ChatBot'
+import { MapProvider } from './components/common/GoogleMap/MapProvider'
+
+const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
   return (
     <Routes>
       {/* redirect route */}
       <Route path="/" element={
         <Navigate to="/home" replace={true} />
-      }/>
+      } />
 
-      <Route path="/home" element={<HomePage/>} />
-      <Route path="/properties/:propertyId" element={<PropertyPage/>} />
+      <Route path="/home" element={<HomePage />} />
+      <Route path="/properties/:propertyId" element={<PropertyPage />} />
 
-      <Route path="/listing/grid" element={<PropertyPages/>} />
-      <Route path="/listing/map" element={<PropertiesMap/>}/>
+      <Route path="/listing/grid" element={<PropertyPages />} />
+      <Route path="/listing/map" element={<PropertiesMap />} />
 
-      <Route path="/ai/chatbot" element={<ChatBot/>} />
-      
-      <Route path="/map" element={<MapPage/>} />
-      <Route path="/dashboard" element={<DashboardLayout/>}>
-        <Route index element={<DashboardPage/>} />
-        <Route path="users" element={<Profile/>} />
-        <Route path="messages" element={<Message/>} />
+      <Route path="/ai/chatbot" element={<ChatBot />} />
+
+      <Route path="/map" element={<MapPage />} />
+      <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="users" element={<Profile />} />
+        <Route path="messages" element={<Message />} />
         <Route path="posts">
-          <Route index element={<Post/>} />
-          <Route path="new" element={<NewPost/>} />
+          <Route index element={<Post />} />
+          <Route path="new" element={
+            <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries={["places"]}>
+              <NewPost />
+            </MapProvider>
+          } />
         </Route>
-        <Route path="properties" element={<MyProperty/>} />
-        <Route path="wishlist" element={<Wishlist/>} />
-        
+        <Route path="properties" element={<MyProperty />} />
+        <Route path="wishlist" element={<Wishlist />} />
+
       </Route>
 
       {/* page not found */}
-      <Route path="*" element={<NotFoundPage/>} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
