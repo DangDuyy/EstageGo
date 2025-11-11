@@ -3,6 +3,7 @@ import { userService } from "~/services/userService"
 import ApiError from "~/utils/ApiError"
 import ms from "ms"
 import { env } from "~/config/environment"
+
 const createNew = async (req, res, next) => {
   try {
     const result = await userService.createNew(req.body)
@@ -46,10 +47,8 @@ const logout = async (req, res, next) => {
   try {
     res.clearCookie('accessToken')
     res.clearCookie('refreshToken')
-
     res.status(StatusCodes.OK).json({ loggedOut: true })
-  }
-  catch (error) {
+  } catch (error) {
     next(error)
   }
 }
@@ -82,11 +81,30 @@ const refreshToken = async (req, res, next) => {
     next(new ApiError(StatusCodes.FORBIDDEN, 'Please Sign in again! (Error from refreshToken) '))
   }
 }
+
+const sendVerificationCode = async (req, res, next) => {
+  try {
+    const result = await userService.sendVerificationCode(req.body)
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 const updateProfile = async (req, res, next) => {
   try {
     const userId = req.jwtDecoded._id
     const result = await userService.updateProfile(userId, req.body)
     
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const verifyCode = async (req, res, next) => {
+  try {
+    const result = await userService.verifyCode(req.body)
     res.status(StatusCodes.OK).json(result)
   } catch (error) {
     next(error)
@@ -116,6 +134,8 @@ export const userController = {
   verifyAccount,
   logout,
   refreshToken,
+  sendVerificationCode,
+  verifyCode,
   updateProfile,
-  changePassword
+  changePassword,
 }

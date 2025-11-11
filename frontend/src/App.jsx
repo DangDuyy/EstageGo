@@ -8,6 +8,7 @@ import MyProperty from './pages/DashboardPage/MyProperty'
 import Profile from './pages/DashboardPage/Profile'
 import Wishlist from './pages/DashboardPage/Wishlist'
 import HomePage from './pages/HomePage'
+import VerifyAccountPage from './pages/HomePage/verifyAccount'
 import DashboardLayout from './layouts/DashboardLayout'
 import MapPage from './pages/MapPage'
 import PropertyPages from './pages/PropertyPage'
@@ -26,6 +27,7 @@ function App() {
       } />
 
       <Route path="/home" element={<HomePage />} />
+      <Route path="/verify-account" element={<VerifyAccountPage />} />
       <Route path="/properties/:propertyId" element={<PropertyPage />} />
 
       <Route path="/listing/grid" element={<PropertyPages />} />

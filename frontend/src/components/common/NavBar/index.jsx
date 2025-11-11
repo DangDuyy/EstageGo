@@ -10,6 +10,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import LoginModal from "../Modal/login";
+import RegisterModal from "../Modal/register";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
 const NavBar = ({ hideLogo = false }) => {
@@ -37,30 +39,43 @@ const NavBar = ({ hideLogo = false }) => {
   const sidebarOpen = hideLogo && sidebar ? sidebar.getOpenState() : false;
   const sidebarSettings = hideLogo && sidebar ? sidebar.settings : { disabled: true };
   const [openModal, setOpenModal] = useState(false)
+  const [openRegisterModal, setOpenRegisterModal] = useState(false)
   const { toggleWishlist, items } = useWishlist()
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const currentUser = useSelector(selectCurrentUser)
 
+  const { isOpen: wishlistOpen } = useWishlist();
+
+  // Check if any modal is open
+  const isAnyModalOpen = openModal || openRegisterModal;
+
+  // Hàm xử lý logout
   const handleLogout = async () => {
     try {
       await dispatch(logoutUserAPI()).unwrap()
-      navigate('/')
-    } catch (error) {
-      console.error('Logout error:', error)
+      toast.success('Đăng xuất thành công!')
+      navigate('/home')
+    } catch {
+      toast.error('Đăng xuất thất bại. Vui lòng thử lại!')
     }
   }
 
-  const { isOpen: wishlistOpen } = useWishlist();
-
   return (
     <div className="min-h-[95px] bg-muted">
+      {/* Overlay mờ khi modal mở */}
+      {isAnyModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[95] pointer-events-none" />
+      )}
+
       <nav
         className={cn(
           // when wishlist is open, lower nav z-index and disable interactions so overlay can sit above
           (wishlistOpen ? "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-0 pointer-events-none" : "fixed left-0 right-0 h-24 bg-background border dark:border-slate-700/70 shadow-lg w-full transition-[padding-left] ease-in-out duration-300 z-[90]"),
-          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-[400px]" : "lg:pl-[200px]")
+          hideLogo && !sidebarSettings.disabled && (sidebarOpen ? "lg:pl-[400px]" : "lg:pl-[200px]"),
+          // Giảm opacity khi modal mở
+          isAnyModalOpen && "opacity-50"
         )}
       >
         <div className="h-full flex items-center justify-between lg:px-10">
@@ -130,8 +145,11 @@ const NavBar = ({ hideLogo = false }) => {
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
-                        <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
+                      <DropdownMenuItem 
+                        className="hover:cursor-pointer text-red-600 focus:text-red-600" 
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="w-4 h-4 mr-3" />
                         Sign out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -159,7 +177,23 @@ const NavBar = ({ hideLogo = false }) => {
         </div>
       </nav>
 
-      <LoginModal open={openModal} onOpenChange={setOpenModal} />
+      <LoginModal 
+        open={openModal} 
+        onOpenChange={setOpenModal}
+        onOpenRegister={() => {
+          setOpenModal(false)
+          setOpenRegisterModal(true)
+        }}
+      />
+      
+      <RegisterModal 
+        open={openRegisterModal} 
+        onOpenChange={setOpenRegisterModal}
+        onOpenLogin={() => {
+          setOpenRegisterModal(false)
+          setOpenModal(true)
+        }}
+      />
 
     </div>
   );

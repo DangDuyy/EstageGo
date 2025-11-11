@@ -3,6 +3,16 @@ import authorizeAxiosInstance from '@/utils/authorizeAxios'
 import { API_ROOT } from '@/utils/constants'
 import axios from 'axios'
 
+export const sendVerificationCodeAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/send-code`, data)
+  return response.data
+}
+
+export const verifyCodeAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/verify-code`, data)
+  return response.data
+}
+
 export const registerUserAPI = async (data) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/register`, data)
   toast.success('Account created successfully! Please check your email to verify account')
@@ -11,7 +21,6 @@ export const registerUserAPI = async (data) => {
 
 export const verifyUserAPI = async (data) => {
   const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/verify`, data)
-  toast.success('Account verified successfully!')
   return response.data
 }
 
