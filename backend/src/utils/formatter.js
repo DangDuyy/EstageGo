@@ -2,7 +2,11 @@ import { pick } from 'lodash'
 
 export const pickUser = (user) => {
   if (!user) return {}
-  return pick(user, ['_id', 'email', 'username', 'fullName', 'avatar', 'phone', 'gender', 'address', 'dob', 'role', 'isActive', 'createdAt', 'updatedAt'])
+  return pick(user, [
+    '_id', 'email', 'username', 'fullName', 'avatar', 'phone', 'gender', 'address', 'dob', 'role', 'isActive', 'createdAt', 'updatedAt',
+    // Agent fields
+    'companyName', 'agentTitle', 'bio', 'specializations', 'areasServed', 'experience', 'licenseNumber', 'website', 'socialLinks', 'agentRequestStatus'
+  ])
 }
 
 export const slugify = (val) => {
