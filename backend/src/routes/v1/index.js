@@ -4,6 +4,8 @@ import { propertyRoutes } from './propertyRoute'
 import { userRoutes } from './userRoute'
 import { ollamaChatRoutes } from './ollamaChatRoute'
 import { wishlistRoute } from './wishlistRoute'
+import { conversationRoutes } from './conversationRoute'
+import { messageRoutes } from './messageRoute'
 
 const Router = express.Router()
 
@@ -18,5 +20,9 @@ Router.use('/properties', propertyRoutes)
 Router.use('/ollama-chat', ollamaChatRoutes)
 
 Router.use('/wishlist', wishlistRoute)
+
+Router.use('/conversations', conversationRoutes)
+
+Router.use('/messages', messageRoutes)
 
 export const APIs_V1 = Router
