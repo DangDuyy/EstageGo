@@ -65,16 +65,34 @@ export const useConversations = () => {
   // Setup socket listeners
   useEffect(() => {
     const socket = getSocket()
-    if (!socket?.connected) return
-
-    const handleNewMessage = ({ conversationId, message }) => {
-      updateConversationLastMessage(conversationId, message)
+    if (!socket) {
+      return
     }
 
-    socket.on('message:new', handleNewMessage)
+    const setupListeners = () => {
+      const handleNewMessage = ({ conversationId, message }) => {
+        updateConversationLastMessage(conversationId, message)
+      }
 
-    return () => {
-      socket.off('message:new', handleNewMessage)
+      socket.on('message:new', handleNewMessage)
+
+      return () => {
+        socket.off('message:new', handleNewMessage)
+      }
+    }
+
+    if (socket.connected) {
+      return setupListeners()
+    } else {
+      // Wait for connection
+      const onConnect = () => {
+        setupListeners()
+      }
+      socket.once('connect', onConnect)
+
+      return () => {
+        socket.off('connect', onConnect)
+      }
     }
   }, [updateConversationLastMessage])
 

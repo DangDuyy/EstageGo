@@ -60,13 +60,26 @@ export const userSlice = createSlice({
       .addCase(loginUserAPI.fulfilled, (state, action) => {
         state.currentUser = action.payload
         
-        // Connect socket with access token from cookies
+        // Save tokens to localStorage as backup (cookies might not work in some browsers)
+        if (action.payload.accessToken) {
+          localStorage.setItem('accessToken', action.payload.accessToken)
+        }
+        if (action.payload.refreshToken) {
+          localStorage.setItem('refreshToken', action.payload.refreshToken)
+        }
+        
+        // Try to get token from cookies first, fallback to localStorage
         const getCookie = (name) => {
           const value = `; ${document.cookie}`
           const parts = value.split(`; ${name}=`)
           if (parts.length === 2) return parts.pop().split(';').shift()
         }
-        const accessToken = getCookie('accessToken')
+        
+        let accessToken = getCookie('accessToken')
+        if (!accessToken) {
+          accessToken = localStorage.getItem('accessToken')
+        }
+        
         if (accessToken) {
           connectSocket(accessToken)
         }
@@ -74,6 +87,11 @@ export const userSlice = createSlice({
       // Logout - xóa user và ngắt socket
       .addCase(logoutUserAPI.fulfilled, (state) => {
         state.currentUser = null
+        
+        // Clear tokens from localStorage
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        
         disconnectSocket()
       })
       // Verify - không lưu user, chỉ verify

@@ -44,7 +44,9 @@ export const useChat = (conversationId) => {
 
   // Setup socket listeners
   useEffect(() => {
-    if (!conversationId) return
+    if (!conversationId) {
+      return
+    }
 
     const socket = getSocket()
     if (!socket) {
@@ -52,8 +54,11 @@ export const useChat = (conversationId) => {
       return
     }
 
-    // Wait for socket to connect if not connected yet
+    let cleanupFn = null
+
+    // Setup listeners function
     const setupListeners = () => {
+      
       // Join conversation room
       joinConversation(conversationId)
 
@@ -87,7 +92,8 @@ export const useChat = (conversationId) => {
       socket.on('typing:start', handleTypingStart)
       socket.on('typing:stop', handleTypingStop)
 
-      return () => {
+      // Return cleanup function
+      cleanupFn = () => {
         socket.off('message:new', handleNewMessage)
         socket.off('typing:start', handleTypingStart)
         socket.off('typing:stop', handleTypingStop)
@@ -96,18 +102,22 @@ export const useChat = (conversationId) => {
     }
 
     if (socket.connected) {
-      return setupListeners()
+      setupListeners()
     } else {
       // Wait for connection
       const onConnect = () => {
-        console.log('[useChat] Socket connected, setting up listeners')
         setupListeners()
       }
       socket.once('connect', onConnect)
 
-      return () => {
+      cleanupFn = () => {
         socket.off('connect', onConnect)
       }
+    }
+
+    // Cleanup on unmount or conversationId change
+    return () => {
+      if (cleanupFn) cleanupFn()
     }
   }, [conversationId])
 

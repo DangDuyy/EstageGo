@@ -19,10 +19,13 @@ import { ChatBot } from './components/common/AITrend/ChatBot'
 import { MapProvider } from './components/common/GoogleMap/MapProvider'
 import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
+import { SocketManager } from './components/common/SocketManager'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
   return (
+    <>
+      <SocketManager />
     <Routes>
       {/* redirect route */}
       <Route path="/" element={
@@ -63,6 +66,7 @@ function App() {
       {/* page not found */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   )
 }
 

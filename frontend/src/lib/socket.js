@@ -33,14 +33,19 @@ export const connectSocket = (accessToken) => {
 
   socket.on('disconnect', (reason) => {
     console.log('[Socket] Disconnected:', reason)
+    if (reason === 'io server disconnect') {
+      // Server disconnected, manually reconnect
+      socket.connect()
+    }
   })
 
-  // Debug mode
-  if (window.__SOCKET_DEBUG) {
-    socket.onAny((event, ...args) => {
-      console.log('[Socket Event]', event, args)
-    })
-  }
+  socket.on('reconnect', (attemptNumber) => {
+    console.log('[Socket] Reconnected after', attemptNumber, 'attempts')
+  })
+
+  socket.on('reconnect_error', (error) => {
+    console.error('[Socket] Reconnection error:', error?.message || error)
+  })
 
   return socket
 }

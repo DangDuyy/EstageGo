@@ -39,6 +39,7 @@ const login = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json(result)
   } catch (error) {
+    console.error('[Login] Error:', error.message)
     next(error)
   }
 }
