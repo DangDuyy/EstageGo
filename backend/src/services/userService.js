@@ -315,6 +315,22 @@ const getAgentById = async (agentId) => {
   }
 }
 
+const getUserProfileById = async (userId) => {
+  try {
+    const user = await userModel
+      .findOne({ _id: userId, isActive: true })
+      .select('-password -verifyToken')
+
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    return pickUser(user)
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
@@ -325,5 +341,6 @@ export const userService = {
   requestAgentRole,
   removeAgentRole,
   getAllAgents,
-  getAgentById
+  getAgentById,
+  getUserProfileById
 }

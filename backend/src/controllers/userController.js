@@ -172,6 +172,17 @@ const getAgentById = async (req, res, next) => {
   }
 }
 
+const getUserProfileById = async (req, res, next) => {
+  try {
+    const { userId } = req.params
+    const result = await userService.getUserProfileById(userId)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const userController = {
   createNew,
   login,
@@ -185,5 +196,6 @@ export const userController = {
   requestAgentRole,
   removeAgentRole,
   getAllAgents,
-  getAgentById
+  getAgentById,
+  getUserProfileById
 }

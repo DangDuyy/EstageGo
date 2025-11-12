@@ -60,143 +60,162 @@ export default function AgentProfile() {
     )
   }
 
-  if (!agent) {
+  if (!user) {
     return (
       <>
         <NavBar />
         <div className="min-h-screen flex items-center justify-center pt-32">
-          <p className="text-muted-foreground">Agent not found</p>
+          <p className="text-muted-foreground">User not found</p>
         </div>
         <FooterBar />
       </>
     )
   }
 
+  const isAgent = user.role === 'agent'
+
   return (
     <>
       <NavBar />
       <div className="min-h-screen bg-background pt-32 pb-20">
         <div className="container mx-auto px-4">
-          {/* Agent Header */}
+          {/* User Header */}
           <Card className="mb-8">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row gap-8">
                 <Avatar className="h-32 w-32 shrink-0">
-                  <AvatarImage src={agent.avatar} alt={agent.fullName} />
+                  <AvatarImage src={user.avatar} alt={user.fullName} />
                   <AvatarFallback className="text-4xl">
-                    {agent.fullName?.charAt(0) || agent.userName?.charAt(0)}
+                    {user.fullName?.charAt(0) || user.userName?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2">{agent.fullName || agent.userName}</h1>
-                  {agent.agentTitle && (
-                    <p className="text-lg text-muted-foreground mb-4">{agent.agentTitle}</p>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl font-bold">{user.fullName || user.userName}</h1>
+                    <Badge variant={isAgent ? "default" : "secondary"} className="text-sm">
+                      {isAgent ? (
+                        <>
+                          <Briefcase className="h-3 w-3 mr-1" />
+                          Agent
+                        </>
+                      ) : (
+                        <>
+                          <User className="h-3 w-3 mr-1" />
+                          Personal
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                  {isAgent && user.agentTitle && (
+                    <p className="text-lg text-muted-foreground mb-4">{user.agentTitle}</p>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {agent.companyName && (
+                    {isAgent && user.companyName && (
                       <div className="flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-muted-foreground" />
-                        <span>{agent.companyName}</span>
+                        <span>{user.companyName}</span>
                       </div>
                     )}
-                    {agent.address && (
+                    {user.address && (
                       <div className="flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-muted-foreground" />
-                        <span>{agent.address}</span>
+                        <span>{user.address}</span>
                       </div>
                     )}
-                    {agent.phone && (
+                    {user.phone && (
                       <div className="flex items-center gap-2">
                         <Phone className="h-5 w-5 text-muted-foreground" />
-                        <a href={`tel:${agent.phone}`} className="hover:text-primary">
-                          {agent.phone}
+                        <a href={`tel:${user.phone}`} className="hover:text-primary">
+                          {user.phone}
                         </a>
                       </div>
                     )}
-                    {agent.email && (
+                    {user.email && (
                       <div className="flex items-center gap-2">
                         <Mail className="h-5 w-5 text-muted-foreground" />
-                        <a href={`mailto:${agent.email}`} className="hover:text-primary">
-                          {agent.email}
+                        <a href={`mailto:${user.email}`} className="hover:text-primary">
+                          {user.email}
                         </a>
                       </div>
                     )}
-                    {agent.experience && (
+                    {isAgent && user.experience && (
                       <div className="flex items-center gap-2">
                         <Briefcase className="h-5 w-5 text-muted-foreground" />
-                        <span>{agent.experience} years of experience</span>
+                        <span>{user.experience} years of experience</span>
                       </div>
                     )}
-                    {agent.licenseNumber && (
+                    {isAgent && user.licenseNumber && (
                       <div className="flex items-center gap-2">
                         <Award className="h-5 w-5 text-muted-foreground" />
-                        <span>License: {agent.licenseNumber}</span>
+                        <span>License: {user.licenseNumber}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {agent.website && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={agent.website} target="_blank" rel="noopener noreferrer">
-                          <Globe className="h-4 w-4 mr-2" />
-                          Website
-                        </a>
-                      </Button>
-                    )}
-                    {agent.socialLinks?.facebook && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={agent.socialLinks.facebook} target="_blank" rel="noopener noreferrer">
-                          <Facebook className="h-4 w-4 mr-2" />
-                          Facebook
-                        </a>
-                      </Button>
-                    )}
-                    {agent.socialLinks?.linkedin && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={agent.socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
-                          <Linkedin className="h-4 w-4 mr-2" />
-                          LinkedIn
-                        </a>
-                      </Button>
-                    )}
-                    {agent.socialLinks?.twitter && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={agent.socialLinks.twitter} target="_blank" rel="noopener noreferrer">
-                          <Twitter className="h-4 w-4 mr-2" />
-                          Twitter
-                        </a>
-                      </Button>
-                    )}
-                  </div>
+                  {isAgent && (
+                    <div className="flex flex-wrap gap-2">
+                      {user.website && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={user.website} target="_blank" rel="noopener noreferrer">
+                            <Globe className="h-4 w-4 mr-2" />
+                            Website
+                          </a>
+                        </Button>
+                      )}
+                      {user.socialLinks?.facebook && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={user.socialLinks.facebook} target="_blank" rel="noopener noreferrer">
+                            <Facebook className="h-4 w-4 mr-2" />
+                            Facebook
+                          </a>
+                        </Button>
+                      )}
+                      {user.socialLinks?.linkedin && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={user.socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
+                            <Linkedin className="h-4 w-4 mr-2" />
+                            LinkedIn
+                          </a>
+                        </Button>
+                      )}
+                      {user.socialLinks?.twitter && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={user.socialLinks.twitter} target="_blank" rel="noopener noreferrer">
+                            <Twitter className="h-4 w-4 mr-2" />
+                            Twitter
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* About Section */}
-          {agent.bio && (
+          {isAgent && user.bio && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>About</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap">{agent.bio}</p>
+                <p className="whitespace-pre-wrap">{user.bio}</p>
               </CardContent>
             </Card>
           )}
 
           {/* Specializations */}
-          {agent.specializations && agent.specializations.length > 0 && (
+          {isAgent && user.specializations && user.specializations.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Specializations</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {agent.specializations.map((spec, idx) => (
+                  {user.specializations.map((spec, idx) => (
                     <Badge key={idx} variant="secondary">
                       {spec}
                     </Badge>
@@ -207,14 +226,14 @@ export default function AgentProfile() {
           )}
 
           {/* Areas Served */}
-          {agent.areasServed && agent.areasServed.length > 0 && (
+          {isAgent && user.areasServed && user.areasServed.length > 0 && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Areas Served</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {agent.areasServed.map((area, idx) => (
+                  {user.areasServed.map((area, idx) => (
                     <Badge key={idx} variant="outline">
                       <MapPin className="h-3 w-3 mr-1" />
                       {area}

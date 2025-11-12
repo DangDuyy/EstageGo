@@ -7,6 +7,7 @@ import Message from './pages/DashboardPage/Message'
 import MyProperty from './pages/DashboardPage/MyProperty'
 import Profile from './pages/DashboardPage/Profile'
 import Wishlist from './pages/DashboardPage/Wishlist'
+import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
 import HomePage from './pages/HomePage'
 import VerifyAccountPage from './pages/HomePage/verifyAccount'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -43,7 +44,7 @@ function App() {
       <Route path="/map" element={<MapPage />} />
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardPage />} />
-        <Route path="users" element={<Profile />} />
+        <Route path="users" element={<UserProfileRedirect />} />
         <Route path="account" element={<Profile />} />
         <Route path="messages" element={<Message />} />
         <Route path="posts">

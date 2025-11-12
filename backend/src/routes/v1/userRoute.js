@@ -34,6 +34,10 @@ Router.route('/agents')
 Router.route('/agents/:agentId')
   .get(userController.getAgentById)
 
+// Public user profile (for both agents and personal users)
+Router.route('/profile/:userId')
+  .get(userController.getUserProfileById)
+
 Router.route('/request-agent')
   .post(authMiddleware.isAuthorized, userController.requestAgentRole)
 
