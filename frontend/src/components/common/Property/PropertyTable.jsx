@@ -213,7 +213,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={row.original.ownerInfo.avatar} />
                         <AvatarFallback>
-                            {row.original.ownerInfo.fullName.charAt(0)}
+                            {row.original.ownerInfo.fullName?.charAt(0)}
                         </AvatarFallback>
                     </Avatar>
                     <div className="text-xs overflow-hidden">

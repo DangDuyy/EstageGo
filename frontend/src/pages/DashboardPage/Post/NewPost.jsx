@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ContentLayout } from "@/components/common/SidebarMenu/content-layout";
@@ -23,11 +23,12 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import MapComponent from "@/components/common/Map/map-component";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
 import TourLinkModal from "@/components/common/Upload/tour-link-modal";
 import MapContainer from "@/components/common/GoogleMap/MapContainer";
+import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
+import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
@@ -283,7 +284,7 @@ export default function AddPropertyWizard() {
 
 
   // ============ Sử dụng map =======================
-  const { loaded } = useMaps();
+  const { loaded } = useContext(MapsContext);
   const [center, setCenter] = useState({ lat: 10.762622, lng: 106.660172 });
   const [results, setResults] = useState([]);
 
@@ -291,7 +292,7 @@ export default function AddPropertyWizard() {
     if (!fullAddress || !window.google || !loaded) return;
 
     const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ address }, (results, status) => {
+    geocoder.geocode({ address: fullAddress }, (results, status) => {
       // if (status === "OK" && results[0]) {
       //   const location = results[0].geometry.location;
       //   // trả về lat và lng
@@ -299,17 +300,26 @@ export default function AddPropertyWizard() {
       //     lat: location.lat(),
       //     lng: location.lng(),
       //   });
-      // } 
+      // }
       if (status === "OK") {
-        setResults[results]
-        const loc = p.geometry.location;
+        const markers = results.map((r, index) => ({
+          id: index,  // hoặc r.place_id nếu có
+          lat: r.geometry.location.lat(),
+          lng: r.geometry.location.lng(),
+          address: r.formatted_address
+        }));
+
+        setResults(markers)
+        // const location = results[0].geometry.location;
+        const loc = results[0].geometry.location;
         setCenter({ lat: loc.lat(), lng: loc.lng() });
+        form.setValue('address.location.coordinates', [loc.lng(), loc.lat()])
       }
       else {
         console.error("Geocode failed: ", status);
       }
     });
-  }, [fullAddress, onResult]);
+  }, [fullAddress]);
 
   // ----- Render -----
   return (
@@ -584,11 +594,10 @@ export default function AddPropertyWizard() {
                     />
                   </div>
 
-                  <MapContainer center={center} zoom={13}>
-                    <MarkerLayer items={results} onMarkerClick={(it) => console.log(it)} />
-                  </MapContainer>
                   <div>
-                    <MapComponent form={form} address={fullAddress} />
+                    <MapContainer center={center} zoom={13}>
+                      <MarkerLayer items={results} onMarkerClick={(it) => console.log(it)} />
+                    </MapContainer>
                   </div>
                 </CardContent>
               </Card>

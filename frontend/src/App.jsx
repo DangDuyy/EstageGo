@@ -43,7 +43,7 @@ function App() {
         <Route path="posts">
           <Route index element={<Post />} />
           <Route path="new" element={
-            <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries={["places"]}>
+            <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries = {["places"]}>
               <NewPost />
             </MapProvider>
           } />

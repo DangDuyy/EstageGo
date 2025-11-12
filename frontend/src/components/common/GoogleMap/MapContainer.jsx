@@ -3,7 +3,7 @@ import React, { useContext, useRef } from "react";
 import { GoogleMap } from "@react-google-maps/api";
 import { MapsContext } from "./MapProvider";
 
-export default function MapContainer({ center, zoom = 12, onLoad, style = {height: "100%", width:"100%"}, children }) {
+export default function MapContainer({ center, zoom = 12, onLoad, style = {height: "400px", width:"100%"}, children }) {
   const { loaded } = useContext(MapsContext)
   const mapRef = useRef(null);
 
