@@ -2,6 +2,7 @@ import { toast } from 'react-toastify'
 import authorizeAxiosInstance from '@/utils/authorizeAxios'
 import { API_ROOT } from '@/utils/constants'
 import axios from 'axios'
+import { polygon } from 'leaflet'
 
 export const sendVerificationCodeAPI = async (data) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/send-code`, data)
@@ -140,6 +141,11 @@ export const searchPropertiesAPI = async (filters) => {
   
   const queryString = params.toString()
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties${queryString ? '?' + queryString : ''}`)
+  return response.data
+}
+
+export const getPropertiesWithinPolygon = async (polygon) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/in`, { polygon })
   return response.data
 }
 

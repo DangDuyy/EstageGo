@@ -31,7 +31,11 @@ function App() {
       <Route path="/properties/:propertyId" element={<PropertyPage />} />
 
       <Route path="/listing/grid" element={<PropertyPages />} />
-      <Route path="/listing/map" element={<PropertiesMap />} />
+      <Route path="/listing/map" element={
+        <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries={["places"]}>
+          <PropertiesMap />
+        </MapProvider>
+      } />
 
       <Route path="/ai/chatbot" element={<ChatBot />} />
 
@@ -43,7 +47,7 @@ function App() {
         <Route path="posts">
           <Route index element={<Post />} />
           <Route path="new" element={
-            <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries = {["places"]}>
+            <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries={["places"]}>
               <NewPost />
             </MapProvider>
           } />

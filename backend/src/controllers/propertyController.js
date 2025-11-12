@@ -138,9 +138,30 @@ const getPropertyDetails = async (req, res, next) => {
         next(error)
     }
 }
+
+const getPropertiesWithinPolygon = async (req, res, next) => {
+    try {
+        const { polygon } = req.body;
+
+        console.log(polygon)
+
+        // Tạo GeoJSON polygon
+        const polygonGeoJSON = {
+            type: "Polygon",
+            coordinates: [polygon], // Mảng 2D: [[lng, lat], ...]
+        };
+
+        const result = await propertyService.getPropertiesWithinPolygon(polygonGeoJSON)
+
+        return res.status(StatusCodes.OK).json(result)
+    } catch (error) {
+        next(error)
+    }
+}
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
     getProperties,
-    getPropertyDetails
+    getPropertyDetails,
+    getPropertiesWithinPolygon
 }

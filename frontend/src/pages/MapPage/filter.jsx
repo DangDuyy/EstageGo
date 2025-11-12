@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 
 function Filter() {
     const navigate = useNavigate();
@@ -65,7 +66,7 @@ function Filter() {
 
                     {/* Search Keyword Input */}
                     <div className="space-y-2 flex items-center flex-1 px-3 py-2 min-w-0">
-                        <div className="relative w-full">
+                        {/* <div className="relative w-full">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4" />
                             <Input
                                 type="text"
@@ -74,7 +75,8 @@ function Filter() {
                                 onChange={(e) => setSearchKeyword(e.target.value)}
                                 className="h-12 pl-12 pt-3 pb-3 rounded-full"
                             />
-                        </div>
+                        </div> */}
+                        <CustomSearchBox onPlaceSelected={(p) => console.log(p)}/>
                     </div>
 
                     {/* Divider */}

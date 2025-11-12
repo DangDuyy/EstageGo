@@ -267,10 +267,28 @@ const getPropertyDetails = async (propertyId) => {
   }
 }
 
+const getPropertiesWithinPolygon = async (polygonGeoJSON ) => {
+  if (!polygonGeoJSON || polygonGeoJSON.type !== "Polygon") {
+    throw new Error("Invalid GeoJSON polygon");
+  }
+
+  // Spatial query MongoDB
+  const properties = await propertyModel.find({
+    "address.location": {
+      $geoWithin: {
+        $geometry: polygonGeoJSON
+      }
+    }
+  }).lean();
+
+  return properties;
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
     getPropertyById,
     getProperties,
-    getPropertyDetails
+    getPropertyDetails,
+    getPropertiesWithinPolygon
 }

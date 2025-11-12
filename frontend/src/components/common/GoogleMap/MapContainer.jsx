@@ -1,11 +1,29 @@
 // src/maps/components/MapContainer.jsx
-import React, { useContext, useRef } from "react";
+import React, { useContext } from "react";
 import { GoogleMap } from "@react-google-maps/api";
 import { MapsContext } from "./MapProvider";
 
-export default function MapContainer({ center, zoom = 12, onLoad, style = {height: "400px", width:"100%"}, children }) {
-  const { loaded } = useContext(MapsContext)
-  const mapRef = useRef(null);
+const centerVN = { lat: 16.0, lng: 108.2 };
+
+const mapOptions = {
+  styles: [
+    {
+      featureType: "poi",      // tất cả điểm quan tâm
+      elementType: "all",
+      stylers: [{ visibility: "off" }] // tắt hiển thị
+    }
+  ],
+  disableDefaultUI: false, // giữ UI mặc định nếu muốn
+};
+
+export default function MapContainer({
+  center = centerVN,
+  zoom = 5,
+  onLoad,
+  style = { height: "600px", width: "100%" },
+  children,
+}) {
+  const { loaded } = useContext(MapsContext);
 
   if (!loaded) return <div>Loading map...</div>;
 
@@ -14,10 +32,8 @@ export default function MapContainer({ center, zoom = 12, onLoad, style = {heigh
       mapContainerStyle={style}
       center={center}
       zoom={zoom}
-      onLoad={(map) => {
-        mapRef.current = map;
-        if (typeof onLoad === "function") onLoad(map);
-      }}
+      options={mapOptions}
+      onLoad={onLoad}
     >
       {children}
     </GoogleMap>
