@@ -22,16 +22,70 @@ export default function Message() {
   const [messageText, setMessageText] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef(null)
+  const messagesStartRef = useRef(null)
+  const scrollAreaRef = useRef(null)
   const typingTimeoutRef = useRef(null)
+  const previousScrollHeight = useRef(0)
 
-  const { messages, loading: messagesLoading, sending, typingUsers, sendMessage } = useChat(
-    selectedConversation?._id
-  )
+  const { 
+    messages, 
+    loading: messagesLoading, 
+    loadingMore,
+    sending, 
+    typingUsers, 
+    pagination,
+    sendMessage,
+    loadMoreMessages 
+  } = useChat(selectedConversation?._id)
 
-  // Auto scroll to bottom when new messages arrive
+  // Auto scroll to bottom when new messages arrive (only if near bottom)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+    if (!scrollContainer) return
+
+    const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 100
+
+    if (isNearBottom || messages.length === 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (!messagesStartRef.current || !pagination.hasMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+          if (scrollContainer) {
+            previousScrollHeight.current = scrollContainer.scrollHeight
+          }
+          loadMoreMessages()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(messagesStartRef.current)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [pagination.hasMore, loadingMore, loadMoreMessages])
+
+  // Maintain scroll position after loading more messages
+  useEffect(() => {
+    if (!loadingMore && previousScrollHeight.current > 0) {
+      const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        const newScrollHeight = scrollContainer.scrollHeight
+        const scrollDiff = newScrollHeight - previousScrollHeight.current
+        scrollContainer.scrollTop = scrollDiff
+        previousScrollHeight.current = 0
+      }
+    }
+  }, [messages, loadingMore])
 
   // Auto select conversation from navigation state
   useEffect(() => {
@@ -101,7 +155,7 @@ export default function Message() {
     <ContentLayout title="Messages">
       <div className="h-[calc(100vh-200px)] flex gap-4">
         {/* Conversations List */}
-        <Card className="w-80 flex flex-col">
+        <Card className="w-80 flex flex-col h-full">
           <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -165,7 +219,7 @@ export default function Message() {
         </Card>
 
         {/* Chat Area */}
-        <Card className="flex-1 flex flex-col">
+        <Card className="flex-1 flex flex-col h-full overflow-hidden">
           {!selectedConversation ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               Select a conversation to start messaging
@@ -195,7 +249,8 @@ export default function Message() {
               </div>
 
               {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4">
+              <div className="flex-1 overflow-hidden min-h-0">
+                <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
                 {messagesLoading ? (
                   <div className="flex justify-center items-center h-40">
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -206,6 +261,21 @@ export default function Message() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Loading more indicator */}
+                    <div ref={messagesStartRef} className="flex justify-center py-2">
+                      {loadingMore && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading older messages...</span>
+                        </div>
+                      )}
+                      {!pagination.hasMore && messages.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Beginning of conversation
+                        </span>
+                      )}
+                    </div>
+
                     {messages.map((msg) => {
                       const isOwn = msg.senderId._id === currentUser?._id
                       return (
@@ -241,7 +311,8 @@ export default function Message() {
                     <div ref={messagesEndRef} />
                   </div>
                 )}
-              </ScrollArea>
+                </ScrollArea>
+              </div>
 
               {/* Message Input */}
               <form onSubmit={handleSendMessage} className="p-4 border-t">

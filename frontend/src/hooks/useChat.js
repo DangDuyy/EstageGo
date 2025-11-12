@@ -6,17 +6,28 @@ import { toast } from 'react-toastify'
 export const useChat = (conversationId) => {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [sending, setSending] = useState(false)
   const [typingUsers, setTypingUsers] = useState([])
+  const [pagination, setPagination] = useState({
+    page: 1,
+    hasMore: false,
+    total: 0
+  })
 
-  // Load messages
+  // Load initial messages
   const loadMessages = useCallback(async () => {
     if (!conversationId) return
 
     try {
       setLoading(true)
-      const data = await getMessagesAPI(conversationId)
+      const data = await getMessagesAPI(conversationId, 1, 50)
       setMessages(data.messages || [])
+      setPagination({
+        page: 1,
+        hasMore: data.pagination.page < data.pagination.totalPages,
+        total: data.pagination.total
+      })
     } catch (error) {
       console.error('Error loading messages:', error)
       toast.error('Failed to load messages')
@@ -24,6 +35,30 @@ export const useChat = (conversationId) => {
       setLoading(false)
     }
   }, [conversationId])
+
+  // Load more older messages
+  const loadMoreMessages = useCallback(async () => {
+    if (!conversationId || loadingMore || !pagination.hasMore) return
+
+    try {
+      setLoadingMore(true)
+      const nextPage = pagination.page + 1
+      const data = await getMessagesAPI(conversationId, nextPage, 50)
+      
+      // Prepend older messages to the beginning
+      setMessages((prev) => [...data.messages, ...prev])
+      setPagination({
+        page: nextPage,
+        hasMore: data.pagination.page < data.pagination.totalPages,
+        total: data.pagination.total
+      })
+    } catch (error) {
+      console.error('Error loading more messages:', error)
+      toast.error('Failed to load more messages')
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [conversationId, pagination.page, pagination.hasMore, loadingMore])
 
   // Send message
   const sendMessage = useCallback(async (text) => {
@@ -129,9 +164,12 @@ export const useChat = (conversationId) => {
   return {
     messages,
     loading,
+    loadingMore,
     sending,
     typingUsers,
+    pagination,
     sendMessage,
-    loadMessages
+    loadMessages,
+    loadMoreMessages
   }
 }
