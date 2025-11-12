@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import authorizeAxiosInstance from '@/utils/authorizeAxios'
 import { API_ROOT } from '@/utils/constants'
+import { connectSocket, disconnectSocket } from '@/lib/socket'
 
 const initialState = {
   currentUser: null,
@@ -55,13 +56,43 @@ export const userSlice = createSlice({
       // Register - không lưu user
       .addCase(registerUserAPI.fulfilled, () => {
       })
-      // Login - lưu user vào state
+      // Login - lưu user vào state và kết nối socket
       .addCase(loginUserAPI.fulfilled, (state, action) => {
         state.currentUser = action.payload
+        
+        // Save tokens to localStorage as backup (cookies might not work in some browsers)
+        if (action.payload.accessToken) {
+          localStorage.setItem('accessToken', action.payload.accessToken)
+        }
+        if (action.payload.refreshToken) {
+          localStorage.setItem('refreshToken', action.payload.refreshToken)
+        }
+        
+        // Try to get token from cookies first, fallback to localStorage
+        const getCookie = (name) => {
+          const value = `; ${document.cookie}`
+          const parts = value.split(`; ${name}=`)
+          if (parts.length === 2) return parts.pop().split(';').shift()
+        }
+        
+        let accessToken = getCookie('accessToken')
+        if (!accessToken) {
+          accessToken = localStorage.getItem('accessToken')
+        }
+        
+        if (accessToken) {
+          connectSocket(accessToken)
+        }
       })
-      // Logout - xóa user
+      // Logout - xóa user và ngắt socket
       .addCase(logoutUserAPI.fulfilled, (state) => {
         state.currentUser = null
+        
+        // Clear tokens from localStorage
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        
+        disconnectSocket()
       })
       // Verify - không lưu user, chỉ verify
       .addCase(verifyUserAPI.fulfilled, () => {

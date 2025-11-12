@@ -18,6 +18,23 @@ authorizeAxiosInstance.defaults.withCredentials = true
 
 authorizeAxiosInstance.interceptors.request.use((config) => {
   interceptorLoadingElements(true)
+  
+  // If no cookie, try to set Authorization header from localStorage
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) return parts.pop().split(';').shift()
+  }
+  
+  const cookieToken = getCookie('accessToken')
+  if (!cookieToken) {
+    // Fallback to localStorage
+    const localToken = localStorage.getItem('accessToken')
+    if (localToken) {
+      config.headers.Authorization = `Bearer ${localToken}`
+    }
+  }
+  
   return config
 }, (error) => {
   return Promise.reject(error)
