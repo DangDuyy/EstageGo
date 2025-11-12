@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { MapPin, Bed, Bath, Ruler, Star, Play, Phone, Mail, Share, Heart, GitCompare, Printer, House, SlidersHorizontal, Sofa, Hammer } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Star, Play, Phone, Mail, Share, Heart, GitCompare, Printer, House, SlidersHorizontal, Sofa, Hammer, MessageCircle } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -16,15 +16,18 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPropertyDetailsAPI,
   selectCurrentActiveProperty
 } from "@/redux/activeProperty/activePropertySlice";
+import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Textarea } from "@/components/ui/textarea";
 import { capitalizeFirstLetter } from "@/utils/formatters";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { createOrGetConversationAPI } from "@/apis";
+import { toast } from "react-toastify";
 
 /* ============ Small utils ============ */
 function PriceTag({ value, currency, unit }) {
@@ -150,10 +153,43 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
 /* ============ Page ============ */
 export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { propertyId } = useParams();
   const property = useSelector(selectCurrentActiveProperty);
+  const currentUser = useSelector(selectCurrentUser);
   const { toggleItem, isInWishlist } = useWishlist()
   const inWishlist = isInWishlist(propertyId)
+  const [startingChat, setStartingChat] = React.useState(false)
+
+  // Handle start chat with owner
+  const handleStartChat = async () => {
+    if (!currentUser) {
+      toast.error('Please login to send messages')
+      return
+    }
+
+    const ownerId = property?.ownerInfo?._id
+    if (!ownerId) {
+      toast.error('Owner information not available')
+      return
+    }
+
+    if (currentUser._id === ownerId) {
+      toast.info('This is your property')
+      return
+    }
+
+    try {
+      setStartingChat(true)
+      const conversation = await createOrGetConversationAPI(ownerId)
+      navigate('/dashboard/messages', { state: { conversationId: conversation._id } })
+    } catch (error) {
+      console.error('Error starting chat:', error)
+      toast.error('Failed to start conversation')
+    } finally {
+      setStartingChat(false)
+    }
+  }
 
   // loan calculator
   const [loan, setLoan] = React.useState({ total: 10000, down: 3000, months: 12, rate: 5 });
@@ -478,31 +514,54 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                     const owner = property.ownerInfo || {};
                     const ownerName = owner.fullName || "Seller name";
                     const ownerAvatar = owner.avatar || null;
+                    const isOwnProperty = currentUser?._id === owner._id;
 
                     return (
-                      <div className="flex flex-row items-center space-y-2 space-x-6">
-                        <Avatar className="h-20 w-20">
-                          {ownerAvatar ? (
-                            <AvatarImage src={ownerAvatar} alt={ownerName} />
-                          ) : (
-                            <AvatarFallback>{ownerName.slice(0, 1)}</AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-lg">{ownerName}</div>
-                          {owner.phone && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-4 w-4" />
-                              <span>{owner.phone}</span>
-                            </div>
-                          )}
-                          {owner.email && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Mail className="h-4 w-4" />
-                              <span>{owner.email}</span>
-                            </div>
-                          )}
+                      <div className="space-y-4">
+                        <div className="flex flex-row items-center space-y-2 space-x-6">
+                          <Avatar className="h-20 w-20">
+                            {ownerAvatar ? (
+                              <AvatarImage src={ownerAvatar} alt={ownerName} />
+                            ) : (
+                              <AvatarFallback>{ownerName.slice(0, 1)}</AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div>
+                            <div className="font-medium text-lg">{ownerName}</div>
+                            {owner.phone && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="h-4 w-4" />
+                                <span>{owner.phone}</span>
+                              </div>
+                            )}
+                            {owner.email && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Mail className="h-4 w-4" />
+                                <span>{owner.email}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        {!isOwnProperty && currentUser && (
+                          <Button 
+                            variant="default" 
+                            className="w-full"
+                            onClick={handleStartChat}
+                            disabled={startingChat}
+                          >
+                            {startingChat ? (
+                              <>
+                                <span className="animate-spin mr-2">⏳</span>
+                                Starting conversation...
+                              </>
+                            ) : (
+                              <>
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                Message Owner
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     );
                   })()}

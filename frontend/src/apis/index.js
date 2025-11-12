@@ -223,3 +223,42 @@ export const removeAgentRoleAPI = async () => {
   toast.success('Agent role removed successfully!')
   return response.data
 }
+
+// ========== CONVERSATION APIs ==========
+
+// Get all conversations for current user
+export const getConversationsAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/conversations`)
+  return response.data
+}
+
+// Create or get conversation with another user
+export const createOrGetConversationAPI = async (otherUserId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/conversations`, { otherUserId })
+  return response.data
+}
+
+// Get conversation by ID
+export const getConversationByIdAPI = async (conversationId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/conversations/${conversationId}`)
+  return response.data
+}
+
+// ========== MESSAGE APIs ==========
+
+// Send message
+export const sendMessageAPI = async (conversationId, text) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages`, {
+    conversationId,
+    text
+  })
+  return response.data
+}
+
+// Get messages in conversation
+export const getMessagesAPI = async (conversationId, page = 1, limit = 50) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/messages/${conversationId}`, {
+    params: { page, limit }
+  })
+  return response.data
+}

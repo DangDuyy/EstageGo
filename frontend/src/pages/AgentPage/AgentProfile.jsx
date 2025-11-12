@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,20 +7,26 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { 
   MapPin, Building2, Phone, Mail, Globe, 
-  Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User
+  Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User, MessageCircle
 } from 'lucide-react'
-import { searchPropertiesAPI } from '@/apis'
+import { searchPropertiesAPI, createOrGetConversationAPI } from '@/apis'
 import NavBar from '@/components/common/NavBar'
 import { FooterBar } from '@/components/common/FooterBar'
 import PropertyCard from '@/components/common/Property/FeatureCard/PropertyCard'
 import authorizeAxiosInstance from '@/utils/authorizeAxios'
 import { API_ROOT } from '@/utils/constants'
+import { useSelector } from 'react-redux'
+import { selectCurrentUser } from '@/redux/user/userSlice'
+import { toast } from 'react-toastify'
 
 export default function AgentProfile() {
   const { agentId } = useParams()
+  const navigate = useNavigate()
+  const currentUser = useSelector(selectCurrentUser)
   const [user, setUser] = useState(null)
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
+  const [startingChat, setStartingChat] = useState(false)
 
   useEffect(() => {
     fetchUserData()
@@ -73,6 +79,31 @@ export default function AgentProfile() {
   }
 
   const isAgent = user.role === 'agent'
+  const isOwnProfile = currentUser?._id === user._id
+
+  // Handle start chat
+  const handleStartChat = async () => {
+    if (!currentUser) {
+      toast.error('Please login to send messages')
+      return
+    }
+
+    if (isOwnProfile) {
+      toast.info('You cannot message yourself')
+      return
+    }
+
+    try {
+      setStartingChat(true)
+      const conversation = await createOrGetConversationAPI(user._id)
+      navigate('/dashboard/messages', { state: { conversationId: conversation._id } })
+    } catch (error) {
+      console.error('Error starting chat:', error)
+      toast.error('Failed to start conversation')
+    } finally {
+      setStartingChat(false)
+    }
+  }
 
   return (
     <>
@@ -91,7 +122,7 @@ export default function AgentProfile() {
                 </Avatar>
 
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h1 className="text-3xl font-bold">{user.fullName || user.userName}</h1>
                     <Badge variant={isAgent ? "default" : "secondary"} className="text-sm">
                       {isAgent ? (
@@ -106,6 +137,21 @@ export default function AgentProfile() {
                         </>
                       )}
                     </Badge>
+                    {!isOwnProfile && currentUser && (
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={handleStartChat}
+                        disabled={startingChat}
+                      >
+                        {startingChat ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                        )}
+                        Message
+                      </Button>
+                    )}
                   </div>
                   {isAgent && user.agentTitle && (
                     <p className="text-lg text-muted-foreground mb-4">{user.agentTitle}</p>
