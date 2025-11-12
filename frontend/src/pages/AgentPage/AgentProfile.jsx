@@ -7,34 +7,42 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { 
   MapPin, Building2, Phone, Mail, Globe, 
-  Facebook, Linkedin, Twitter, Briefcase, Award, Loader2
+  Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User
 } from 'lucide-react'
-import { getAgentByIdAPI, searchPropertiesAPI } from '@/apis'
+import { searchPropertiesAPI } from '@/apis'
 import NavBar from '@/components/common/NavBar'
 import { FooterBar } from '@/components/common/FooterBar'
 import PropertyCard from '@/components/common/Property/FeatureCard/PropertyCard'
+import authorizeAxiosInstance from '@/utils/authorizeAxios'
+import { API_ROOT } from '@/utils/constants'
 
 export default function AgentProfile() {
   const { agentId } = useParams()
-  const [agent, setAgent] = useState(null)
+  const [user, setUser] = useState(null)
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchAgentData()
+    fetchUserData()
   }, [agentId])
 
-  const fetchAgentData = async () => {
+  const fetchUserData = async () => {
     try {
       setLoading(true)
-      const agentData = await getAgentByIdAPI(agentId)
-      setAgent(agentData)
+      // Fetch any user (agent or personal)
+      const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/profile/${agentId}`)
+      setUser(response.data)
 
-      // Fetch agent's properties
-      const propertiesData = await searchPropertiesAPI({ owner: agentId, page: 1, itemsPerPage: 10 })
-      setProperties(propertiesData.properties || [])
+      // Fetch user's properties
+      try {
+        const propertiesData = await searchPropertiesAPI({ owner: agentId, page: 1, itemsPerPage: 10 })
+        setProperties(propertiesData?.properties || propertiesData?.data || [])
+      } catch (propError) {
+        console.error('Error fetching user properties:', propError)
+        setProperties([])
+      }
     } catch (error) {
-      console.error('Error fetching agent data:', error)
+      console.error('Error fetching user data:', error)
     } finally {
       setLoading(false)
     }
@@ -223,14 +231,14 @@ export default function AgentProfile() {
               <CardTitle>Property Listings</CardTitle>
             </CardHeader>
             <CardContent>
-              {properties.length === 0 ? (
+              {!properties || properties.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   No properties listed yet
                 </p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {properties.map((property) => (
-                    <PropertyCard key={property._id} property={property} />
+                  {properties.filter(p => p && p._id).map((property) => (
+                    <PropertyCard key={property._id} item={property} />
                   ))}
                 </div>
               )}
