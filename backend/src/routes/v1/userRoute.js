@@ -27,4 +27,21 @@ Router.route('/profile')
 Router.route('/change-password')
   .put(authMiddleware.isAuthorized, userController.changePassword)
 
+// Agent routes
+Router.route('/agents')
+  .get(userController.getAllAgents)
+
+Router.route('/agents/:agentId')
+  .get(userController.getAgentById)
+
+// Public user profile (for both agents and personal users)
+Router.route('/profile/:userId')
+  .get(userController.getUserProfileById)
+
+Router.route('/request-agent')
+  .post(authMiddleware.isAuthorized, userController.requestAgentRole)
+
+Router.route('/remove-agent')
+  .delete(authMiddleware.isAuthorized, userController.removeAgentRole)
+
 export const userRoutes = Router

@@ -4,10 +4,19 @@ const { JwtProvider } = require("~/providers/JwtProvider")
 const { default: ApiError } = require("~/utils/ApiError")
 
 const isAuthorized = async (req, res, next) => {
-  const clientAccessToken = req.cookies?.accessToken
+  // Try to get token from cookies first, then from Authorization header
+  let clientAccessToken = req.cookies?.accessToken
   
   if (!clientAccessToken) {
-    next(new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Unthorized: {Token not found}'))
+    // Fallback to Authorization header (for localStorage usage)
+    const authHeader = req.headers.authorization
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      clientAccessToken = authHeader.substring(7)
+    }
+  }
+  
+  if (!clientAccessToken) {
+    next(new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Unauthorized: {Token not found}'))
     return
   }
 

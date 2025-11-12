@@ -196,3 +196,75 @@ export const changePasswordAPI = async (passwordData) => {
   toast.success('Password changed successfully!')
   return response.data
 }
+
+// ========== AGENT APIs ==========
+
+// Get all agents with search and pagination
+export const getAllAgentsAPI = async (searchQuery = '', page = 1, limit = 12) => {
+  const params = new URLSearchParams()
+  if (searchQuery) params.set('search', searchQuery)
+  params.set('page', page)
+  params.set('limit', limit)
+  
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/agents?${params.toString()}`)
+  return response.data
+}
+
+// Get agent by ID
+export const getAgentByIdAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/agents/${agentId}`)
+  return response.data
+}
+
+// Request to become an agent
+export const requestAgentRoleAPI = async () => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/request-agent`)
+  toast.success('Agent request submitted successfully!')
+  return response.data
+}
+
+// Remove agent role and return to user
+export const removeAgentRoleAPI = async () => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/users/remove-agent`)
+  toast.success('Agent role removed successfully!')
+  return response.data
+}
+
+// ========== CONVERSATION APIs ==========
+
+// Get all conversations for current user
+export const getConversationsAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/conversations`)
+  return response.data
+}
+
+// Create or get conversation with another user
+export const createOrGetConversationAPI = async (otherUserId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/conversations`, { otherUserId })
+  return response.data
+}
+
+// Get conversation by ID
+export const getConversationByIdAPI = async (conversationId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/conversations/${conversationId}`)
+  return response.data
+}
+
+// ========== MESSAGE APIs ==========
+
+// Send message
+export const sendMessageAPI = async (conversationId, text) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages`, {
+    conversationId,
+    text
+  })
+  return response.data
+}
+
+// Get messages in conversation
+export const getMessagesAPI = async (conversationId, page = 1, limit = 50) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/messages/${conversationId}`, {
+    params: { page, limit }
+  })
+  return response.data
+}

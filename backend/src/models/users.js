@@ -75,6 +75,56 @@ const userSchema = new mongoose.Schema({
     },
     verifyToken: {
         type: String
+    },
+    // Agent-specific fields
+    companyName: {
+        type: String,
+        default: null,
+        trim: true,
+        maxlength: 200
+    },
+    agentTitle: {
+        type: String,
+        default: null,
+        trim: true,
+        maxlength: 200
+    },
+    bio: {
+        type: String,
+        default: null,
+        maxlength: 2000
+    },
+    specializations: [{
+        type: String,
+        trim: true
+    }],
+    areasServed: [{
+        type: String,
+        trim: true
+    }],
+    experience: {
+        type: Number,
+        default: null,
+        min: 0
+    },
+    licenseNumber: {
+        type: String,
+        default: null,
+        trim: true
+    },
+    website: {
+        type: String,
+        default: null
+    },
+    socialLinks: {
+        facebook: { type: String, default: null },
+        linkedin: { type: String, default: null },
+        twitter: { type: String, default: null }
+    },
+    agentRequestStatus: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none'
     }
 }, { timestamps: true }); // Tự động tạo createdAt và updatedAt fields
 

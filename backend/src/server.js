@@ -1,4 +1,5 @@
 import express from 'express'
+import http from 'http'
 import { APIs_V1 } from './routes/v1'
 import { env } from './config/environment'
 import exitHook from 'async-exit-hook'
@@ -7,10 +8,21 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { errorHandlingMiddleware } from '~/middlewares/exampleMiddleware'
 import mongoose from 'mongoose'
+import { initSocket } from './sockets'
 
 
 const START_SERVER = () => {
-  const app = express ()
+  const app = express()
+  const server = http.createServer(app)
+
+  // Initialize Socket.IO
+  const io = initSocket(server)
+
+  // Make io accessible in routes
+  app.use((req, res, next) => {
+    req.io = io
+    next()
+  })
 
   app.use((req,res,next) => {
     res.set('Cache-Control', 'no-store')
@@ -29,14 +41,15 @@ const START_SERVER = () => {
 
 
   if (env.BUILD_MODE === 'production') {
-    app.listen(process.env.PORT, () => {
+    server.listen(process.env.PORT, () => {
       console.log(`3. Production: Hello ${env.AUTHOR}, I am running at Port: ${ process.env.PORT }/`)
     })
   }
   else
   {
-    app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
+    server.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
       console.log(`3. LocalDev: Hello ${env.AUTHOR}, I am running at http://${ env.LOCAL_DEV_APP_HOST }:${ env.LOCAL_DEV_APP_PORT }/`)
+      console.log('   Socket.IO is ready for realtime chat')
     })
   }
 
