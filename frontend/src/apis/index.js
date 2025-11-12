@@ -190,3 +190,36 @@ export const changePasswordAPI = async (passwordData) => {
   toast.success('Password changed successfully!')
   return response.data
 }
+
+// ========== AGENT APIs ==========
+
+// Get all agents with search and pagination
+export const getAllAgentsAPI = async (searchQuery = '', page = 1, limit = 12) => {
+  const params = new URLSearchParams()
+  if (searchQuery) params.set('search', searchQuery)
+  params.set('page', page)
+  params.set('limit', limit)
+  
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/agents?${params.toString()}`)
+  return response.data
+}
+
+// Get agent by ID
+export const getAgentByIdAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/agents/${agentId}`)
+  return response.data
+}
+
+// Request to become an agent
+export const requestAgentRoleAPI = async () => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/request-agent`)
+  toast.success('Agent request submitted successfully!')
+  return response.data
+}
+
+// Remove agent role and return to user
+export const removeAgentRoleAPI = async () => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/users/remove-agent`)
+  toast.success('Agent role removed successfully!')
+  return response.data
+}

@@ -128,6 +128,50 @@ const changePassword = async (req, res, next) => {
   }
 }
 
+const requestAgentRole = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.requestAgentRole(userId)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const removeAgentRole = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.removeAgentRole(userId)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const getAllAgents = async (req, res, next) => {
+  try {
+    const { search = '', page = 1, limit = 12 } = req.query
+    const result = await userService.getAllAgents(search, parseInt(page), parseInt(limit))
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const getAgentById = async (req, res, next) => {
+  try {
+    const { agentId } = req.params
+    const result = await userService.getAgentById(agentId)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const userController = {
   createNew,
   login,
@@ -138,4 +182,8 @@ export const userController = {
   verifyCode,
   updateProfile,
   changePassword,
+  requestAgentRole,
+  removeAgentRole,
+  getAllAgents,
+  getAgentById
 }

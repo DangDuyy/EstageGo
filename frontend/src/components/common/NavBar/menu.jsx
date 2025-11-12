@@ -30,6 +30,7 @@ const MENU = [
   },
 
   { label: "Properties", to: "/properties" },
+  { label: "Agents", to: "/agents" },
   { label: "Pages", to: "/pages" },
   { label: "Blog", to: "/blog" },
   { label: "Dashboard", to: "/dashboard" },

@@ -193,11 +193,137 @@ const changePassword = async (userId, oldPassword, newPassword) => {
   }
 }
 
+const requestAgentRole = async (userId) => {
+  try {
+    const user = await userModel.findById(userId)
+    
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    if (user.role === 'agent') {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'You are already an agent')
+    }
+
+    if (user.agentRequestStatus === 'pending') {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Your agent request is already pending')
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { agentRequestStatus: 'pending' },
+      { new: true }
+    )
+
+    return pickUser(updatedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
+const removeAgentRole = async (userId) => {
+  try {
+    const user = await userModel.findById(userId)
+    
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    if (user.role !== 'agent') {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'You are not an agent')
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { 
+        role: 'user',
+        agentRequestStatus: 'none',
+        // Clear agent-specific fields
+        companyName: null,
+        agentTitle: null,
+        bio: null,
+        specializations: [],
+        areasServed: [],
+        experience: null,
+        licenseNumber: null,
+        website: null,
+        socialLinks: { facebook: null, linkedin: null, twitter: null }
+      },
+      { new: true }
+    )
+
+    return pickUser(updatedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
+const getAllAgents = async (searchQuery = '', page = 1, limit = 12) => {
+  try {
+    const skip = (page - 1) * limit
+    
+    const query = {
+      role: 'agent',
+      isActive: true
+    }
+
+    if (searchQuery) {
+      query.$or = [
+        { fullName: { $regex: searchQuery, $options: 'i' } },
+        { userName: { $regex: searchQuery, $options: 'i' } },
+        { companyName: { $regex: searchQuery, $options: 'i' } },
+        { areasServed: { $regex: searchQuery, $options: 'i' } }
+      ]
+    }
+
+    const agents = await userModel
+      .find(query)
+      .select('-password -verifyToken')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    const total = await userModel.countDocuments(query)
+
+    return {
+      agents: agents.map(agent => pickUser(agent)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
+const getAgentById = async (agentId) => {
+  try {
+    const agent = await userModel
+      .findOne({ _id: agentId, role: 'agent', isActive: true })
+      .select('-password -verifyToken')
+
+    if (!agent) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Agent not found')
+    }
+
+    return pickUser(agent)
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
   login,
   refreshToken,
   updateProfile,
-  changePassword
+  changePassword,
+  requestAgentRole,
+  removeAgentRole,
+  getAllAgents,
+  getAgentById
 }
