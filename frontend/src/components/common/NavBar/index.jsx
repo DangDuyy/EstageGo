@@ -3,7 +3,7 @@ import { Logo } from "./logo";
 import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
-import { Bell, Folders, Heart, LayoutGrid, LogOut, User } from "lucide-react";
+import { Bell, Folders, Heart, LayoutGrid, LogOut, User, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -143,6 +143,14 @@ const NavBar = ({ hideLogo = false }) => {
                             Account
                           </Link>
                         </DropdownMenuItem>
+                        {currentUser?.role === 'admin' && (
+                          <DropdownMenuItem className="hover:cursor-pointer" asChild>
+                            <Link to="/admin/dashboard" className="flex items-center">
+                              <ShieldCheck className="w-4 h-4 mr-3 text-muted-foreground" />
+                              Admin
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 

@@ -205,7 +205,11 @@ export default function Profile() {
       <div className="w-full border-2 rounded-2xl flex flex-col gap-5 p-5">
         <p className="font-semibold text-xl">Agent Account</p>
         
-        {user?.role === 'agent' ? (
+        {user?.role === 'admin' ? (
+          <p className='border-1 bg-[#d4edda] text-[#155724] p-4 rounded-2xl'>
+            You are an <strong>administrator</strong> with full system access. You can manage all properties, users, and agent requests through the admin dashboard.
+          </p>
+        ) : user?.role === 'agent' ? (
           <>
             <p className='border-1 bg-[#fff3cd] text-black p-4 rounded-2xl'>
               Your current account type is set to <strong>agent</strong>. If you want to remove your agent account and return to normal account, you must click the button below.

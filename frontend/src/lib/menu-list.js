@@ -37,16 +37,6 @@ export function getMenuList(pathname, isAdminPanel = false) {
             submenus: []
           }
         ]
-      },
-      {
-        groupLabel: "Settings",
-        menus: [
-          {
-            href: "/dashboard/account",
-            label: "Account",
-            icon: Settings
-          }
-        ]
       }
     ];
   }
