@@ -29,6 +29,11 @@ const propertySchema = new mongoose.Schema({
         enum: ['public', 'private'],
         default: 'public'
     },
+    postType: {
+        type: String,
+        enum: ['normal', 'vip'],
+        default: 'normal'
+    },
     purpose: {
         type: String,
         enum: ['sale', 'rent'],

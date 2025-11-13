@@ -1,22 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; 
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
+import { searchPropertiesAPI } from "@/apis";
 
 const categories = ["View All", "Apartment", "Villa", "Studio", "House", "Office"];
 
-const properties = [
-  { id: 1, title: "Casa Lomas de Machalí Machas", image: "/images/home/house-1.jpg", location: "145 Brooklyn Ave, California, New York", tags: ["Featured","For Sale"], beds: 1, baths: 2, sqft: 2200, price: 211000, agent: { name: "Duy", avatar: "https://github.com/shadcn.png" }, href: "/properties/1" },
-  { id: 2, title: "Casa Lomas de Machalí Machas", image: "/images/home/house-2.jpg", location: "145 Brooklyn Ave, California, New York", tags: ["Featured","For Sale"], beds: 1, baths: 2, sqft: 2200, price: 211000, agent: { name: "Duy", avatar: "https://github.com/shadcn.png" }, href: "/properties/2" },
-  { id: 3, title: "Casa Lomas de Machalí Machas", image: "/images/home/house-3.jpg", location: "145 Brooklyn Ave, California, New York", tags: ["Featured","For Sale"], beds: 1, baths: 2, sqft: 2200, price: 211000, agent: { name: "Duy", avatar: "https://github.com/shadcn.png" }, href: "/properties/3" },
-  { id: 4, title: "Casa Lomas de Machalí Machas", image: "/images/home/house-4.jpg", location: "145 Brooklyn Ave, California, New York", tags: ["Featured","For Sale"], beds: 1, baths: 2, sqft: 2200, price: 211000, agent: { name: "Duy", avatar: "https://github.com/shadcn.png" }, href: "/properties/4" },
-  { id: 5, title: "Casa Lomas de Machalí Machas", image: "/images/home/house-5.jpg", location: "145 Brooklyn Ave, California, New York", tags: ["Featured","For Sale"], beds: 1, baths: 2, sqft: 2200, price: 211000, agent: { name: "Duy", avatar: "https://github.com/shadcn.png" }, href: "/properties/5" },
-  { id: 6, title: "Casa Lomas de Machalí Machas", image: "/images/home/house-6.jpg", location: "145 Brooklyn Ave, California, New York", tags: ["Featured","For Sale"], beds: 1, baths: 2, sqft: 2200, price: 211000, agent: { name: "Duy", avatar: "https://github.com/shadcn.png" }, href: "/properties/6" },
-];
+const typeMapping = {
+  "View All": null,
+  "Apartment": "apartment",
+  "Villa": "villa",
+  "Studio": "apartment", // Studio có thể map về apartment
+  "House": "house",
+  "Office": "office"
+};
 
 export function FeatureCard() {
   const [active, setActive] = useState("View All");
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        const filters = {
+          page: 1,
+          itemsPerPage: 6,
+          sortBy: 'featured', // Ưu tiên VIP posts
+          status: 'active'
+        };
+
+        // Nếu có filter theo type
+        const selectedType = typeMapping[active];
+        if (selectedType) {
+          filters.types = [selectedType];
+        }
+
+        const response = await searchPropertiesAPI(filters);
+        setProperties(response.properties || []);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+        setProperties([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [active]);
 
   return (
     <section className="py-32">
@@ -41,14 +74,24 @@ export function FeatureCard() {
 
           {/* Grid cards */}
         <div className="mx-auto mt-10 grid max-w-[1350px] gap-y-5 lg:px-20 grid-cols-1 place-items-center space-x-0 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((p) => (
-            <div
-              key={p.id}
-              className="w-full lg:w-[90%] max-w-[2000px]" // ↓ thu nhỏ card ở lg
-            >
-              <PropertyCard item={p} />
+          {loading ? (
+            <div className="col-span-full text-center py-10">
+              <p className="text-gray-500">Đang tải...</p>
             </div>
-          ))}
+          ) : properties.length === 0 ? (
+            <div className="col-span-full text-center py-10">
+              <p className="text-gray-500">Không có bất động sản nào</p>
+            </div>
+          ) : (
+            properties.map((p) => (
+              <div
+                key={p._id || p.id}
+                className="w-full lg:w-[90%] max-w-[2000px]"
+              >
+                <PropertyCard item={p} />
+              </div>
+            ))
+          )}
         </div>
 
         </div>
