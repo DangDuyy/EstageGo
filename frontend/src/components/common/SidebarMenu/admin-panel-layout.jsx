@@ -5,14 +5,15 @@ import { Sidebar } from "./sidebar";
 import { Footer } from "./footer";
 
 export default function AdminPanelLayout({
-  children
+  children,
+  isAdminPanel = false
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   if (!sidebar) return null;
   const { getOpenState, settings } = sidebar;
   return (
     <>
-      <Sidebar />
+      <Sidebar isAdminPanel={isAdminPanel} />
       <main
         className={cn(
           "min-h-[calc(100vh_-_56px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",

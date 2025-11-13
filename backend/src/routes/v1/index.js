@@ -6,6 +6,8 @@ import { ollamaChatRoutes } from './ollamaChatRoute'
 import { wishlistRoute } from './wishlistRoute'
 import { conversationRoutes } from './conversationRoute'
 import { messageRoutes } from './messageRoute'
+import { adminRoutes } from './adminRoute'
+import { agentRequestRoutes } from './agentRequestRoute'
 
 const Router = express.Router()
 
@@ -24,5 +26,9 @@ Router.use('/wishlist', wishlistRoute)
 Router.use('/conversations', conversationRoutes)
 
 Router.use('/messages', messageRoutes)
+
+Router.use('/admin', adminRoutes)
+
+Router.use('/agent-requests', agentRequestRoutes)
 
 export const APIs_V1 = Router

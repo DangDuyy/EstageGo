@@ -1,4 +1,4 @@
-import { LayoutGrid, LogOut, User } from "lucide-react";
+import { LayoutGrid, LogOut, User, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,6 +33,10 @@ export function UserNav() {
     } catch (error) {
       console.error('Logout error:', error)
     }
+  }
+
+  if (!currentUser) {
+    return null;
   }
 
   return (
@@ -74,11 +78,19 @@ export function UserNav() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>
-            <Link to="/account" className="flex items-center">
+            <Link to="/dashboard/account" className="flex items-center">
               <User className="w-4 h-4 mr-3 text-muted-foreground" />
               Account
             </Link>
           </DropdownMenuItem>
+          {currentUser?.role === 'admin' && (
+            <DropdownMenuItem className="hover:cursor-pointer" asChild>
+              <Link to="/admin/dashboard" className="flex items-center">
+                <ShieldCheck className="w-4 h-4 mr-3 text-muted-foreground" />
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
