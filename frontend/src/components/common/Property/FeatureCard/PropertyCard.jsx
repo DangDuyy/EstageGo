@@ -43,7 +43,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
   const statTextClass = variant === "grid" ? "" : "text-base md:text-lg"; // list to hơn
   const statGapClass  = variant === "grid" ? "gap-4" : "gap-6";           // list nới gap
 
-  // Badge: Featured + purpose (sale/rent)
+  // Badge: VIP + Featured + purpose (sale/rent)
   const mapPurpose = (p) => {
     if (!p) return null;
     const v = String(p).toLowerCase();
@@ -51,7 +51,9 @@ export default function PropertyCard({ item, variant = "grid" }) {
     if (v === "rent") return "For Rent";
     return p;
   };
-  const badges = ["Featured"];
+  const badges = [];
+  if (item.postType === 'vip') badges.push("VIP");
+  badges.push("Featured");
   const purposeLabel = mapPurpose(item.purpose);
   if (purposeLabel) badges.push(purposeLabel);
 
@@ -77,7 +79,11 @@ export default function PropertyCard({ item, variant = "grid" }) {
             {badges.map((t, idx) => (
               <Badge
                 key={`${t}-${idx}`}
-                className={`text-md ${t === "Featured" ? "bg-blue-600 text-white" : "bg-gray-700 text-white"} `}
+                className={`text-md ${
+                  t === "VIP" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold" :
+                  t === "Featured" ? "bg-blue-600 text-white" : 
+                  "bg-gray-700 text-white"
+                } `}
               >
                 {t}
               </Badge>

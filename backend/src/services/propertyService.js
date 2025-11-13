@@ -177,6 +177,11 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     const dir = (String(sortDir).toLowerCase() === "asc") ? 1 : -1
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
+    else if (sortBy === "featured") {
+      // Ưu tiên VIP posts trước, sau đó sort theo createdAt
+      sort["postType"] = -1 // vip trước normal
+      sort["createdAt"] = -1
+    }
     else sort["createdAt"] = dir // mặc định mới nhất
 
     const pipeline = []
@@ -284,11 +289,21 @@ const getPropertiesWithinPolygon = async (polygonGeoJSON ) => {
   return properties;
 }
 
+const getUserById = async (userId) => {
+  try {
+    const user = await userModel.findById(userId)
+    return user
+  } catch (error) {
+    throw error
+  }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
     getPropertyById,
     getProperties,
     getPropertyDetails,
-    getPropertiesWithinPolygon
+    getPropertiesWithinPolygon,
+    getUserById
 }

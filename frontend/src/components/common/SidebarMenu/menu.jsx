@@ -14,10 +14,10 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logoutUserAPI } from "@/redux/user/userSlice";
 
-export function Menu({ isOpen }) {
+export function Menu({ isOpen, isAdminPanel = false }) {
   const location = useLocation();
   const pathname = location.pathname;
-  const menuList = getMenuList(pathname);
+  const menuList = getMenuList(pathname, isAdminPanel);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

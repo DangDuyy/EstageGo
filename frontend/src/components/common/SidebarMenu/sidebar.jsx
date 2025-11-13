@@ -7,7 +7,7 @@ import { Menu } from "./menu";
 import { SidebarToggle } from "./sidebar-toggle";
 import { Link } from "react-router-dom";
 
-export function Sidebar() {
+export function Sidebar({ isAdminPanel = false }) {
   const sidebar = useStore(useSidebar, (x) => x);
   if (!sidebar) return null;
   const { isOpen, toggleOpen, getOpenState, setIsHover, settings } = sidebar;
@@ -43,11 +43,11 @@ export function Sidebar() {
                   : "translate-x-0 opacity-100"
               )}
             >
-              EstageGo
+              EstageGo {isAdminPanel && <span className="text-xs text-purple-600">Admin</span>}
             </h1>
           </Link>
         </Button>
-        <Menu isOpen={getOpenState()} />
+        <Menu isOpen={getOpenState()} isAdminPanel={isAdminPanel} />
       </div>
     </aside>
   );

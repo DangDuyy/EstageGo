@@ -13,9 +13,15 @@ const createProperty = async (req, res, next) => {
         });
 
         const owner = req.jwtDecoded._id
+        
+        // Lấy thông tin user để xác định postType dựa trên membershipLevel
+        const user = await propertyService.getUserById(owner)
+        const postType = user?.membershipLevel === 'premium' ? 'vip' : 'normal'
+        
         const propertyData = {
             ...req.body,
-            owner
+            owner,
+            postType
         }
 
         console.log(propertyData)

@@ -11,6 +11,7 @@ import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
 import HomePage from './pages/HomePage'
 import VerifyAccountPage from './pages/HomePage/verifyAccount'
 import DashboardLayout from './layouts/DashboardLayout'
+import AdminLayout from './layouts/AdminLayout'
 import MapPage from './pages/MapPage'
 import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
@@ -20,9 +21,17 @@ import { MapProvider } from './components/common/GoogleMap/MapProvider'
 import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
 import { SocketManager } from './components/common/SocketManager'
+import AdminDashboard from './pages/AdminPage/AdminDashboard'
+import AdminProperties from './pages/AdminPage/AdminProperties'
+import AdminAgentRequests from './pages/AdminPage/AdminAgentRequests'
+import AdminUsers from './pages/AdminPage/AdminUsers'
+import { useAuth } from './hooks/useAuth'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
+  // Fetch current user on app load
+  useAuth();
+
   return (
     <>
       <SocketManager />
@@ -64,7 +73,15 @@ function App() {
         </Route>
         <Route path="properties" element={<MyProperty />} />
         <Route path="wishlist" element={<Wishlist />} />
+      </Route>
 
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="properties" element={<AdminProperties />} />
+        <Route path="agent-requests" element={<AdminAgentRequests />} />
+        <Route path="users" element={<AdminUsers />} />
       </Route>
 
       {/* page not found */}
