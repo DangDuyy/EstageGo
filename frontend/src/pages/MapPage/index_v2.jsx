@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 import { DEFAULT_ITEMS_PER_PAGE } from "@/utils/constants";
 import MapContainer from "@/components/common/GoogleMap/MapContainer";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
+import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 
 function PropertiesMap() {
     const location = useLocation();
@@ -139,6 +140,7 @@ function PropertiesMap() {
     const mapRef = useRef(null);
     const selectedFeatureRef = useRef(null);
     const selectedLayerRef = useRef(null); // ✅ layer riêng cho vùng được chọn
+    const { loaded, google } = useContext(MapsContext)
 
     // Helper: traverse geometry để extend bounds
     const extendBoundsForFeature = (feature, bounds) => {
@@ -248,8 +250,74 @@ function PropertiesMap() {
             setProperties(properties)
             console.log(properties)
 
+            const provinceId = e.feature.getProperty("GID_1");
+            console.log(provinceId)
+
         });
 
+    };
+
+    const handlePlaceSelected = async (place) => {
+        if (!place.geometry?.location || !mapRef.current) return;
+
+        const latLng = place.geometry.location;
+
+        const selectedLayer = selectedLayerRef.current || new google.maps.Data();
+        // Clear previous highlights
+        selectedLayer.forEach((f) => selectedLayer.remove(f));
+
+        let selectedFeature = null;
+
+        // Hàm kiểm tra nếu point nằm trong polygon
+        const pointInPolygon = (point, polygon) => {
+            let inside = false;
+            const paths = polygon.getArray().map((path) => path.getArray());
+            for (let i = 0; i < paths.length; i++) {
+                const vs = paths[i];
+                let j = vs.length - 1;
+                for (let k = 0; k < vs.length; k++) {
+                    const xi = vs[k].lat(), yi = vs[k].lng();
+                    const xj = vs[j].lat(), yj = vs[j].lng();
+                    if ((yi > point.lng() !== yj > point.lng()) &&
+                        point.lat() < ((xj - xi) * (point.lng() - yi)) / (yj - yi) + xi) {
+                        inside = !inside;
+                    }
+                    j = k;
+                }
+            }
+            return inside;
+        };
+
+        // Duyệt tất cả feature
+        mapRef.current.data.forEach((feature) => {
+            const geometry = feature.getGeometry();
+
+            const type = geometry.getType();
+
+            if (type === "Polygon") {
+                if (pointInPolygon(latLng, geometry)) selectedFeature = feature;
+            } else if (type === "MultiPolygon") {
+                geometry.getArray().forEach((polygon) => {
+                    if (pointInPolygon(latLng, polygon)) selectedFeature = feature;
+                });
+            }
+        });
+
+        if (!selectedFeature) return;
+
+        selectedFeatureRef.current = selectedFeature;
+
+        // Zoom tới feature
+        const featureBounds = new google.maps.LatLngBounds();
+        selectedFeature.getGeometry().forEachLatLng((latlng) =>
+            featureBounds.extend(latlng)
+        );
+        mapRef.current.fitBounds(featureBounds);
+
+        // Highlight feature
+        selectedFeature.toGeoJson((geoJson) => {
+            selectedLayer.addGeoJson(geoJson);
+        });
     };
 
     return (
@@ -258,7 +326,7 @@ function PropertiesMap() {
             <div className="w-full pt-25 h-screen flex flex-col fixed inset-0 overflow-hidden">
                 {/* Filter - cố định ở trên */}
                 <div className="flex-shrink-0 z-10">
-                    <Filter />
+                    <Filter handlePlaceSelected={handlePlaceSelected} />
                 </div>
 
                 {/* Main content area - chiếm phần còn lại của screen */}
@@ -271,10 +339,10 @@ function PropertiesMap() {
                                     items={properties
                                         .filter(p => p.address?.location?.coordinates?.length === 2) // chỉ lấy những item có tọa độ hợp lệ
                                         .map((p) => ({
-                                        id: p._id,
-                                        lat: p.address?.location?.coordinates[1], // GeoJSON: [lng, lat]
-                                        lng: p.address?.location?.coordinates[0]
-                                    }))}
+                                            id: p._id,
+                                            lat: p.address?.location?.coordinates[1], // GeoJSON: [lng, lat]
+                                            lng: p.address?.location?.coordinates[0]
+                                        }))}
                                     onMarkerClick={(item) => console.log(item)}
                                 />
                             )}

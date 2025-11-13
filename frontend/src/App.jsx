@@ -38,7 +38,7 @@ function App() {
 
       <Route path="/listing/grid" element={<PropertyPages />} />
       <Route path="/listing/map" element={
-        <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries={["places"]}>
+        <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries={["places", "geometry"]}>
           <PropertiesMap />
         </MapProvider>
       } />

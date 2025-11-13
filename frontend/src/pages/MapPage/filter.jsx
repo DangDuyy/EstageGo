@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 
-function Filter() {
+function Filter({handlePlaceSelected}) {
     const navigate = useNavigate();
     const location = useLocation();
     
@@ -76,7 +76,7 @@ function Filter() {
                                 className="h-12 pl-12 pt-3 pb-3 rounded-full"
                             />
                         </div> */}
-                        <CustomSearchBox onPlaceSelected={(p) => console.log(p)}/>
+                        <CustomSearchBox onPlaceSelected={handlePlaceSelected}/>
                     </div>
 
                     {/* Divider */}

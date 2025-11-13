@@ -143,8 +143,6 @@ const getPropertiesWithinPolygon = async (req, res, next) => {
     try {
         const { polygon } = req.body;
 
-        console.log(polygon)
-
         // Tạo GeoJSON polygon
         const polygonGeoJSON = {
             type: "Polygon",

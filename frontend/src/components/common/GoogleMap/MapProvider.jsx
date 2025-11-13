@@ -4,7 +4,7 @@ import { createContext } from "react"
 // eslint-disable-next-line react-refresh/only-export-components
 export const MapsContext = createContext({ loaded: false, google: null })
 
-export const MapProvider = ({ apiKey, children, libraries = ["places"] }) => {
+export const MapProvider = ({ apiKey, children, libraries = ["places", "geometry"] }) => {
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: apiKey,
         libraries,
