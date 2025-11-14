@@ -2,9 +2,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Bed, Bath, Ruler, Heart } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Heart, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/utils/helper";
+import { formatPostDate } from "@/utils/formatters";
 import { Separator } from "@/components/ui/separator";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Button } from "@/components/ui/button";
@@ -143,6 +144,13 @@ export default function PropertyCard({ item, variant = "grid" }) {
                   <span className="line-clamp-1">{locationText}</span>
                 </div>
               )}
+
+              {item.createdAt && (
+                <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{formatPostDate(item.createdAt)}</span>
+                </div>
+              )}
             </div>
 
             <Separator className="my-4" />
@@ -175,6 +183,12 @@ export default function PropertyCard({ item, variant = "grid" }) {
                 <Stat icon={Bath} label="Baths" value={baths} iconClass={statIconClass} />
                 <Stat icon={Ruler} label={item.sqft ? "Sqft" : "Area"} value={area} iconClass={statIconClass} />
               </div>
+              {item.createdAt && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{formatPostDate(item.createdAt)}</span>
+                </div>
+              )}
             </div>
 
             <Separator className="my-4" />
