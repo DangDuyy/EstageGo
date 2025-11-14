@@ -102,7 +102,13 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       sortDir         // 'asc' | 'desc'
     } = queryFilter || {}
 
-    const match = { _destroy: { $ne: true } }
+    const match = { 
+      _destroy: { $ne: true },
+      $or: [
+        { expireAt: null },
+        { expireAt: { $gt: new Date() } }
+      ]
+    }
 
     if (owner && typeof owner === "string") {
       try { match.owner = new Types.ObjectId(owner) } catch {}
@@ -240,7 +246,11 @@ const getPropertyDetails = async (propertyId) => {
       { 
         $match : {
         _id: new Types.ObjectId(propertyId),
-        _destroy: { $ne: true }
+        _destroy: { $ne: true },
+        $or: [
+          { expireAt: null },
+          { expireAt: { $gt: new Date() } }
+        ]
         } 
       },
       { 
@@ -283,7 +293,12 @@ const getPropertiesWithinPolygon = async (polygonGeoJSON ) => {
       $geoWithin: {
         $geometry: polygonGeoJSON
       }
-    }
+    },
+    _destroy: { $ne: true },
+    $or: [
+      { expireAt: null },
+      { expireAt: { $gt: new Date() } }
+    ]
   }).lean();
 
   return properties;

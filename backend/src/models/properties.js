@@ -155,6 +155,10 @@ const propertySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    expireAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true })
 

@@ -47,6 +47,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom"
+import { formatPostDate } from "@/utils/formatters"
 
 export default function PropertyTable({ data, onPageChange, onPageSizeChange }) {
     const [rowSelection, setRowSelection] = useState({})
@@ -128,6 +129,9 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                     </div>
                     <div className="font-medium text-sm text-primary">
                         {formatPrice(row.original.price.value, row.original.price.currency)}/{row.original.price?.period}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                        📅 {formatPostDate(row.original.createdAt)}
                     </div>
                 </div>
             ),
