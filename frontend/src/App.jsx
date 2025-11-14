@@ -7,6 +7,7 @@ import Message from './pages/DashboardPage/Message'
 import MyProperty from './pages/DashboardPage/MyProperty'
 import Profile from './pages/DashboardPage/Profile'
 import Wishlist from './pages/DashboardPage/Wishlist'
+import PricingPlans from './pages/DashboardPage/PricingPlans'
 import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
 import HomePage from './pages/HomePage'
 import VerifyAccountPage from './pages/HomePage/verifyAccount'
@@ -73,6 +74,7 @@ function App() {
         </Route>
         <Route path="properties" element={<MyProperty />} />
         <Route path="wishlist" element={<Wishlist />} />
+        <Route path="plans" element={<PricingPlans />} />
       </Route>
 
       {/* Admin routes */}
