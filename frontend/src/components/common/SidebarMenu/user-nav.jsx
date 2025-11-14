@@ -1,4 +1,4 @@
-import { LayoutGrid, LogOut, User, ShieldCheck } from "lucide-react";
+import { LayoutGrid, LogOut, User, ShieldCheck, Crown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -93,6 +93,12 @@ export function UserNav() {
             <Link to="/dashboard/account" className="flex items-center">
               <User className="w-4 h-4 mr-3 text-muted-foreground" />
               Account
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="hover:cursor-pointer" asChild>
+            <Link to="/dashboard/plans" className="flex items-center">
+              <Crown className="w-4 h-4 mr-3 text-muted-foreground" />
+              Plans
             </Link>
           </DropdownMenuItem>
           {currentUser?.role === 'admin' && (
