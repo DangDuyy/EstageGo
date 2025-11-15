@@ -315,17 +315,42 @@ const getUserById = async (userId) => {
 
 const getPropertiesByFilters = async (filters) => {
   try {
-    // Base filters: không lấy property bị xóa và hết hạn
-    const baseMatch = {
-      _destroy: { $ne: true },
+    // Base conditions
+    const baseConditions = {
+      _destroy: { $ne: true }
+    }
+    
+    const expireCondition = {
       $or: [
         { expireAt: null },
         { expireAt: { $gt: new Date() } }
       ]
     }
 
-    // Merge AI filters với base filters
-    const finalMatch = { ...baseMatch, ...filters }
+    // Separate $or from other filters
+    const { $or: filterOr, ...otherFilters } = filters
+    
+    // Build final match
+    let finalMatch
+    
+    if (filterOr && filterOr.length > 0) {
+      // Nếu có $or từ AI filters, combine với expire check bằng $and
+      finalMatch = {
+        $and: [
+          baseConditions,
+          expireCondition,
+          { ...otherFilters },
+          { $or: filterOr }
+        ]
+      }
+    } else {
+      // Không có $or, merge bình thường
+      finalMatch = {
+        ...baseConditions,
+        ...expireCondition,
+        ...otherFilters
+      }
+    }
 
     // Log để debug
     console.log("Final match filters:", JSON.stringify(finalMatch, null, 2))
