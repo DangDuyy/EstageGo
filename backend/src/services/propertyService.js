@@ -313,6 +313,52 @@ const getUserById = async (userId) => {
   }
 }
 
+const getPropertiesByFilters = async (filters) => {
+  try {
+    // Base filters: không lấy property bị xóa và hết hạn
+    const baseMatch = {
+      _destroy: { $ne: true },
+      $or: [
+        { expireAt: null },
+        { expireAt: { $gt: new Date() } }
+      ]
+    }
+
+    // Merge AI filters với base filters
+    const finalMatch = { ...baseMatch, ...filters }
+
+    // Nếu không có status filter từ AI, mặc định lấy active
+    if (!finalMatch.status) {
+      finalMatch.status = 'active'
+    }
+
+    const pipeline = [
+      { $match: finalMatch },
+      { $sort: { createdAt: -1 } }, // Mới nhất trước
+      { $limit: 50 }, // Giới hạn kết quả
+      {
+        $lookup: {
+          from: userModel.collection.name,
+          let: { ownerId: "$owner" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$ownerId"] } } },
+            { $project: { password: 0, verifyToken: 0, __v: 0 } }
+          ],
+          as: "ownerInfo"
+        }
+      },
+      { $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true } }
+    ]
+
+    const properties = await propertyModel.aggregate(pipeline).collation({ locale: "vi", strength: 1 })
+
+    return properties
+  } catch (error) {
+    console.error("Error in getPropertiesByFilters:", error)
+    throw error
+  }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
@@ -320,5 +366,6 @@ export const propertyService = {
     getProperties,
     getPropertyDetails,
     getPropertiesWithinPolygon,
-    getUserById
+    getUserById,
+    getPropertiesByFilters
 }

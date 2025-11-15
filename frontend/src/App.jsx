@@ -27,6 +27,7 @@ import AdminProperties from './pages/AdminPage/AdminProperties'
 import AdminAgentRequests from './pages/AdminPage/AdminAgentRequests'
 import AdminUsers from './pages/AdminPage/AdminUsers'
 import { useAuth } from './hooks/useAuth'
+import AISearchPage from './pages/AISearchPage'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -57,6 +58,7 @@ function App() {
       <Route path="/agents/:agentId" element={<AgentProfile />} />
 
       <Route path="/ai/chatbot" element={<ChatBot />} />
+      <Route path="/ai/nl-search" element={<AISearchPage />} />
 
       <Route path="/map" element={<MapPage />} />
       <Route path="/dashboard" element={<DashboardLayout />}>

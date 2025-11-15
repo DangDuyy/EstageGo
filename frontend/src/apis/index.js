@@ -149,6 +149,11 @@ export const getPropertiesWithinPolygon = async (polygon) => {
   return response.data
 }
 
+export const nlSearchPropertiesAPI = async (naturalLanguageQuery) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/nl-search`, { naturalLanguageQuery })
+  return response.data
+}
+
 // ========== WISHLIST APIs ==========
 
 // Get user's wishlist
