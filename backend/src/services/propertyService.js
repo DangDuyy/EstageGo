@@ -6,7 +6,7 @@ import ApiError from "~/utils/ApiError"
 import { DEFAULT_ITEM_PER_PAGE, DEFAULT_PAGE } from "~/utils/constants"
 
 const { default: propertyModel } = require("~/models/properties")
-const { slugify, escapeRegex } = require("~/utils/formatter")
+const { slugify, escapeRegex, removeDiacritics, createFuzzyRegex } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
     try {
@@ -327,10 +327,8 @@ const getPropertiesByFilters = async (filters) => {
     // Merge AI filters với base filters
     const finalMatch = { ...baseMatch, ...filters }
 
-    // Nếu không có status filter từ AI, mặc định lấy active
-    if (!finalMatch.status) {
-      finalMatch.status = 'active'
-    }
+    // Log để debug
+    console.log("Final match filters:", JSON.stringify(finalMatch, null, 2))
 
     const pipeline = [
       { $match: finalMatch },

@@ -2,6 +2,7 @@ import { date } from "joi"
 import { mediaService } from "~/services/mediaService"
 import { toArr, toNum, toStr } from "~/utils/formatter"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { searchSuggestionService } from "~/services/searchSuggestionService"
 
 const { StatusCodes } = require("http-status-codes")
 const { propertyService } = require("~/services/propertyService")
@@ -130,7 +131,17 @@ const getProperties = async (req, res, next) => {
         }
 
         const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
-        return res.status(StatusCodes.OK).json(result)
+        
+        // Nếu không có kết quả và có search query, tìm suggestions
+        let searchSuggestions = null
+        if (result.totalProperties === 0 && queryFilter.q) {
+            searchSuggestions = await searchSuggestionService.findSearchSuggestions(queryFilter.q)
+        }
+        
+        return res.status(StatusCodes.OK).json({
+            ...result,
+            ...(searchSuggestions && { searchSuggestions })
+        })
     } catch (error) {
         next(error)
     }
@@ -361,15 +372,51 @@ Ví dụ output hợp lệ:
         }, {});
 
         console.log("AI Generated Filters:", cleanFilters);
+        console.log("Natural Language Query:", naturalLanguageQuery);
 
         // Thực thi truy vấn MongoDB
         const properties = await propertyService.getPropertiesByFilters(cleanFilters);
+        console.log(`Found ${properties.length} properties`);
+
+        // Nếu không có kết quả, tìm suggestions (không block main flow)
+        let searchSuggestions = null
+        if (properties.length === 0) {
+            try {
+                // Extract keywords từ query
+                const locationKeywords = searchSuggestionService.extractLocationKeywords(naturalLanguageQuery)
+                
+                // Tìm suggestions cho toàn bộ query hoặc từng keyword
+                const querySuggestions = await searchSuggestionService.findSearchSuggestions(naturalLanguageQuery)
+                
+                // Nếu có location keywords, tìm suggestions cho chúng
+                const keywordSuggestions = []
+                for (const keyword of locationKeywords.slice(0, 3)) { // Limit to 3 keywords
+                    const kws = await searchSuggestionService.findSearchSuggestions(keyword, 3)
+                    if (kws.didYouMean) {
+                        keywordSuggestions.push({
+                            original: keyword,
+                            suggestion: kws.didYouMean
+                        })
+                    }
+                }
+                
+                searchSuggestions = {
+                    didYouMean: querySuggestions.didYouMean,
+                    suggestions: querySuggestions.suggestions,
+                    keywordCorrections: keywordSuggestions
+                }
+            } catch (suggestionError) {
+                console.error("Error getting suggestions:", suggestionError)
+                // Don't block the response if suggestions fail
+            }
+        }
 
         return res.status(StatusCodes.OK).json({
             success: true,
             properties: properties,
             filtersUsed: cleanFilters,
-            totalProperties: properties.length
+            totalProperties: properties.length,
+            ...(searchSuggestions && { searchSuggestions })
         });
 
     } catch (error) {
