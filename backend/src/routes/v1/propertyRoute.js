@@ -10,6 +10,9 @@ router.route('/')
   .get(propertyController.getProperties, propertyValidation.getProperties)
   .post(authMiddleware.isAuthorized, uploadFiles, propertyController.createProperty)
 
+router.route('/nl-search')
+  .post(propertyController.naturalLanguageSearch)
+
 router.route('/in')
   .post(propertyController.getPropertiesWithinPolygon)
 

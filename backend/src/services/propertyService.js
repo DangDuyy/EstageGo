@@ -6,7 +6,7 @@ import ApiError from "~/utils/ApiError"
 import { DEFAULT_ITEM_PER_PAGE, DEFAULT_PAGE } from "~/utils/constants"
 
 const { default: propertyModel } = require("~/models/properties")
-const { slugify, escapeRegex } = require("~/utils/formatter")
+const { slugify, escapeRegex, removeDiacritics, createFuzzyRegex } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
     try {
@@ -313,6 +313,75 @@ const getUserById = async (userId) => {
   }
 }
 
+const getPropertiesByFilters = async (filters) => {
+  try {
+    // Base conditions
+    const baseConditions = {
+      _destroy: { $ne: true }
+    }
+    
+    const expireCondition = {
+      $or: [
+        { expireAt: null },
+        { expireAt: { $gt: new Date() } }
+      ]
+    }
+
+    // Separate $or from other filters
+    const { $or: filterOr, ...otherFilters } = filters
+    
+    // Build final match
+    let finalMatch
+    
+    if (filterOr && filterOr.length > 0) {
+      // Nếu có $or từ AI filters, combine với expire check bằng $and
+      finalMatch = {
+        $and: [
+          baseConditions,
+          expireCondition,
+          { ...otherFilters },
+          { $or: filterOr }
+        ]
+      }
+    } else {
+      // Không có $or, merge bình thường
+      finalMatch = {
+        ...baseConditions,
+        ...expireCondition,
+        ...otherFilters
+      }
+    }
+
+    // Log để debug
+    console.log("Final match filters:", JSON.stringify(finalMatch, null, 2))
+
+    const pipeline = [
+      { $match: finalMatch },
+      { $sort: { createdAt: -1 } }, // Mới nhất trước
+      { $limit: 50 }, // Giới hạn kết quả
+      {
+        $lookup: {
+          from: userModel.collection.name,
+          let: { ownerId: "$owner" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$ownerId"] } } },
+            { $project: { password: 0, verifyToken: 0, __v: 0 } }
+          ],
+          as: "ownerInfo"
+        }
+      },
+      { $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true } }
+    ]
+
+    const properties = await propertyModel.aggregate(pipeline).collation({ locale: "vi", strength: 1 })
+
+    return properties
+  } catch (error) {
+    console.error("Error in getPropertiesByFilters:", error)
+    throw error
+  }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
@@ -320,5 +389,6 @@ export const propertyService = {
     getProperties,
     getPropertyDetails,
     getPropertiesWithinPolygon,
-    getUserById
+    getUserById,
+    getPropertiesByFilters
 }

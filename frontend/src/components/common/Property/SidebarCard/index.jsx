@@ -96,13 +96,28 @@ export default function SidebarCard() {
   const [totalProperties, setTotalProperties] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Check if this is from AI search
+  const aiSearchData = location.state?.isAISearch ? {
+    properties: location.state?.properties || [],
+    query: location.state?.query || '',
+    filters: location.state?.filters || {}
+  } : null;
+
   const updateStateData = (res) => {
     setProperties(Array.isArray(res?.properties) ? res.properties : []);
     setTotalProperties(Number(res?.totalProperties || 0));
   };
 
-  // Fetch data theo query string
+  // Fetch data theo query string hoặc sử dụng AI search results
   useEffect(() => {
+    // Nếu có AI search data, sử dụng nó thay vì fetch
+    if (aiSearchData) {
+      setProperties(aiSearchData.properties);
+      setTotalProperties(aiSearchData.properties.length);
+      setLoading(false);
+      return;
+    }
+
     const controller = new AbortController();
     let active = true;
 
@@ -125,7 +140,7 @@ export default function SidebarCard() {
       active = false;
       controller.abort();
     };
-  }, [location.search]);
+  }, [location.search, aiSearchData]);
 
   // Tính filtered theo sort
   const filtered = useMemo(() => {
@@ -211,6 +226,33 @@ export default function SidebarCard() {
 
   return (
     <section className="container mx-auto px-40 py-10">
+      {/* AI Search Banner */}
+      {aiSearchData && (
+        <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">✨</span>
+            <p className="font-semibold text-primary">Kết quả tìm kiếm AI</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            <strong>Câu tìm kiếm:</strong> "{aiSearchData.query}"
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tìm thấy <strong>{aiSearchData.properties.length}</strong> bất động sản phù hợp
+          </p>
+          {/* Optional: Show filters used */}
+          {aiSearchData.filters && Object.keys(aiSearchData.filters).length > 0 && (
+            <details className="mt-2">
+              <summary className="text-xs text-muted-foreground cursor-pointer hover:underline">
+                Xem bộ lọc đã dùng
+              </summary>
+              <pre className="text-xs mt-2 p-2 bg-muted rounded overflow-auto">
+                {JSON.stringify(aiSearchData.filters, null, 2)}
+              </pre>
+            </details>
+          )}
+        </div>
+      )}
+      
       {/* Header */}
       <div className="mb-6 flex justify-between">
         <h3 className="text-3xl font-bold">Property Listing</h3>
