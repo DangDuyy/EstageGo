@@ -693,6 +693,94 @@ const bulkAnalyzeImages = async (req, res, next) => {
     }
 }
 
+const analyzeTemporaryImage = async (req, res, next) => {
+    try {
+        // uploadFiles middleware uses array, so files are in req.files
+        const files = req.files
+        
+        if (!files || files.length === 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "No image file provided"
+            })
+        }
+        
+        const file = files[0] // Get first file
+        
+        // Upload to cloudinary temporarily
+        console.log('[Upload] Uploading file to Cloudinary:', file.originalname)
+        const uploadResult = await mediaService.uploadPropertyImage([file], 'temp')
+        
+        if (!uploadResult || uploadResult.length === 0) {
+            console.error('[Upload] Failed to upload to Cloudinary')
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Failed to upload image"
+            })
+        }
+        
+        const imageUrl = uploadResult[0].url
+        console.log('[Upload] Image uploaded successfully:', imageUrl)
+        
+        // Analyze with AI
+        console.log('[AI] Starting analysis with Gemini...')
+        const analysis = await imageTaggingService.analyzeImageWithGemini(imageUrl)
+        console.log('[AI] Analysis completed:', analysis)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Image analyzed successfully",
+            data: {
+                imageUrl,
+                ...analysis
+            }
+        })
+    } catch (error) {
+        console.error("Error analyzing temporary image:", error)
+        next(error)
+    }
+}
+
+const clearImageTags = async (req, res, next) => {
+    try {
+        const { propertyId, imageId } = req.params
+        const userId = req.jwtDecoded._id
+        
+        // Verify ownership
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only clear tags of your own properties"
+            })
+        }
+        
+        // Clear all tags and objects
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, {
+            tags: [],
+            detectedObjects: [],
+            analyzed: false
+        })
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Tags cleared successfully",
+            data: updatedProperty
+        })
+    } catch (error) {
+        console.error("Error clearing image tags:", error)
+        next(error)
+    }
+}
+
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
@@ -705,5 +793,7 @@ export const propertyController = {
     searchPropertiesByTag,
     getUserPropertiesWithMedia,
     getAllUserImageTags,
-    bulkAnalyzeImages
+    bulkAnalyzeImages,
+    analyzeTemporaryImage,
+    clearImageTags
 }

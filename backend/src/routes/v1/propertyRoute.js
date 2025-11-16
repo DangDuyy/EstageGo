@@ -29,11 +29,15 @@ router.route('/user/image-tags')
 router.route('/search-by-tag')
   .get(propertyController.searchPropertiesByTag)
 
+router.route('/analyze-temp-image')
+  .post(authMiddleware.isAuthorized, uploadFiles, propertyController.analyzeTemporaryImage)
+
 router.route('/:propertyId/images/:imageId/analyze')
   .post(authMiddleware.isAuthorized, propertyController.analyzePropertyImage)
 
 router.route('/:propertyId/images/:imageId/tags')
   .put(authMiddleware.isAuthorized, propertyController.updatePropertyImageTags)
+  .delete(authMiddleware.isAuthorized, propertyController.clearImageTags)
 
 router.route('/:propertyId/images/bulk-analyze')
   .post(authMiddleware.isAuthorized, propertyController.bulkAnalyzeImages)

@@ -317,3 +317,23 @@ export const bulkAnalyzeImagesAPI = async (propertyId) => {
   toast.success('Images analyzed successfully!')
   return response.data
 }
+
+// Analyze temporary image (not attached to property)
+export const analyzeTemporaryImageAPI = async (file) => {
+  const formData = new FormData()
+  formData.append('files', file)
+  
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/analyze-temp-image`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return response.data
+}
+
+// Clear all tags from an image
+export const clearImageTagsAPI = async (propertyId, imageId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/tags`)
+  toast.success('Tags cleared successfully!')
+  return response.data
+}

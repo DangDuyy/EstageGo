@@ -6,10 +6,23 @@ const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY)
 
 const analyzeImageWithGemini = async (imageUrl) => {
   try {
+    console.log('[ImageTagging] Fetching image from URL:', imageUrl)
+    
     // Download image from URL
     const response = await fetch(imageUrl)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`)
+    }
+    
     const arrayBuffer = await response.arrayBuffer()
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
+    
+    console.log('[ImageTagging] Image downloaded, size:', arrayBuffer.byteLength, 'bytes')
+    
+    if (!env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured')
+    }
     
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
     
@@ -28,6 +41,8 @@ Return response in JSON format:
 
 Be specific and relevant to real estate. Focus on features that matter to property buyers/renters.`
 
+    console.log('[ImageTagging] Sending request to Gemini API...')
+    
     const result = await model.generateContent([
       prompt,
       {
@@ -39,14 +54,17 @@ Be specific and relevant to real estate. Focus on features that matter to proper
     ])
     
     const text = result.response.text()
+    console.log('[ImageTagging] Gemini response:', text.substring(0, 200) + '...')
     
     // Parse JSON from response (remove markdown code blocks if present)
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
+      console.error('[ImageTagging] Failed to parse JSON from response:', text)
       throw new Error('Failed to parse JSON response from Gemini')
     }
     
     const analysis = JSON.parse(jsonMatch[0])
+    console.log('[ImageTagging] Parsed analysis:', analysis)
     
     // Format response to match our schema
     const tags = []

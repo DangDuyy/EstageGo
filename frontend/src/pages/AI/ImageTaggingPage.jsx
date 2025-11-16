@@ -6,16 +6,19 @@ import {
   getAllUserImageTagsAPI,
   analyzePropertyImageAPI,
   updateImageTagsAPI,
-  bulkAnalyzeImagesAPI
+  bulkAnalyzeImagesAPI,
+  analyzeTemporaryImageAPI,
+  clearImageTagsAPI
 } from '@/apis'
 import { toast } from 'react-toastify'
-import { Loader2, Sparkles, Tag, Image as ImageIcon, X, Plus } from 'lucide-react'
+import { Loader2, Sparkles, Tag, Image as ImageIcon, X, Plus, Upload, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import NavBar from '@/components/common/NavBar'
+import { FooterBar } from '@/components/common/FooterBar'
 
 const ImageTaggingPage = () => {
   const currentUser = useSelector(selectCurrentUser)
@@ -25,6 +28,9 @@ const ImageTaggingPage = () => {
   const [selectedImage, setSelectedImage] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [newTag, setNewTag] = useState('')
+  const [uploadedFile, setUploadedFile] = useState(null)
+  const [uploadedPreview, setUploadedPreview] = useState(null)
+  const [tempAnalysisResult, setTempAnalysisResult] = useState(null)
 
   useEffect(() => {
     if (currentUser) {
@@ -161,6 +167,77 @@ const ImageTaggingPage = () => {
     }
   }
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+    
+    setUploadedFile(file)
+    
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setUploadedPreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleAnalyzeUploadedImage = async () => {
+    if (!uploadedFile) {
+      toast.error('Please select an image first')
+      return
+    }
+    
+    try {
+      setAnalyzing(true)
+      const result = await analyzeTemporaryImageAPI(uploadedFile)
+      
+      setTempAnalysisResult(result.data)
+      toast.success('Image analyzed successfully!')
+    } catch (error) {
+      console.error('Error analyzing uploaded image:', error)
+      toast.error('Failed to analyze image')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  const handleClearTags = async (propertyId, imageId) => {
+    try {
+      await clearImageTagsAPI(propertyId, imageId)
+      
+      // Update local state
+      setProperties(prev => prev.map(prop => {
+        if (prop._id === propertyId) {
+          return {
+            ...prop,
+            media: prop.media.map(img => 
+              img._id === imageId 
+                ? { ...img, tags: [], detectedObjects: [], analyzed: false }
+                : img
+            )
+          }
+        }
+        return prop
+      }))
+      
+      // Reload tags
+      const tagsData = await getAllUserImageTagsAPI()
+      setAllTags(tagsData.data || [])
+      
+      if (selectedImage && selectedImage._id === imageId) {
+        setSelectedImage(null)
+      }
+    } catch (error) {
+      console.error('Error clearing tags:', error)
+      toast.error('Failed to clear tags')
+    }
+  }
+
   const openImageModal = (property, image) => {
     setSelectedImage({
       ...image,
@@ -199,6 +276,105 @@ const ImageTaggingPage = () => {
           Automatically detect and tag objects in your property images using AI
         </p>
       </div>
+
+      {/* Upload & Analyze Section */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Try It Now - Upload & Analyze
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2 text-sm font-medium">
+                Upload an image to analyze
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+              />
+              {uploadedPreview && (
+                <div className="mt-4">
+                  <img
+                    src={uploadedPreview}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                  <Button
+                    onClick={handleAnalyzeUploadedImage}
+                    disabled={analyzing}
+                    className="w-full mt-2"
+                  >
+                    {analyzing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Analyze Image
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {tempAnalysisResult && (
+              <div className="border rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Analysis Result</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Room Type</p>
+                    <Badge variant="default" className="text-sm">
+                      {tempAnalysisResult.roomType || 'Unknown'}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Tags</p>
+                    <div className="flex flex-wrap gap-1">
+                      {tempAnalysisResult.tags?.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag.label} ({Math.round(tag.confidence * 100)}%)
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {tempAnalysisResult.detectedObjects && tempAnalysisResult.detectedObjects.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Detected Objects</p>
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {tempAnalysisResult.detectedObjects.map((obj, index) => (
+                          <div key={index} className="text-xs flex justify-between">
+                            <span>{obj.name}</span>
+                            <span className="text-muted-foreground">
+                              {Math.round(obj.confidence * 100)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {tempAnalysisResult.description && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Description</p>
+                      <p className="text-sm">{tempAnalysisResult.description}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tag Cloud */}
       {allTags.length > 0 && (
@@ -271,7 +447,7 @@ const ImageTaggingPage = () => {
                           alt={image.metadata?.filename || 'Property image'}
                           className="w-full h-48 object-cover rounded-lg"
                         />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2 flex-col">
                           <Button
                             size="sm"
                             variant="secondary"
@@ -284,6 +460,19 @@ const ImageTaggingPage = () => {
                             <Sparkles className="h-4 w-4 mr-2" />
                             {image.analyzed ? 'Re-analyze' : 'Analyze'}
                           </Button>
+                          {image.analyzed && image.tags && image.tags.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleClearTags(property._id, image._id)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Clear Tags
+                            </Button>
+                          )}
                         </div>
                         {image.analyzed && (
                           <Badge className="absolute top-2 right-2" variant="default">
@@ -343,6 +532,16 @@ const ImageTaggingPage = () => {
                   )}
                   {selectedImage.analyzed ? 'Re-analyze' : 'Analyze with AI'}
                 </Button>
+                {selectedImage.analyzed && selectedImage.tags && selectedImage.tags.length > 0 && (
+                  <Button
+                    onClick={() => handleClearTags(selectedImage.propertyId, selectedImage._id)}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All Tags
+                  </Button>
+                )}
               </div>
 
               <div>
@@ -400,6 +599,7 @@ const ImageTaggingPage = () => {
         </DialogContent>
       </Dialog>
     </div>
+    <FooterBar/>
     </>
   )
 }
