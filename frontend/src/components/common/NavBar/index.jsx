@@ -1,37 +1,21 @@
 import { Button } from "@/components/ui/button";
+import { useWishlist } from '@/contexts/WishlistContext';
+import { useSidebar } from "@/hooks/use-sidebar";
+import { useStore } from "@/hooks/use-store";
+import { cn } from "@/lib/utils";
+import { logoutUserAPI, selectCurrentUser } from "@/redux/user/userSlice";
+import { Bell, Folders, Heart, User } from "lucide-react";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import LoginModal from "../Modal/login";
+import RegisterModal from "../Modal/register";
+import { UserNav } from "../SidebarMenu/user-nav";
 import { Logo } from "./logo";
 import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
-import { Bell, Folders, Heart, LayoutGrid, LogOut, User, ShieldCheck } from "lucide-react";
-import { useState } from "react";
-import { useWishlist } from '@/contexts/WishlistContext'
-import { useSidebar } from "@/hooks/use-sidebar";
-import { useStore } from "@/hooks/use-store";
-import { cn } from "@/lib/utils";
-import LoginModal from "../Modal/login";
-import RegisterModal from "../Modal/register";
-import { useSelector, useDispatch } from "react-redux";
-import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider
-} from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { UserNav } from "../SidebarMenu/user-nav";
 
 
 const NavBar = ({ hideLogo = false }) => {
@@ -53,15 +37,15 @@ const NavBar = ({ hideLogo = false }) => {
   const isAnyModalOpen = openModal || openRegisterModal;
 
   // Hàm xử lý logout
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutUserAPI()).unwrap()
-      toast.success('Đăng xuất thành công!')
-      navigate('/home')
-    } catch {
-      toast.error('Đăng xuất thất bại. Vui lòng thử lại!')
-    }
-  }
+  // const handleLogout = async () => {
+  //   try {
+  //     await dispatch(logoutUserAPI()).unwrap()
+  //     toast.success('Đăng xuất thành công!')
+  //     navigate('/home')
+  //   } catch {
+  //     toast.error('Đăng xuất thất bại. Vui lòng thử lại!')
+  //   }
+  // }
 
   return (
     <div className="min-h-[95px] bg-muted">
