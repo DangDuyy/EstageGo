@@ -580,5 +580,6 @@ export const propertyService = {
     getPropertyById,
     getProperties,
     getPropertyDetails,
-    getPropertiesWithinPolygon
+    getPropertiesWithinPolygon,
+    getPropertiesWithMap
 }
