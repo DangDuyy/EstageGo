@@ -382,6 +382,124 @@ const getPropertiesByFilters = async (filters) => {
   }
 }
 
+const updateImageTags = async (propertyId, imageId, tagsData) => {
+    try {
+        const property = await propertyModel.findById(propertyId)
+        
+        if (!property) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
+        }
+        
+        const mediaItem = property.media.id(imageId)
+        
+        if (!mediaItem) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
+        }
+        
+        // Update tags
+        if (tagsData.tags) {
+            mediaItem.tags = tagsData.tags
+        }
+        
+        // Update detected objects
+        if (tagsData.detectedObjects) {
+            mediaItem.detectedObjects = tagsData.detectedObjects
+        }
+        
+        // Mark as analyzed
+        mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
+        mediaItem.analyzedAt = new Date()
+        
+        await property.save()
+        
+        return property
+    } catch (error) {
+        throw error
+    }
+}
+
+const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
+    try {
+        const skip = (page - 1) * limit
+        
+        const properties = await propertyModel.find({
+            'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
+        })
+        .populate('owner', 'firstName lastName email avatar')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        
+        const total = await propertyModel.countDocuments({
+            'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
+        })
+        
+        return {
+            properties,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
+const getUserPropertiesWithMedia = async (userId) => {
+    try {
+        const properties = await propertyModel.find({
+            owner: userId,
+            'media.0': { $exists: true } // Only properties with at least one media
+        })
+        .select('_id title slug media createdAt')
+        .sort({ createdAt: -1 })
+        
+        return properties
+    } catch (error) {
+        throw error
+    }
+}
+
+const getAllImageTags = async (userId) => {
+    try {
+        const properties = await propertyModel.find({
+            owner: userId
+        }).select('media.tags')
+        
+        const allTags = []
+        properties.forEach(property => {
+            property.media.forEach(media => {
+                if (media.tags && media.tags.length > 0) {
+                    allTags.push(...media.tags)
+                }
+            })
+        })
+        
+        // Count and aggregate tags
+        const tagMap = new Map()
+        allTags.forEach(tag => {
+            const label = tag.label.toLowerCase()
+            if (!tagMap.has(label)) {
+                tagMap.set(label, {
+                    label,
+                    count: 0,
+                    sources: { ai: 0, manual: 0 }
+                })
+            }
+            const existing = tagMap.get(label)
+            existing.count++
+            existing.sources[tag.source]++
+        })
+        
+        return Array.from(tagMap.values()).sort((a, b) => b.count - a.count)
+    } catch (error) {
+        throw error
+    }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
@@ -390,5 +508,9 @@ export const propertyService = {
     getPropertyDetails,
     getPropertiesWithinPolygon,
     getUserById,
-    getPropertiesByFilters
+    getPropertiesByFilters,
+    updateImageTags,
+    searchPropertiesByImageTag,
+    getUserPropertiesWithMedia,
+    getAllImageTags
 }

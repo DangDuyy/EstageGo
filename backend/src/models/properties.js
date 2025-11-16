@@ -146,7 +146,43 @@ const propertySchema = new mongoose.Schema({
             size: Number, // Kích thước file tính theo bytes
             uploadedAt: { type: Date, default: Date.now },
             mimetype: String // loại MIME (image/png, application/pdf, ...).
-        }
+        },
+        tags: [{
+            label: {
+                type: String,
+                required: true
+            },
+            confidence: {
+                type: Number,
+                min: 0,
+                max: 1,
+                default: 1
+            },
+            source: {
+                type: String,
+                enum: ['ai', 'manual'],
+                default: 'manual'
+            },
+            position: {
+                x: Number,
+                y: Number
+            }
+        }],
+        detectedObjects: [{
+            name: String,
+            bbox: {
+                x: Number,
+                y: Number,
+                width: Number,
+                height: Number
+            },
+            confidence: Number
+        }],
+        analyzed: {
+            type: Boolean,
+            default: false
+        },
+        analyzedAt: Date
     }],
     tour_link: {
         type: String
