@@ -67,11 +67,6 @@ export function getMenuList(pathname, isAdminPanel = false) {
           ]
         },
         {
-          href: "/dashboard/properties",
-          label: "My properties",
-          icon: House,
-        },
-        {
           href: "/dashboard/messages",
           label: "Message",
           icon: MessageCircleMore

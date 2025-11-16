@@ -5,6 +5,16 @@ let socket = null
 
 export const getSocket = () => socket
 
+export const updateSocketToken = (newAccessToken) => {
+  if (socket?.connected) {
+    console.log('[Socket] Updating token...')
+    socket.auth = { token: newAccessToken }
+    // Reconnect with new token
+    socket.disconnect()
+    socket.connect()
+  }
+}
+
 export const connectSocket = (accessToken) => {
   if (socket?.connected) {
     console.log('[Socket] Already connected')
