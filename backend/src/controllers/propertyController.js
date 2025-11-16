@@ -1,6 +1,11 @@
 import { date } from "joi"
 import { mediaService } from "~/services/mediaService"
 import { toArr, toNum, toStr } from "~/utils/formatter"
+import { GoogleGenerativeAI } from "@google/generative-ai"
+import { searchSuggestionService } from "~/services/searchSuggestionService"
+import { propertyKnowledgeService } from "~/services/propertyKnowledgeService"
+import { imageTaggingService } from "~/services/imageTaggingService"
+import { env } from "~/config/environment"
 
 const { StatusCodes } = require("http-status-codes")
 const { propertyService } = require("~/services/propertyService")
@@ -13,9 +18,15 @@ const createProperty = async (req, res, next) => {
         });
 
         const owner = req.jwtDecoded._id
+        
+        // Lấy thông tin user để xác định postType dựa trên membershipLevel
+        const user = await propertyService.getUserById(owner)
+        const postType = user?.membershipLevel === 'premium' ? 'vip' : 'normal'
+        
         const propertyData = {
             ...req.body,
-            owner
+            owner,
+            postType
         }
 
         console.log(propertyData)
@@ -123,7 +134,17 @@ const getProperties = async (req, res, next) => {
         }
 
         const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
-        return res.status(StatusCodes.OK).json(result)
+        
+        // Nếu không có kết quả và có search query, tìm suggestions
+        let searchSuggestions = null
+        if (result.totalProperties === 0 && queryFilter.q) {
+            searchSuggestions = await searchSuggestionService.findSearchSuggestions(queryFilter.q)
+        }
+        
+        return res.status(StatusCodes.OK).json({
+            ...result,
+            ...(searchSuggestions && { searchSuggestions })
+        })
     } catch (error) {
         next(error)
     }
@@ -170,11 +191,624 @@ const getPropertiesWithinPolygon = async (req, res, next) => {
         next(error)
     }
 }
+
+const naturalLanguageSearch = async (req, res, next) => {
+    try {
+        const { naturalLanguageQuery } = req.body;
+
+        if (!naturalLanguageQuery || typeof naturalLanguageQuery !== 'string') {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Vui lòng nhập câu tìm kiếm."
+            });
+        }
+
+        // Kiểm tra GEMINI_API_KEY
+        const apiKey = env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error("GEMINI_API_KEY không được cấu hình trong .env");
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "AI service chưa được cấu hình."
+            });
+        }
+
+        // Khởi tạo Gemini client với model ổn định
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash"
+        });
+
+        // Lấy knowledge base từ database để AI hiểu data thực tế
+        const knowledge = await propertyKnowledgeService.getCachedKnowledge();
+        const knowledgeContext = knowledge ? propertyKnowledgeService.formatKnowledgeForPrompt(knowledge) : '';
+
+        // Xây dựng prompt với context từ database
+        const prompt = `
+Bạn là công cụ chuyển đổi ngôn ngữ tìm kiếm bất động sản từ tiếng Việt/tiếng Anh sang bộ lọc truy vấn MongoDB (Mongoose).
+
+${knowledgeContext}
+
+Yêu cầu người dùng: "${naturalLanguageQuery}"
+
+QUAN TRỌNG: Trả về kết quả dưới dạng JSON object hợp lệ. Không thêm bất kỳ văn bản giải thích nào, chỉ trả về JSON thuần túy.
+
+Quy tắc chuyển đổi:
+1. Chuyển đổi tiền tệ:
+   - "tỷ", "billion", "B" -> nhân với 1000000000
+   - "triệu", "million", "M" -> nhân với 1000000
+   - Ví dụ: "3 tỷ" -> 3000000000, "500 triệu" -> 500000000
+
+2. So sánh:
+   - "dưới", "under", "max", "tối đa", "không quá" -> $lte
+   - "trên", "over", "min", "tối thiểu", "từ", "ít nhất" -> $gte
+   - "chính xác", "exactly" -> $eq
+   - "từ X đến Y" -> { $gte: X, $lte: Y }
+
+3. Loại bất động sản (type):
+   - "căn hộ", "chung cư", "apartment" -> "apartment"
+   - "nhà phố", "nhà riêng", "house" -> "house"
+   - "biệt thự", "villa" -> "villa"
+   - "đất", "mảnh đất", "land" -> "land"
+   - "văn phòng", "office" -> "office"
+   - "condotel", "condo" -> "condo"
+   - "thương mại", "commercial" -> "commercial"
+   - "nhà liền kề", "townhouse" -> "townhouse"
+
+4. Mục đích (purpose):
+   - "bán", "mua", "sale", "buy", "for sale" -> "sale"
+   - "thuê", "cho thuê", "rent", "for rent" -> "rent"
+
+5. Vị trí và Tên Tòa Nhà:
+   - **QUAN TRỌNG**: Nếu người dùng nhắc đến TÊN TÒA NHÀ/KHU ĐÔ THỊ (như Landmark, Vinhomes, Masteri, The Manor, etc.),
+     PHẢI TẠO QUERY $or TÌM TRONG NHIỀU TRƯỜNG: title, description, address.fullAddress
+   
+   - Ví dụ TÊN TÒA NHÀ:
+     "landmark" -> {
+       "$or": [
+         {"title": {"$regex": "landmark", "$options": "i"}},
+         {"description": {"$regex": "landmark", "$options": "i"}},
+         {"address.fullAddress": {"$regex": "landmark", "$options": "i"}}
+       ]
+     }
+   
+   - Ví dụ TÊN + LOẠI:
+     "căn hộ landmark" -> {
+       "type": "apartment",
+       "$or": [
+         {"title": {"$regex": "landmark", "$options": "i"}},
+         {"description": {"$regex": "landmark", "$options": "i"}},
+         {"address.fullAddress": {"$regex": "landmark", "$options": "i"}}
+       ]
+     }
+   
+   - VỊ TRÍ HÀNH CHÍNH (không phải tên tòa nhà):
+     - Tỉnh/thành -> address.province (regex)
+     - Quận/huyện -> address.district (regex)
+     - Từ "gần" + địa điểm -> address.fullAddress (regex)
+
+6. Phòng:
+   - "3BR", "3 bedrooms", "3 phòng ngủ" -> rooms.bedrooms
+   - "2 phòng tắm", "2 bathrooms" -> rooms.bathrooms
+
+7. Tiện ích (amenities):
+   - "bể bơi", "swimming pool" -> amenities: { $in: ["swimming pool"] }
+   - "gym", "phòng gym" -> amenities: { $in: ["gym"] }
+   - Danh sách: "pool, gym, parking" -> amenities: { $in: ["swimming pool", "gym", "parking"] }
+
+8. Status:
+   - Mặc định không cần truyền (backend sẽ lấy active)
+   - Nếu có từ "đã bán", "sold" -> status: "sold"
+   - Nếu có từ "đã cho thuê", "rented" -> status: "rented"
+
+**CHỈ** trả về JSON object tuân thủ schema. Không giải thích, không thêm văn bản.
+Nếu không có thông tin về một trường nào đó, bỏ qua trường đó (nullable).
+
+Ví dụ output hợp lệ:
+
+Ví dụ 1 - Tìm theo TÊN TÒA NHÀ (search trong title, description, fullAddress):
+{
+  "type": "apartment",
+  "purpose": "sale",
+  "$or": [
+    {"title": {"$regex": "landmark", "$options": "i"}},
+    {"description": {"$regex": "landmark", "$options": "i"}},
+    {"address.fullAddress": {"$regex": "landmark", "$options": "i"}}
+  ]
+}
+
+Ví dụ 2 - Tên tòa nhà + Nhiều tiêu chí:
+{
+  "type": "apartment",
+  "purpose": "sale",
+  "rooms.bedrooms": { "$gte": 2 },
+  "price.value": { "$lte": 5000000000 },
+  "$or": [
+    {"title": {"$regex": "vinhomes", "$options": "i"}},
+    {"description": {"$regex": "vinhomes", "$options": "i"}},
+    {"address.fullAddress": {"$regex": "vinhomes", "$options": "i"}}
+  ]
+}
+
+Ví dụ 3 - Tìm theo quận (VỊ TRÍ HÀNH CHÍNH, không dùng $or):
+{
+  "type": "apartment",
+  "address.district": { "$regex": "quận 1", "$options": "i" }
+}
+
+Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
+{
+  "address.fullAddress": { "$regex": "gần trường", "$options": "i" }
+}
+`;
+
+        // Gọi Gemini API với error handling và timeout
+        let result;
+        try {
+            // Set timeout cho API call (10 giây)
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('AI request timeout')), 10000)
+            );
+            
+            result = await Promise.race([
+                model.generateContent(prompt),
+                timeoutPromise
+            ]);
+        } catch (aiError) {
+            console.error("Google AI API Error:", aiError);
+            console.error("Error details:", {
+                name: aiError.name,
+                message: aiError.message,
+                cause: aiError.cause
+            });
+            
+            // Kiểm tra timeout
+            if (aiError.message && aiError.message.includes('timeout')) {
+                return res.status(StatusCodes.REQUEST_TIMEOUT).json({
+                    success: false,
+                    message: "AI service không phản hồi. Vui lòng thử lại."
+                });
+            }
+            
+            // Kiểm tra rate limit error
+            if (aiError.message && (aiError.message.includes('quota') || aiError.message.includes('429'))) {
+                return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+                    success: false,
+                    message: "AI service đang bận. Vui lòng thử lại sau ít phút."
+                });
+            }
+            
+            // Kiểm tra retry delay
+            if (aiError.message && aiError.message.includes('retryDelay')) {
+                return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+                    success: false,
+                    message: "AI service tạm thời quá tải. Vui lòng thử lại sau 1 phút."
+                });
+            }
+            
+            // Kiểm tra API key invalid
+            if (aiError.message && (aiError.message.includes('API key') || aiError.message.includes('401') || aiError.message.includes('403'))) {
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: "Lỗi cấu hình AI service. Vui lòng liên hệ quản trị viên."
+                });
+            }
+            
+            // Kiểm tra network error
+            if (aiError.name === 'GoogleGenerativeAIFetchError' || aiError.message.includes('fetch')) {
+                return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+                    success: false,
+                    message: "Không thể kết nối tới AI service. Vui lòng kiểm tra kết nối mạng và thử lại."
+                });
+            }
+            
+            // Lỗi khác
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Không thể kết nối tới AI service. Vui lòng thử lại.",
+                error: process.env.NODE_ENV === 'development' ? aiError.message : undefined
+            });
+        }
+        
+        let responseText = result.response.text();
+        console.log("AI Response (raw):", responseText);
+
+        // Parse JSON - xử lý markdown code blocks nếu có
+        let filters;
+        try {
+            // Loại bỏ markdown code blocks nếu có (```json ... ``` hoặc ``` ... ```)
+            responseText = responseText.trim();
+            if (responseText.startsWith('```')) {
+                responseText = responseText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+            }
+            
+            filters = JSON.parse(responseText);
+            console.log("AI Parsed Filters:", filters);
+        } catch (parseError) {
+            console.error("Lỗi parse JSON từ Gemini:", parseError);
+            console.error("Response text:", responseText);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "AI không thể tạo ra truy vấn hợp lệ.",
+                debug: process.env.NODE_ENV === 'development' ? responseText : undefined
+            });
+        }
+
+        // Loại bỏ các trường null/undefined/empty
+        const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+            if (value !== null && value !== undefined && 
+                !(typeof value === 'object' && Object.keys(value).length === 0)) {
+                acc[key] = value;
+            }
+            return acc;
+        }, {});
+
+        console.log("AI Generated Filters:", cleanFilters);
+        console.log("Natural Language Query:", naturalLanguageQuery);
+
+        // Thực thi truy vấn MongoDB
+        const properties = await propertyService.getPropertiesByFilters(cleanFilters);
+        console.log(`Found ${properties.length} properties`);
+
+        // Nếu không có kết quả, tìm suggestions (không block main flow)
+        let searchSuggestions = null
+        if (properties.length === 0) {
+            try {
+                // Extract keywords từ query
+                const locationKeywords = searchSuggestionService.extractLocationKeywords(naturalLanguageQuery)
+                
+                // Tìm suggestions cho toàn bộ query hoặc từng keyword
+                const querySuggestions = await searchSuggestionService.findSearchSuggestions(naturalLanguageQuery)
+                
+                // Nếu có location keywords, tìm suggestions cho chúng
+                const keywordSuggestions = []
+                for (const keyword of locationKeywords.slice(0, 3)) { // Limit to 3 keywords
+                    const kws = await searchSuggestionService.findSearchSuggestions(keyword, 3)
+                    if (kws.didYouMean) {
+                        keywordSuggestions.push({
+                            original: keyword,
+                            suggestion: kws.didYouMean
+                        })
+                    }
+                }
+                
+                searchSuggestions = {
+                    didYouMean: querySuggestions.didYouMean,
+                    suggestions: querySuggestions.suggestions,
+                    keywordCorrections: keywordSuggestions
+                }
+            } catch (suggestionError) {
+                console.error("Error getting suggestions:", suggestionError)
+                // Don't block the response if suggestions fail
+            }
+        }
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            properties: properties,
+            filtersUsed: cleanFilters,
+            totalProperties: properties.length,
+            ...(searchSuggestions && { searchSuggestions })
+        });
+
+    } catch (error) {
+        console.error("Lỗi trong naturalLanguageSearch:", error);
+        next(error);
+    }
+}
+
+const analyzePropertyImage = async (req, res, next) => {
+    try {
+        const { propertyId, imageId } = req.params
+        const userId = req.jwtDecoded._id
+        
+        // Get property and verify ownership
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only analyze images of your own properties"
+            })
+        }
+        
+        // Find image in property media
+        const mediaItem = property.media.id(imageId)
+        
+        if (!mediaItem) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Image not found"
+            })
+        }
+        
+        // Analyze image with AI
+        const analysis = await imageTaggingService.analyzeImageWithGemini(mediaItem.url)
+        
+        // Update property with analysis results
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Image analyzed successfully",
+            data: {
+                imageId,
+                ...analysis
+            }
+        })
+    } catch (error) {
+        console.error("Error analyzing property image:", error)
+        next(error)
+    }
+}
+
+const updatePropertyImageTags = async (req, res, next) => {
+    try {
+        const { propertyId, imageId } = req.params
+        const userId = req.jwtDecoded._id
+        const { tags, detectedObjects } = req.body
+        
+        // Verify ownership
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only update tags of your own properties"
+            })
+        }
+        
+        // Update tags
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, {
+            tags,
+            detectedObjects,
+            analyzed: true
+        })
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Tags updated successfully",
+            data: updatedProperty
+        })
+    } catch (error) {
+        console.error("Error updating image tags:", error)
+        next(error)
+    }
+}
+
+const searchPropertiesByTag = async (req, res, next) => {
+    try {
+        const { tag } = req.query
+        const { page = 1, limit = 12 } = req.query
+        
+        if (!tag) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Tag parameter is required"
+            })
+        }
+        
+        const result = await propertyService.searchPropertiesByImageTag(tag, parseInt(page), parseInt(limit))
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: result
+        })
+    } catch (error) {
+        console.error("Error searching properties by tag:", error)
+        next(error)
+    }
+}
+
+const getUserPropertiesWithMedia = async (req, res, next) => {
+    try {
+        const userId = req.jwtDecoded._id
+        
+        const properties = await propertyService.getUserPropertiesWithMedia(userId)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: properties
+        })
+    } catch (error) {
+        console.error("Error getting user properties with media:", error)
+        next(error)
+    }
+}
+
+const getAllUserImageTags = async (req, res, next) => {
+    try {
+        const userId = req.jwtDecoded._id
+        
+        const tags = await propertyService.getAllImageTags(userId)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: tags
+        })
+    } catch (error) {
+        console.error("Error getting user image tags:", error)
+        next(error)
+    }
+}
+
+const bulkAnalyzeImages = async (req, res, next) => {
+    try {
+        const { propertyId } = req.params
+        const userId = req.jwtDecoded._id
+        
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only analyze images of your own properties"
+            })
+        }
+        
+        // Get all unanalyzed images
+        const unanalyzedImages = property.media.filter(media => 
+            media.type.startsWith('image') && !media.analyzed
+        )
+        
+        if (unanalyzedImages.length === 0) {
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                message: "All images already analyzed",
+                data: { analyzed: 0, total: property.media.length }
+            })
+        }
+        
+        // Analyze each image
+        const results = []
+        for (const media of unanalyzedImages) {
+            try {
+                const analysis = await imageTaggingService.analyzeImageWithGemini(media.url)
+                await propertyService.updateImageTags(propertyId, media._id, analysis)
+                results.push({ imageId: media._id, success: true })
+            } catch (error) {
+                results.push({ imageId: media._id, success: false, error: error.message })
+            }
+        }
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: `Analyzed ${results.filter(r => r.success).length} images`,
+            data: {
+                analyzed: results.filter(r => r.success).length,
+                total: unanalyzedImages.length,
+                results
+            }
+        })
+    } catch (error) {
+        console.error("Error bulk analyzing images:", error)
+        next(error)
+    }
+}
+
+const analyzeTemporaryImage = async (req, res, next) => {
+    try {
+        // uploadFiles middleware uses array, so files are in req.files
+        const files = req.files
+        
+        if (!files || files.length === 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "No image file provided"
+            })
+        }
+        
+        const file = files[0] // Get first file
+        
+        // Upload to cloudinary temporarily
+        console.log('[Upload] Uploading file to Cloudinary:', file.originalname)
+        const uploadResult = await mediaService.uploadPropertyImage([file], 'temp')
+        
+        if (!uploadResult || uploadResult.length === 0) {
+            console.error('[Upload] Failed to upload to Cloudinary')
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: "Failed to upload image"
+            })
+        }
+        
+        const imageUrl = uploadResult[0].url
+        console.log('[Upload] Image uploaded successfully:', imageUrl)
+        
+        // Analyze with AI
+        console.log('[AI] Starting analysis with Gemini...')
+        const analysis = await imageTaggingService.analyzeImageWithGemini(imageUrl)
+        console.log('[AI] Analysis completed:', analysis)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Image analyzed successfully",
+            data: {
+                imageUrl,
+                ...analysis
+            }
+        })
+    } catch (error) {
+        console.error("Error analyzing temporary image:", error)
+        next(error)
+    }
+}
+
+const clearImageTags = async (req, res, next) => {
+    try {
+        const { propertyId, imageId } = req.params
+        const userId = req.jwtDecoded._id
+        
+        // Verify ownership
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only clear tags of your own properties"
+            })
+        }
+        
+        // Clear all tags and objects
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, {
+            tags: [],
+            detectedObjects: [],
+            analyzed: false
+        })
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Tags cleared successfully",
+            data: updatedProperty
+        })
+    } catch (error) {
+        console.error("Error clearing image tags:", error)
+        next(error)
+    }
+}
+
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
     getProperties,
     getPropertyDetails,
     getPropertiesWithinPolygon,
-    getPropertiesWithMap
+    getPropertiesWithMap,
+    naturalLanguageSearch,
+    analyzePropertyImage,
+    updatePropertyImageTags,
+    searchPropertiesByTag,
+    getUserPropertiesWithMedia,
+    getAllUserImageTags,
+    bulkAnalyzeImages,
+    analyzeTemporaryImage,
+    clearImageTags
 }

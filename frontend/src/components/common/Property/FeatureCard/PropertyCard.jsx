@@ -2,9 +2,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Bed, Bath, Ruler, Heart } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Heart, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "@/utils/helper";
+import { formatPostDate } from "@/utils/formatters";
 import { Separator } from "@/components/ui/separator";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export default function PropertyCard({ item, variant = "grid" }) {
   const statTextClass = variant === "grid" ? "" : "text-base md:text-lg"; // list to hơn
   const statGapClass  = variant === "grid" ? "gap-4" : "gap-6";           // list nới gap
 
-  // Badge: Featured + purpose (sale/rent)
+  // Badge: VIP + Featured + purpose (sale/rent)
   const mapPurpose = (p) => {
     if (!p) return null;
     const v = String(p).toLowerCase();
@@ -51,7 +52,9 @@ export default function PropertyCard({ item, variant = "grid" }) {
     if (v === "rent") return "For Rent";
     return p;
   };
-  const badges = ["Featured"];
+  const badges = [];
+  if (item.postType === 'vip') badges.push("VIP");
+  badges.push("Featured");
   const purposeLabel = mapPurpose(item.purpose);
   if (purposeLabel) badges.push(purposeLabel);
 
@@ -77,7 +80,11 @@ export default function PropertyCard({ item, variant = "grid" }) {
             {badges.map((t, idx) => (
               <Badge
                 key={`${t}-${idx}`}
-                className={`text-md ${t === "Featured" ? "bg-blue-600 text-white" : "bg-gray-700 text-white"} `}
+                className={`text-md ${
+                  t === "VIP" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold" :
+                  t === "Featured" ? "bg-blue-600 text-white" : 
+                  "bg-gray-700 text-white"
+                } `}
               >
                 {t}
               </Badge>
@@ -137,6 +144,13 @@ export default function PropertyCard({ item, variant = "grid" }) {
                   <span className="line-clamp-1">{locationText}</span>
                 </div>
               )}
+
+              {item.createdAt && (
+                <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{formatPostDate(item.createdAt)}</span>
+                </div>
+              )}
             </div>
 
             <Separator className="my-4" />
@@ -169,6 +183,12 @@ export default function PropertyCard({ item, variant = "grid" }) {
                 <Stat icon={Bath} label="Baths" value={baths} iconClass={statIconClass} />
                 <Stat icon={Ruler} label={item.sqft ? "Sqft" : "Area"} value={area} iconClass={statIconClass} />
               </div>
+              {item.createdAt && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{formatPostDate(item.createdAt)}</span>
+                </div>
+              )}
             </div>
 
             <Separator className="my-4" />

@@ -24,7 +24,7 @@ import {
 } from "@/redux/activeProperty/activePropertySlice";
 import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Textarea } from "@/components/ui/textarea";
-import { capitalizeFirstLetter } from "@/utils/formatters";
+import { capitalizeFirstLetter, formatPostDate } from "@/utils/formatters";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { createOrGetConversationAPI } from "@/apis";
 import { toast } from "react-toastify";
@@ -366,6 +366,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
               const items = [
                 { label: "ID", value: property?._id?.slice(-4) || "-", Icon: House },
                 { label: "Type", value: property?.type || "-", Icon: SlidersHorizontal },
+                { label: "Posted", value: formatPostDate(property?.createdAt, true) || "-", Icon: null },
                 { label: "Bedrooms", value: property?.rooms?.bedrooms ?? "-", Icon: Bed },
                 { label: "Bathrooms", value: property?.rooms?.bathrooms ?? "-", Icon: Bath },
                 { label: "LivingRooms", value: property?.rooms?.livingrooms ?? "-", Icon: Sofa},

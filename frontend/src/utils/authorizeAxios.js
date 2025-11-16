@@ -4,6 +4,7 @@ import { refreshTokenAPI } from '@/apis'
 import { logoutUserAPI } from '@/redux/user/userSlice'
 import { interceptorLoadingElements } from './formatters'
 import { toast } from 'react-toastify'
+import { updateSocketToken } from '@/lib/socket'
 
 let axiosReduxStore
 export const injectStore = mainStore => {
@@ -50,22 +51,36 @@ authorizeAxiosInstance.interceptors.response.use((response) => {
 
   interceptorLoadingElements(false)
 
-  if (error.response?.status === 401) {
-    axiosReduxStore.dispatch(logoutUserAPI(false))
-  }
-
   const originalRequests = error.config
-  if (error.response?.status === 410 && !originalRequests._retry) {
+  
+  // Handle 410 (token expired) or 401 (unauthorized) - try to refresh token
+  if ((error.response?.status === 410 || error.response?.status === 401) && !originalRequests._retry) {
     originalRequests._retry = true
 
     if (!refreshTokenPromise) {
       refreshTokenPromise = refreshTokenAPI(
 
       ).then( data => {
-        return data?.accessToken
+        const newAccessToken = data?.accessToken
+        
+        // Update localStorage with new token
+        if (newAccessToken) {
+          localStorage.setItem('accessToken', newAccessToken)
+          
+          // Update socket with new token
+          try {
+            updateSocketToken(newAccessToken)
+          } catch (socketError) {
+            console.warn('[Auth] Failed to update socket token:', socketError)
+          }
+        }
+        
+        return newAccessToken
       }
       ).catch(() => {
+        // Refresh token failed, logout user
         axiosReduxStore.dispatch(logoutUserAPI(false))
+        throw error
       }
       ).finally(() => {
         refreshTokenPromise = null

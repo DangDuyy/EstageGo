@@ -1,4 +1,4 @@
-import { LayoutGrid, LogOut, User } from "lucide-react";
+import { LayoutGrid, LogOut, User, ShieldCheck, Crown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +35,10 @@ export function UserNav() {
     }
   }
 
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <DropdownMenu>
       <TooltipProvider disableHoverableContent>
@@ -59,7 +63,19 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
+              {currentUser.membershipLevel === 'premium' && (
+                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
+                  Premium
+                </span>
+              )}
+              {currentUser.membershipLevel === 'standard' && (
+                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-blue-400 to-blue-600 text-white">
+                  Standard
+                </span>
+              )}
+            </div>
             <p className="text-xs leading-none text-muted-foreground">
               {currentUser.email}
             </p>
@@ -74,11 +90,25 @@ export function UserNav() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="hover:cursor-pointer" asChild>
-            <Link to="/account" className="flex items-center">
+            <Link to="/dashboard/account" className="flex items-center">
               <User className="w-4 h-4 mr-3 text-muted-foreground" />
               Account
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem className="hover:cursor-pointer" asChild>
+            <Link to="/dashboard/plans" className="flex items-center">
+              <Crown className="w-4 h-4 mr-3 text-muted-foreground" />
+              Plans
+            </Link>
+          </DropdownMenuItem>
+          {currentUser?.role === 'admin' && (
+            <DropdownMenuItem className="hover:cursor-pointer" asChild>
+              <Link to="/admin/dashboard" className="flex items-center">
+                <ShieldCheck className="w-4 h-4 mr-3 text-muted-foreground" />
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>

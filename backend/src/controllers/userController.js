@@ -184,6 +184,17 @@ const getUserProfileById = async (req, res, next) => {
   }
 }
 
+const getCurrentUser = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.getUserProfileById(userId)
+    
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const userController = {
   createNew,
   login,
@@ -198,5 +209,6 @@ export const userController = {
   removeAgentRole,
   getAllAgents,
   getAgentById,
-  getUserProfileById
+  getUserProfileById,
+  getCurrentUser
 }

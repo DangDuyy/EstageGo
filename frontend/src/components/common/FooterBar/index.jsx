@@ -59,10 +59,13 @@ const FooterBar = ({
           className="flex w-full flex-col justify-between gap-10 lg:flex-row lg:items-start lg:text-left">
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start">
             {/* Logo */}
-            <div className="flex items-center gap-2 lg:justify-start dark:bg-black">
-              <Logo />
+            <div className="flex items-center gap-2 lg:justify-start">
+              <Logo 
+                className="brightness-0 invert dark:brightness-100 dark:invert-0" 
+                textClassName="text-white dark:text-black"
+              />
             </div>
-            <p className="text-muted-foreground max-w-[70%] text-sm">
+            <p className="text-muted-foreground max-w-[70%] text-sm text-amber-50 dark:text-black">
               {description}
             </p>
             <ul className="text-amber-50 dark:text-black flex items-center space-x-6">

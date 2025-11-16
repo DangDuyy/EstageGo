@@ -6,7 +6,7 @@ import ApiError from "~/utils/ApiError"
 import { DEFAULT_ITEM_PER_PAGE, DEFAULT_PAGE } from "~/utils/constants"
 
 const { default: propertyModel } = require("~/models/properties")
-const { slugify, escapeRegex } = require("~/utils/formatter")
+const { slugify, escapeRegex, removeDiacritics, createFuzzyRegex } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
   try {
@@ -102,7 +102,13 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       sortDir         // 'asc' | 'desc'
     } = queryFilter || {}
 
-    const match = { _destroy: { $ne: true } }
+    const match = { 
+      _destroy: { $ne: true },
+      $or: [
+        { expireAt: null },
+        { expireAt: { $gt: new Date() } }
+      ]
+    }
 
     if (owner && typeof owner === "string") {
       try { match.owner = new Types.ObjectId(owner) } catch { }
@@ -177,6 +183,11 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     const dir = (String(sortDir).toLowerCase() === "asc") ? 1 : -1
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
+    else if (sortBy === "featured") {
+      // Ưu tiên VIP posts trước, sau đó sort theo createdAt
+      sort["postType"] = -1 // vip trước normal
+      sort["createdAt"] = -1
+    }
     else sort["createdAt"] = dir // mặc định mới nhất
 
     const pipeline = []
@@ -233,11 +244,15 @@ const getPropertyDetails = async (propertyId) => {
       throw new Error('Invalid propertyId')
 
     const pineline = [
-      {
-        $match: {
-          _id: new Types.ObjectId(propertyId),
-          _destroy: { $ne: true }
-        }
+      { 
+        $match : {
+        _id: new Types.ObjectId(propertyId),
+        _destroy: { $ne: true },
+        $or: [
+          { expireAt: null },
+          { expireAt: { $gt: new Date() } }
+        ]
+        } 
       },
       {
         $lookup: {
@@ -352,18 +367,218 @@ const getPropertiesWithinPolygon = async (polygonGeoJSON) => {
       $geoWithin: {
         $geometry: polygonGeoJSON
       }
-    }
+    },
+    _destroy: { $ne: true },
+    $or: [
+      { expireAt: null },
+      { expireAt: { $gt: new Date() } }
+    ]
   }).lean();
 
   return properties;
 }
 
+const getUserById = async (userId) => {
+  try {
+    const user = await userModel.findById(userId)
+    return user
+  } catch (error) {
+    throw error
+  }
+}
+
+const getPropertiesByFilters = async (filters) => {
+  try {
+    // Base conditions
+    const baseConditions = {
+      _destroy: { $ne: true }
+    }
+    
+    const expireCondition = {
+      $or: [
+        { expireAt: null },
+        { expireAt: { $gt: new Date() } }
+      ]
+    }
+
+    // Separate $or from other filters
+    const { $or: filterOr, ...otherFilters } = filters
+    
+    // Build final match
+    let finalMatch
+    
+    if (filterOr && filterOr.length > 0) {
+      // Nếu có $or từ AI filters, combine với expire check bằng $and
+      finalMatch = {
+        $and: [
+          baseConditions,
+          expireCondition,
+          { ...otherFilters },
+          { $or: filterOr }
+        ]
+      }
+    } else {
+      // Không có $or, merge bình thường
+      finalMatch = {
+        ...baseConditions,
+        ...expireCondition,
+        ...otherFilters
+      }
+    }
+
+    // Log để debug
+    console.log("Final match filters:", JSON.stringify(finalMatch, null, 2))
+
+    const pipeline = [
+      { $match: finalMatch },
+      { $sort: { createdAt: -1 } }, // Mới nhất trước
+      { $limit: 50 }, // Giới hạn kết quả
+      {
+        $lookup: {
+          from: userModel.collection.name,
+          let: { ownerId: "$owner" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$ownerId"] } } },
+            { $project: { password: 0, verifyToken: 0, __v: 0 } }
+          ],
+          as: "ownerInfo"
+        }
+      },
+      { $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true } }
+    ]
+
+    const properties = await propertyModel.aggregate(pipeline).collation({ locale: "vi", strength: 1 })
+
+    return properties
+  } catch (error) {
+    console.error("Error in getPropertiesByFilters:", error)
+    throw error
+  }
+}
+
+const updateImageTags = async (propertyId, imageId, tagsData) => {
+    try {
+        const property = await propertyModel.findById(propertyId)
+        
+        if (!property) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
+        }
+        
+        const mediaItem = property.media.id(imageId)
+        
+        if (!mediaItem) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
+        }
+        
+        // Update tags
+        if (tagsData.tags) {
+            mediaItem.tags = tagsData.tags
+        }
+        
+        // Update detected objects
+        if (tagsData.detectedObjects) {
+            mediaItem.detectedObjects = tagsData.detectedObjects
+        }
+        
+        // Mark as analyzed
+        mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
+        mediaItem.analyzedAt = new Date()
+        
+        await property.save()
+        
+        return property
+    } catch (error) {
+        throw error
+    }
+}
+
+const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
+    try {
+        const skip = (page - 1) * limit
+        
+        const properties = await propertyModel.find({
+            'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
+        })
+        .populate('owner', 'firstName lastName email avatar')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        
+        const total = await propertyModel.countDocuments({
+            'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
+        })
+        
+        return {
+            properties,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+    } catch (error) {
+        throw error
+    }
+}
+
+const getUserPropertiesWithMedia = async (userId) => {
+    try {
+        const properties = await propertyModel.find({
+            owner: userId,
+            'media.0': { $exists: true } // Only properties with at least one media
+        })
+        .select('_id title slug media createdAt')
+        .sort({ createdAt: -1 })
+        
+        return properties
+    } catch (error) {
+        throw error
+    }
+}
+
+const getAllImageTags = async (userId) => {
+    try {
+        const properties = await propertyModel.find({
+            owner: userId
+        }).select('media.tags')
+        
+        const allTags = []
+        properties.forEach(property => {
+            property.media.forEach(media => {
+                if (media.tags && media.tags.length > 0) {
+                    allTags.push(...media.tags)
+                }
+            })
+        })
+        
+        // Count and aggregate tags
+        const tagMap = new Map()
+        allTags.forEach(tag => {
+            const label = tag.label.toLowerCase()
+            if (!tagMap.has(label)) {
+                tagMap.set(label, {
+                    label,
+                    count: 0,
+                    sources: { ai: 0, manual: 0 }
+                })
+            }
+            const existing = tagMap.get(label)
+            existing.count++
+            existing.sources[tag.source]++
+        })
+        
+        return Array.from(tagMap.values()).sort((a, b) => b.count - a.count)
+    } catch (error) {
+        throw error
+    }
+}
+
 export const propertyService = {
-  createProperty,
-  addMediaToProperty,
-  getPropertyById,
-  getProperties,
-  getPropertyDetails,
-  getPropertiesWithinPolygon,
-  getPropertiesWithMap
+    createProperty,
+    addMediaToProperty,
+    getPropertyById,
+    getProperties,
+    getPropertyDetails,
+    getPropertiesWithinPolygon
 }

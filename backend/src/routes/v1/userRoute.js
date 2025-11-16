@@ -21,6 +21,9 @@ Router.route('/logout')
   .delete(userController.logout)
 
 // Protected routes (require authentication)
+Router.route('/me')
+  .get(authMiddleware.isAuthorized, userController.getCurrentUser)
+
 Router.route('/profile')
   .put(authMiddleware.isAuthorized, userController.updateProfile)
 

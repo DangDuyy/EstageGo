@@ -1,28 +1,39 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import NotFoundPage from './pages/404'
-import DashboardPage from './pages/DashboardPage/DashBoard'
-import Post from './pages/DashboardPage/Post/Post'
-import NewPost from './pages/DashboardPage/Post/NewPost'
-import Message from './pages/DashboardPage/Message'
-import MyProperty from './pages/DashboardPage/MyProperty'
-import Profile from './pages/DashboardPage/Profile'
-import Wishlist from './pages/DashboardPage/Wishlist'
-import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
-import HomePage from './pages/HomePage'
-import VerifyAccountPage from './pages/HomePage/verifyAccount'
-import DashboardLayout from './layouts/DashboardLayout'
-import MapPage from './pages/MapPage'
-import PropertyPages from './pages/PropertyPage'
-import PropertyPage from './pages/PropertyPage/_id'
-import PropertiesMap from './pages/MapPage/index_v2'
 import { ChatBot } from './components/common/AITrend/ChatBot'
 import { MapProvider } from './components/common/GoogleMap/MapProvider'
+import { SocketManager } from './components/common/SocketManager'
+import { useAuth } from './hooks/useAuth'
+import AdminLayout from './layouts/AdminLayout'
+import DashboardLayout from './layouts/DashboardLayout'
+import NotFoundPage from './pages/404'
+import AdminAgentRequests from './pages/AdminPage/AdminAgentRequests'
+import AdminDashboard from './pages/AdminPage/AdminDashboard'
+import AdminProperties from './pages/AdminPage/AdminProperties'
+import AdminUsers from './pages/AdminPage/AdminUsers'
 import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
-import { SocketManager } from './components/common/SocketManager'
+import AISearchPage from './pages/AI/AISearchPage'
+import ImageTaggingPage from './pages/AI/ImageTaggingPage'
+import DashboardPage from './pages/DashboardPage/DashBoard'
+import Message from './pages/DashboardPage/Message'
+import NewPost from './pages/DashboardPage/Post/NewPost'
+import Post from './pages/DashboardPage/Post/Post'
+import PricingPlans from './pages/DashboardPage/PricingPlans'
+import Profile from './pages/DashboardPage/Profile'
+import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
+import Wishlist from './pages/DashboardPage/Wishlist'
+import HomePage from './pages/HomePage'
+import VerifyAccountPage from './pages/HomePage/verifyAccount'
+import MapPage from './pages/MapPage'
+import PropertiesMap from './pages/MapPage/index_v2'
+import PropertyPages from './pages/PropertyPage'
+import PropertyPage from './pages/PropertyPage/_id'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
+  // Fetch current user on app load
+  useAuth();
+
   return (
     <>
       <SocketManager />
@@ -47,6 +58,8 @@ function App() {
       <Route path="/agents/:agentId" element={<AgentProfile />} />
 
       <Route path="/ai/chatbot" element={<ChatBot />} />
+      <Route path="/ai/nl-search" element={<AISearchPage />} />
+      <Route path="/ai/image-tagging" element={<ImageTaggingPage />} />
 
       <Route path="/map" element={<MapPage />} />
       <Route path="/dashboard" element={<DashboardLayout />}>
@@ -62,9 +75,17 @@ function App() {
             </MapProvider>
           } />
         </Route>
-        <Route path="properties" element={<MyProperty />} />
         <Route path="wishlist" element={<Wishlist />} />
+        <Route path="plans" element={<PricingPlans />} />
+      </Route>
 
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="properties" element={<AdminProperties />} />
+        <Route path="agent-requests" element={<AdminAgentRequests />} />
+        <Route path="users" element={<AdminUsers />} />
       </Route>
 
       {/* page not found */}

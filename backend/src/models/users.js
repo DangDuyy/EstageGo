@@ -125,6 +125,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['none', 'pending', 'approved', 'rejected'],
         default: 'none'
+    },
+    membershipLevel: {
+        type: String,
+        enum: ['basic', 'standard', 'premium'],
+        default: 'basic'
     }
 }, { timestamps: true }); // Tự động tạo createdAt và updatedAt fields
 

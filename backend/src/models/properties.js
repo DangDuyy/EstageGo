@@ -29,6 +29,11 @@ const propertySchema = new mongoose.Schema({
         enum: ['public', 'private'],
         default: 'public'
     },
+    postType: {
+        type: String,
+        enum: ['normal', 'vip'],
+        default: 'normal'
+    },
     purpose: {
         type: String,
         enum: ['sale', 'rent'],
@@ -141,7 +146,43 @@ const propertySchema = new mongoose.Schema({
             size: Number, // Kích thước file tính theo bytes
             uploadedAt: { type: Date, default: Date.now },
             mimetype: String // loại MIME (image/png, application/pdf, ...).
-        }
+        },
+        tags: [{
+            label: {
+                type: String,
+                required: true
+            },
+            confidence: {
+                type: Number,
+                min: 0,
+                max: 1,
+                default: 1
+            },
+            source: {
+                type: String,
+                enum: ['ai', 'manual'],
+                default: 'manual'
+            },
+            position: {
+                x: Number,
+                y: Number
+            }
+        }],
+        detectedObjects: [{
+            name: String,
+            bbox: {
+                x: Number,
+                y: Number,
+                width: Number,
+                height: Number
+            },
+            confidence: Number
+        }],
+        analyzed: {
+            type: Boolean,
+            default: false
+        },
+        analyzedAt: Date
     }],
     tour_link: {
         type: String
@@ -150,6 +191,10 @@ const propertySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    expireAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true })
 

@@ -26,7 +26,7 @@ export const verifyUserAPI = async (data) => {
 }
 
 export const refreshTokenAPI = async () => {
-  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/refresh_token`)
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/refresh-token`)
   return response.data
 }
 
@@ -157,6 +157,11 @@ export const getPropertiesWithMap = async (query) => {
   return response.data
 }
 
+export const nlSearchPropertiesAPI = async (naturalLanguageQuery) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/nl-search`, { naturalLanguageQuery })
+  return response.data
+}
+
 // ========== WISHLIST APIs ==========
 
 // Get user's wishlist
@@ -274,5 +279,69 @@ export const getMessagesAPI = async (conversationId, page = 1, limit = 50) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/messages/${conversationId}`, {
     params: { page, limit }
   })
+  return response.data
+}
+
+// ========== IMAGE TAGGING APIs ==========
+
+// Get user properties with media
+export const getUserPropertiesWithMediaAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/user/properties-with-media`)
+  return response.data
+}
+
+// Get all user image tags
+export const getAllUserImageTagsAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/user/image-tags`)
+  return response.data
+}
+
+// Search properties by tag
+export const searchPropertiesByTagAPI = async (tag, page = 1, limit = 12) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/search-by-tag`, {
+    params: { tag, page, limit }
+  })
+  return response.data
+}
+
+// Analyze single image
+export const analyzePropertyImageAPI = async (propertyId, imageId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/analyze`)
+  return response.data
+}
+
+// Update image tags
+export const updateImageTagsAPI = async (propertyId, imageId, tags, detectedObjects) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/tags`, {
+    tags,
+    detectedObjects
+  })
+  return response.data
+}
+
+// Bulk analyze all images of a property
+export const bulkAnalyzeImagesAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/images/bulk-analyze`)
+  toast.success('Images analyzed successfully!')
+  return response.data
+}
+
+// Analyze temporary image (not attached to property)
+export const analyzeTemporaryImageAPI = async (file) => {
+  const formData = new FormData()
+  formData.append('files', file)
+  
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/analyze-temp-image`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return response.data
+}
+
+// Clear all tags from an image
+export const clearImageTagsAPI = async (propertyId, imageId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/tags`)
+  toast.success('Tags cleared successfully!')
   return response.data
 }
