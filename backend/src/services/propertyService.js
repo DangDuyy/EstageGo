@@ -9,63 +9,63 @@ const { default: propertyModel } = require("~/models/properties")
 const { slugify, escapeRegex } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
-    try {
-        // Tạo slug từ title
-        const baseSlug = slugify(propertyData.title, {
-            lower: true, // chuyển hết sang chữ thường
-            strict: true, // loại bỏ kí tự đặc biệt
-            locale: "vi" // hỗ trợ tiếng việt
-        })
+  try {
+    // Tạo slug từ title
+    const baseSlug = slugify(propertyData.title, {
+      lower: true, // chuyển hết sang chữ thường
+      strict: true, // loại bỏ kí tự đặc biệt
+      locale: "vi" // hỗ trợ tiếng việt
+    })
 
-        // Đảm bảo slug unique
-        let slug = baseSlug
-        let counter = 1
-        while (await propertyModel.findOne({ slug })) {
-            slug = `${baseSlug}-${counter}`
-            counter++
-        }
-
-        const propertyToCreate = {
-            ...propertyData,
-            slug
-        }
-
-        const newProperty = await propertyModel.create(propertyToCreate)
-
-        return newProperty
+    // Đảm bảo slug unique
+    let slug = baseSlug
+    let counter = 1
+    while (await propertyModel.findOne({ slug })) {
+      slug = `${baseSlug}-${counter}`
+      counter++
     }
-    catch (error) {
-        throw error
+
+    const propertyToCreate = {
+      ...propertyData,
+      slug
     }
+
+    const newProperty = await propertyModel.create(propertyToCreate)
+
+    return newProperty
+  }
+  catch (error) {
+    throw error
+  }
 }
 
 const addMediaToProperty = async (propertyId, mediaItems) => {
-    try {
-        const property = await propertyModel.findOne({_id: propertyId})
+  try {
+    const property = await propertyModel.findOne({ _id: propertyId })
 
-        if(!property){
-            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
-        }
-
-        // Add new media item
-        property.media.push(...mediaItems)
-
-        const updateProperty = await property.save()
-        return updateProperty
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
     }
-    catch(error){
-        throw errors
-    }
+
+    // Add new media item
+    property.media.push(...mediaItems)
+
+    const updateProperty = await property.save()
+    return updateProperty
+  }
+  catch (error) {
+    throw errors
+  }
 }
 
 const getPropertyById = async (id) => {
-    try{
-        const property = await propertyModel.findById(id)
-        return property
-    }
-    catch(error){
-        throw error
-    }
+  try {
+    const property = await propertyModel.findById(id)
+    return property
+  }
+  catch (error) {
+    throw error
+  }
 }
 
 export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
@@ -78,7 +78,7 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     const {
       q,
 
-      type,           
+      type,
       types,          // string[]
       purpose,        // 'sale' | 'rent'
       status,         // 'active' | 'hidden' | ...
@@ -105,7 +105,7 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     const match = { _destroy: { $ne: true } }
 
     if (owner && typeof owner === "string") {
-      try { match.owner = new Types.ObjectId(owner) } catch {}
+      try { match.owner = new Types.ObjectId(owner) } catch { }
     }
 
     if (Array.isArray(types) && types.length) {
@@ -188,7 +188,8 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     }
 
     pipeline.push(
-      { $facet: {
+      {
+        $facet: {
           queryProperties: [
             { $sort: sort },
             {
@@ -232,13 +233,13 @@ const getPropertyDetails = async (propertyId) => {
       throw new Error('Invalid propertyId')
 
     const pineline = [
-      { 
-        $match : {
-        _id: new Types.ObjectId(propertyId),
-        _destroy: { $ne: true }
-        } 
+      {
+        $match: {
+          _id: new Types.ObjectId(propertyId),
+          _destroy: { $ne: true }
+        }
       },
-      { 
+      {
         $lookup: {
           from: userModel.collection.name,
           localField: 'owner',
@@ -247,7 +248,7 @@ const getPropertyDetails = async (propertyId) => {
         }
       },
       {
-        $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true } 
+        $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true }
       },
       {
         $project: {
@@ -267,7 +268,80 @@ const getPropertyDetails = async (propertyId) => {
   }
 }
 
-const getPropertiesWithinPolygon = async (polygonGeoJSON ) => {
+function vnToRegex(str) {
+  const map = {
+    a: "[aàáạảãâầấậẩẫăằắặẳẵ]",
+    A: "[AÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]",
+    e: "[eèéẹẻẽêềếệểễ]",
+    E: "[EÈÉẸẺẼÊỀẾỆỂỄ]",
+    i: "[iìíịỉĩ]",
+    I: "[IÌÍỊỈĨ]",
+    o: "[oòóọỏõôồốộổỗơờớợởỡ]",
+    O: "[OÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]",
+    u: "[uùúụủũưừứựửữ]",
+    U: "[UÙÚỤỦŨƯỪỨỰỬỮ]",
+    y: "[yỳýỵỷỹ]",
+    Y: "[YỲÝỴỶỸ]",
+    d: "[dđ]",
+    D: "[DĐ]"
+  };
+
+  return str
+    .split("")
+    .map(c => map[c] || c)
+    .join("\\s*"); // IMPORTANT: cho phép KHÔNG có khoảng trắng
+}
+
+const getPropertiesWithMap = async (query) => {
+  const { regionSelection, address } = query
+  let filter = {}
+
+  if (regionSelection) {
+    const pattern = vnToRegex(regionSelection)
+    filter["address.province"] = {
+      $regex: pattern,
+      $options: "i"
+    }
+  }
+
+  if (address) {
+    if (address.province) {
+      filter.province = {
+        $regex: address.province,
+        $options: "i"
+      }
+    }
+
+    if (address.district) {
+      filter.district = {
+        $regex: address.district,
+        $options: "i"
+      }
+    }
+
+    if (address.ward) {
+      filter.ward = {
+        $regex: address.ward,
+        $options: "i"
+      }
+    }
+
+    if (address.street) {
+      filter.street = {
+        $regex: address.street,
+        $options: "i"
+      }
+    }
+  }
+
+  console.log(filter)
+
+  const properties = await propertyModel.find(filter)
+
+  return properties
+}
+
+const getPropertiesWithinPolygon = async (polygonGeoJSON) => {
   if (!polygonGeoJSON || polygonGeoJSON.type !== "Polygon") {
     throw new Error("Invalid GeoJSON polygon");
   }
@@ -285,10 +359,11 @@ const getPropertiesWithinPolygon = async (polygonGeoJSON ) => {
 }
 
 export const propertyService = {
-    createProperty,
-    addMediaToProperty,
-    getPropertyById,
-    getProperties,
-    getPropertyDetails,
-    getPropertiesWithinPolygon
+  createProperty,
+  addMediaToProperty,
+  getPropertyById,
+  getProperties,
+  getPropertyDetails,
+  getPropertiesWithinPolygon,
+  getPropertiesWithMap
 }

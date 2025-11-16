@@ -13,6 +13,10 @@ import { initSocket } from './sockets'
 
 const START_SERVER = () => {
   const app = express()
+
+  // Bật extended query parser
+  app.set('query parser', 'extended');
+  
   const server = http.createServer(app)
 
   // Initialize Socket.IO

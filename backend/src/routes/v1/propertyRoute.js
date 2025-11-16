@@ -10,6 +10,9 @@ router.route('/')
   .get(propertyController.getProperties, propertyValidation.getProperties)
   .post(authMiddleware.isAuthorized, uploadFiles, propertyController.createProperty)
 
+router.route('/map')
+  .get(propertyController.getPropertiesWithMap)
+
 router.route('/in')
   .post(propertyController.getPropertiesWithinPolygon)
 

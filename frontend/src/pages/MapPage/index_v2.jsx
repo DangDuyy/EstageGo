@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { fetchAllPropertiesAPI, getPropertiesWithinPolygon } from "@/apis";
+import { fetchAllPropertiesAPI, getPropertiesWithinPolygon, getPropertiesWithMap } from "@/apis";
 import PropertyCard from "@/components/common/Property/FeatureCard/PropertyCard";
 import Filter from "./filter";
 import NavBar from '@/components/common/NavBar';
@@ -140,7 +140,17 @@ function PropertiesMap() {
     const mapRef = useRef(null);
     const selectedFeatureRef = useRef(null);
     const selectedLayerRef = useRef(null); // ✅ layer riêng cho vùng được chọn
-    const { loaded, google } = useContext(MapsContext)
+    const { google } = useContext(MapsContext)
+    const [searchQuery, setSearchQuery] = useState({
+        regionSelection: null,
+        address: {
+            province: null,
+            district: null,
+            ward: null,
+            street: null
+        }
+    })
+
 
     // Helper: traverse geometry để extend bounds
     const extendBoundsForFeature = (feature, bounds) => {
@@ -174,8 +184,10 @@ function PropertiesMap() {
         // 1️⃣ Load Level 0 + 1
         // const level0 = await fetch("/geojson/gadm41_VNM_0.json").then((r) => r.json());
         const level1 = await fetch("/geojson/gadm41_VNM_1.json").then((r) => r.json());
+        // const level2 = await fetch("/geojson/gadm41_VNM_2.json").then((r) => r.json());
         // map.data.addGeoJson(level0);
         map.data.addGeoJson(level1);
+        // map.data.addGeoJson(level2)
 
         // 2️⃣ Giữ màu mặc định Google Maps
         map.data.setStyle({ fillOpacity: 0, strokeWeight: 1 });
@@ -210,6 +222,12 @@ function PropertiesMap() {
 
         // 4️⃣ Click Level 1 → chọn tỉnh
         map.data.addListener("click", async (e) => {
+            // Xóa các feature mà ở cấp 2 trở đi
+            map.data.forEach((f) => {
+                if (f.getProperty('GID_2')) {
+                    map.data.remove(f)
+                }
+            })
             // Bỏ highlight cũ trên layer chính
             if (selectedFeatureRef.current) {
                 map.data.revertStyle(selectedFeatureRef.current);
@@ -230,36 +248,36 @@ function PropertiesMap() {
             const geoJson = await new Promise((resolve) => e.feature.toGeoJson(resolve));
             selectedLayer.addGeoJson(geoJson);
 
+            const regionSelection = e.feature.getProperty("TYPE_1") + e.feature.getProperty("NAME_1")
 
-            // call api
-            const geometry = e.feature.getGeometry();
+            setSearchQuery({regionSelection})
 
-            // Trích toàn bộ polygon của tỉnh
-            const polygonCoords = [];
-            geometry.forEachLatLng((latlng) => {
-                polygonCoords.push([latlng.lng(), latlng.lat()]); // Lưu ý: GeoJSON cần [lng, lat]
-            });
-
-            // Đảm bảo polygon khép kín (điểm đầu = điểm cuối)
-            const first = polygonCoords[0];
-            polygonCoords.push(first);
-
-            console.log(polygonCoords)
-
-            const properties = await getPropertiesWithinPolygon(polygonCoords)
-            setProperties(properties)
-            console.log(properties)
-
-            const provinceId = e.feature.getProperty("GID_1");
-            console.log(provinceId)
 
         });
 
     };
 
+    useEffect(() => {
+        const fetchProperties = async () => {
+            const properties = await getPropertiesWithMap(searchQuery)
+            setProperties(properties)
+        }
+
+        fetchProperties()
+        console.log('Query', searchQuery)
+    }, [searchQuery])
+
     const handlePlaceSelected = async (place) => {
         if (!place.geometry?.location || !mapRef.current) return;
 
+        // Xóa các feature mà ở cấp 2 trở đi
+        mapRef.current.data.forEach((f) => {
+            if (f.getProperty('GID_2')) {
+                mapRef.current.data.remove(f)
+            }
+        })
+
+        console.log(place)
         const latLng = place.geometry.location;
 
         const selectedLayer = selectedLayerRef.current || new google.maps.Data();
@@ -307,7 +325,55 @@ function PropertiesMap() {
 
         selectedFeatureRef.current = selectedFeature;
 
-        // Zoom tới feature
+
+        // ===========================================
+        const addressComponents = place.address_components ?? []
+        let province = null
+        let district = null
+        let ward = null
+        let street = null
+        addressComponents.forEach((c) => {
+            if (c.types.includes("administrative_area_level_1")) {
+                province = c.short_name
+            }
+            if (c.types.includes("administrative_area_level_2")) {
+                district = c.short_name
+            }
+            if (c.types.includes("sublocality_level_1")) {
+                ward = c.short_name
+            }
+            if (c.types.includes("route")) {
+                street = c.short_name
+            }
+        })
+
+        let data = null
+        let filteredFeatures = null
+        if (ward) {
+            data = await fetch("/geojson/gadm41_VNM_3.json").then((r) => r.json());
+            filteredFeatures = data.features.filter(f => f.properties.NAME_3 === ward.replace(" ", "") && f.properties.NAME_2 === district.replace(" ", ""));
+        }
+        else if (district) {
+            data = await fetch("/geojson/gadm41_VNM_2.json").then((r) => r.json());
+            // Lọc các huyện của tỉnh
+            filteredFeatures = data.features.filter(f => f.properties.NAME_2 === district.replace(" ", ""));
+        }
+
+        if (filteredFeatures) {
+
+            const featureCollection = {
+                type: "FeatureCollection",
+                features: filteredFeatures
+            };
+
+            // Thêm vào map
+            const features = mapRef.current.data.addGeoJson(featureCollection);
+
+            selectedFeature = features[0]
+        }
+
+        setSearchQuery({ address: { province, district, ward, street } })
+
         const featureBounds = new google.maps.LatLngBounds();
         selectedFeature.getGeometry().forEachLatLng((latlng) =>
             featureBounds.extend(latlng)

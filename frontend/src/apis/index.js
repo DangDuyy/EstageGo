@@ -149,6 +149,14 @@ export const getPropertiesWithinPolygon = async (polygon) => {
   return response.data
 }
 
+export const getPropertiesWithMap = async (query) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/map`, {
+    params: query
+  })
+
+  return response.data
+}
+
 // ========== WISHLIST APIs ==========
 
 // Get user's wishlist
