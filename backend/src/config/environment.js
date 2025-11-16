@@ -35,5 +35,7 @@ export const env = {
     (process.env.EMAIL_PORT && Number(process.env.EMAIL_PORT) === 465),
   SMTP_USER: process.env.SMTP_USER || process.env.EMAIL_SENDER || process.env.EMAIL_FROM || '',
   SMTP_PASS: process.env.SMTP_PASS || process.env.EMAIL_PASS || '',
-  EMAIL_FROM: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_SENDER || ''
+  EMAIL_FROM: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_SENDER || '',
+
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY
 }

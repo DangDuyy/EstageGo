@@ -4,6 +4,8 @@ import { toArr, toNum, toStr } from "~/utils/formatter"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { searchSuggestionService } from "~/services/searchSuggestionService"
 import { propertyKnowledgeService } from "~/services/propertyKnowledgeService"
+import { imageTaggingService } from "~/services/imageTaggingService"
+import { env } from "~/config/environment"
 
 const { StatusCodes } = require("http-status-codes")
 const { propertyService } = require("~/services/propertyService")
@@ -188,7 +190,7 @@ const naturalLanguageSearch = async (req, res, next) => {
         }
 
         // Kiểm tra GEMINI_API_KEY
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = env.GEMINI_API_KEY;
         if (!apiKey) {
             console.error("GEMINI_API_KEY không được cấu hình trong .env");
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -481,11 +483,227 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
     }
 }
 
+const analyzePropertyImage = async (req, res, next) => {
+    try {
+        const { propertyId, imageId } = req.params
+        const userId = req.jwtDecoded._id
+        
+        // Get property and verify ownership
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only analyze images of your own properties"
+            })
+        }
+        
+        // Find image in property media
+        const mediaItem = property.media.id(imageId)
+        
+        if (!mediaItem) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Image not found"
+            })
+        }
+        
+        // Analyze image with AI
+        const analysis = await imageTaggingService.analyzeImageWithGemini(mediaItem.url)
+        
+        // Update property with analysis results
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Image analyzed successfully",
+            data: {
+                imageId,
+                ...analysis
+            }
+        })
+    } catch (error) {
+        console.error("Error analyzing property image:", error)
+        next(error)
+    }
+}
+
+const updatePropertyImageTags = async (req, res, next) => {
+    try {
+        const { propertyId, imageId } = req.params
+        const userId = req.jwtDecoded._id
+        const { tags, detectedObjects } = req.body
+        
+        // Verify ownership
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only update tags of your own properties"
+            })
+        }
+        
+        // Update tags
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, {
+            tags,
+            detectedObjects,
+            analyzed: true
+        })
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Tags updated successfully",
+            data: updatedProperty
+        })
+    } catch (error) {
+        console.error("Error updating image tags:", error)
+        next(error)
+    }
+}
+
+const searchPropertiesByTag = async (req, res, next) => {
+    try {
+        const { tag } = req.query
+        const { page = 1, limit = 12 } = req.query
+        
+        if (!tag) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Tag parameter is required"
+            })
+        }
+        
+        const result = await propertyService.searchPropertiesByImageTag(tag, parseInt(page), parseInt(limit))
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: result
+        })
+    } catch (error) {
+        console.error("Error searching properties by tag:", error)
+        next(error)
+    }
+}
+
+const getUserPropertiesWithMedia = async (req, res, next) => {
+    try {
+        const userId = req.jwtDecoded._id
+        
+        const properties = await propertyService.getUserPropertiesWithMedia(userId)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: properties
+        })
+    } catch (error) {
+        console.error("Error getting user properties with media:", error)
+        next(error)
+    }
+}
+
+const getAllUserImageTags = async (req, res, next) => {
+    try {
+        const userId = req.jwtDecoded._id
+        
+        const tags = await propertyService.getAllImageTags(userId)
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: tags
+        })
+    } catch (error) {
+        console.error("Error getting user image tags:", error)
+        next(error)
+    }
+}
+
+const bulkAnalyzeImages = async (req, res, next) => {
+    try {
+        const { propertyId } = req.params
+        const userId = req.jwtDecoded._id
+        
+        const property = await propertyService.getPropertyById(propertyId)
+        
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
+            })
+        }
+        
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only analyze images of your own properties"
+            })
+        }
+        
+        // Get all unanalyzed images
+        const unanalyzedImages = property.media.filter(media => 
+            media.type.startsWith('image') && !media.analyzed
+        )
+        
+        if (unanalyzedImages.length === 0) {
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                message: "All images already analyzed",
+                data: { analyzed: 0, total: property.media.length }
+            })
+        }
+        
+        // Analyze each image
+        const results = []
+        for (const media of unanalyzedImages) {
+            try {
+                const analysis = await imageTaggingService.analyzeImageWithGemini(media.url)
+                await propertyService.updateImageTags(propertyId, media._id, analysis)
+                results.push({ imageId: media._id, success: true })
+            } catch (error) {
+                results.push({ imageId: media._id, success: false, error: error.message })
+            }
+        }
+        
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: `Analyzed ${results.filter(r => r.success).length} images`,
+            data: {
+                analyzed: results.filter(r => r.success).length,
+                total: unanalyzedImages.length,
+                results
+            }
+        })
+    } catch (error) {
+        console.error("Error bulk analyzing images:", error)
+        next(error)
+    }
+}
+
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
     getProperties,
     getPropertyDetails,
     getPropertiesWithinPolygon,
-    naturalLanguageSearch
+    naturalLanguageSearch,
+    analyzePropertyImage,
+    updatePropertyImageTags,
+    searchPropertiesByTag,
+    getUserPropertiesWithMedia,
+    getAllUserImageTags,
+    bulkAnalyzeImages
 }

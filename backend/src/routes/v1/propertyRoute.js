@@ -19,4 +19,23 @@ router.route('/in')
 router.route('/:id')
   .get(propertyController.getPropertyDetails)
 
+// Image Tagging Routes
+router.route('/user/properties-with-media')
+  .get(authMiddleware.isAuthorized, propertyController.getUserPropertiesWithMedia)
+
+router.route('/user/image-tags')
+  .get(authMiddleware.isAuthorized, propertyController.getAllUserImageTags)
+
+router.route('/search-by-tag')
+  .get(propertyController.searchPropertiesByTag)
+
+router.route('/:propertyId/images/:imageId/analyze')
+  .post(authMiddleware.isAuthorized, propertyController.analyzePropertyImage)
+
+router.route('/:propertyId/images/:imageId/tags')
+  .put(authMiddleware.isAuthorized, propertyController.updatePropertyImageTags)
+
+router.route('/:propertyId/images/bulk-analyze')
+  .post(authMiddleware.isAuthorized, propertyController.bulkAnalyzeImages)
+
 export const propertyRoutes = router

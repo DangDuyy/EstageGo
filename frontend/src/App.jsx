@@ -13,6 +13,7 @@ import AdminUsers from './pages/AdminPage/AdminUsers'
 import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
 import AISearchPage from './pages/AI/AISearchPage'
+import ImageTaggingPage from './pages/AI/ImageTaggingPage'
 import DashboardPage from './pages/DashboardPage/DashBoard'
 import Message from './pages/DashboardPage/Message'
 import NewPost from './pages/DashboardPage/Post/NewPost'
@@ -58,6 +59,7 @@ function App() {
 
       <Route path="/ai/chatbot" element={<ChatBot />} />
       <Route path="/ai/nl-search" element={<AISearchPage />} />
+      <Route path="/ai/image-tagging" element={<ImageTaggingPage />} />
 
       <Route path="/map" element={<MapPage />} />
       <Route path="/dashboard" element={<DashboardLayout />}>
