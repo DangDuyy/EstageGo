@@ -582,5 +582,6 @@ export const propertyService = {
     updateImageTags,
     searchPropertiesByImageTag,
     getUserPropertiesWithMedia,
-    getAllImageTags
+    getAllImageTags,
+    getPropertiesWithMap
 }
