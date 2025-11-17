@@ -15,9 +15,10 @@ const USER_GENDER = {
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        required: true,
         match: [EMAIL_RULE, EMAIL_RULE_MESSAGE],
-        unique: true
+        sparse: true,
+        unique: true,
+        default: null
     },
     password: {
         type: String,
@@ -43,12 +44,15 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
+        sparse: true,
+        unique: true,
+        default: null,
         validate: {
             validator: function (v) {
-                return PHONE_RULE.test(v);
+                if (!v) return true
+                return PHONE_RULE.test(v)
             },
-            unique: true,
-            sparse: true
+            message: PHONE_RULE_MESSAGE
         }
     },
     gender: {
@@ -74,7 +78,20 @@ const userSchema = new mongoose.Schema({
         default: false
     },
     verifyToken: {
-        type: String
+        type: String,
+        default: null
+    },
+    verifyTokenExpires: {
+        type: Date,
+        default: null
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    isPhoneVerified: {
+        type: Boolean,
+        default: false
     },
     // Agent-specific fields
     companyName: {
@@ -131,16 +148,25 @@ const userSchema = new mongoose.Schema({
         enum: ['basic', 'standard', 'premium'],
         default: 'basic'
     }
-}, { timestamps: true }); // Tự động tạo createdAt và updatedAt fields
+}, { timestamps: true })
 
-// Tạo index cho các trường cần thiết
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ userName: 1 }, { unique: true });
-userSchema.index({ _destroy: 1 });
+// Validate: phải có ít nhất email HOẶC phone
+userSchema.pre('save', function(next) {
+  if (!this.email && !this.phone) {
+    next(new Error('User must have either email or phone number'))
+  } else {
+    next()
+  }
+})
+
+// Tạo index
+userSchema.index({ email: 1 }, { sparse: true, unique: true })
+userSchema.index({ userName: 1 }, { unique: true })
+userSchema.index({ phone: 1 }, { sparse: true, unique: true })
 
 // Middleware để loại bỏ các field không được phép update
 userSchema.pre('findOneAndUpdate', function() {
-  const INVALID_UPDATE_VALUES = ['_id', 'username', 'createdAt', 'email']
+  const INVALID_UPDATE_VALUES = ['_id', 'userName', 'createdAt', 'email']
   const update = this.getUpdate()
   
   if (update.$set) {
@@ -149,10 +175,9 @@ userSchema.pre('findOneAndUpdate', function() {
     })
   }
   
-  // Update updatedAt field
   if (!update.$set) update.$set = {}
   update.$set.updatedAt = new Date()
 })
 
-const userModel = mongoose.model('User', userSchema);
-export default userModel;
+const userModel = mongoose.model('User', userSchema)
+export default userModel

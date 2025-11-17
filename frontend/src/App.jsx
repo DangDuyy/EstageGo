@@ -24,6 +24,7 @@ import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
 import Wishlist from './pages/DashboardPage/Wishlist'
 import HomePage from './pages/HomePage'
 import VerifyAccountPage from './pages/HomePage/verifyAccount'
+import VerifyPhoneRegister from './pages/HomePage/verifyPhoneRegister'
 import MapPage from './pages/MapPage'
 import PropertiesMap from './pages/MapPage/index_v2'
 import PropertyPages from './pages/PropertyPage'
@@ -45,6 +46,7 @@ function App() {
 
       <Route path="/home" element={<HomePage />} />
       <Route path="/verify-account" element={<VerifyAccountPage />} />
+      <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
       <Route path="/properties/:propertyId" element={<PropertyPage />} />
 
       <Route path="/listing/grid" element={<PropertyPages />} />
