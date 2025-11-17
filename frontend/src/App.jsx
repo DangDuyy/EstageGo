@@ -10,6 +10,7 @@ import Wishlist from './pages/DashboardPage/Wishlist'
 import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
 import HomePage from './pages/HomePage'
 import VerifyAccountPage from './pages/HomePage/verifyAccount'
+import VerifyPhoneRegister from './pages/HomePage/verifyPhoneRegister'
 import DashboardLayout from './layouts/DashboardLayout'
 import MapPage from './pages/MapPage'
 import PropertyPages from './pages/PropertyPage'
@@ -26,46 +27,47 @@ function App() {
   return (
     <>
       <SocketManager />
-    <Routes>
-      {/* redirect route */}
-      <Route path="/" element={
-        <Navigate to="/home" replace={true} />
-      } />
+      <Routes>
+        {/* redirect route */}
+        <Route path="/" element={
+          <Navigate to="/home" replace={true} />
+        } />
 
-      <Route path="/home" element={<HomePage />} />
-      <Route path="/verify-account" element={<VerifyAccountPage />} />
-      <Route path="/properties/:propertyId" element={<PropertyPage />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/verify-account" element={<VerifyAccountPage />} />
+        <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
+        <Route path="/properties/:propertyId" element={<PropertyPage />} />
 
-      <Route path="/listing/grid" element={<PropertyPages />} />
-      <Route path="/listing/map" element={<PropertiesMap />} />
+        <Route path="/listing/grid" element={<PropertyPages />} />
+        <Route path="/listing/map" element={<PropertiesMap />} />
 
-      <Route path="/agents" element={<AgentListPage />} />
-      <Route path="/agents/:agentId" element={<AgentProfile />} />
+        <Route path="/agents" element={<AgentListPage />} />
+        <Route path="/agents/:agentId" element={<AgentProfile />} />
 
-      <Route path="/ai/chatbot" element={<ChatBot />} />
+        <Route path="/ai/chatbot" element={<ChatBot />} />
 
-      <Route path="/map" element={<MapPage />} />
-      <Route path="/dashboard" element={<DashboardLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="users" element={<UserProfileRedirect />} />
-        <Route path="account" element={<Profile />} />
-        <Route path="messages" element={<Message />} />
-        <Route path="posts">
-          <Route index element={<Post />} />
-          <Route path="new" element={
-            <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries = {["places"]}>
-              <NewPost />
-            </MapProvider>
-          } />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="users" element={<UserProfileRedirect />} />
+          <Route path="account" element={<Profile />} />
+          <Route path="messages" element={<Message />} />
+          <Route path="posts">
+            <Route index element={<Post />} />
+            <Route path="new" element={
+              <MapProvider apiKey={API_KEY_GOOGLE_MAPS} libraries = {["places"]}>
+                <NewPost />
+              </MapProvider>
+            } />
+          </Route>
+          <Route path="properties" element={<MyProperty />} />
+          <Route path="wishlist" element={<Wishlist />} />
+
         </Route>
-        <Route path="properties" element={<MyProperty />} />
-        <Route path="wishlist" element={<Wishlist />} />
 
-      </Route>
-
-      {/* page not found */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* page not found */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
     </>
   )
 }

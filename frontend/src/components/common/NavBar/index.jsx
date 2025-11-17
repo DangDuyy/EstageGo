@@ -55,10 +55,10 @@ const NavBar = ({ hideLogo = false }) => {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUserAPI()).unwrap()
-      toast.success('Đăng xuất thành công!')
+      toast.success('Signed out successfully!')
       navigate('/home')
     } catch {
-      toast.error('Đăng xuất thất bại. Vui lòng thử lại!')
+      toast.error('Sign out failed. Please try again!')
     }
   }
 

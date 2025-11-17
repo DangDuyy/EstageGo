@@ -15,12 +15,28 @@ export const verifyCodeAPI = async (data) => {
 
 export const registerUserAPI = async (data) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/register`, data)
-  toast.success('Account created successfully! Please check your email to verify account')
   return response.data
 }
 
 export const verifyUserAPI = async (data) => {
   const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/verify`, data)
+  return response.data
+}
+
+export const verifyPhoneRegistrationAPI = async (phone, code) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/verify-registration`, { phone, code })
+  return response.data
+}
+
+export const loginUserAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/login`, data)
+  return response.data
+}
+
+export const logoutUserAPI = async () => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/users/logout`)
+  localStorage.removeItem('accessToken')
+  toast.success('Logged out successfully')
   return response.data
 }
 
@@ -260,5 +276,19 @@ export const getMessagesAPI = async (conversationId, page = 1, limit = 50) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/messages/${conversationId}`, {
     params: { page, limit }
   })
+  return response.data
+}
+
+// Send phone verification code (for profile update)
+export const sendPhoneVerificationAPI = async (phone) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/send-code`, { phone })
+  toast.success('Verification code sent to your phone!')
+  return response.data
+}
+
+// Verify phone with code (for profile update)
+export const verifyPhoneAPI = async (phone, code) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/verify`, { phone, code })
+  toast.success('Phone verified successfully!')
   return response.data
 }
