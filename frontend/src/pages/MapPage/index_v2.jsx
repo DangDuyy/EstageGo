@@ -17,6 +17,7 @@ import { DEFAULT_ITEMS_PER_PAGE } from "@/utils/constants";
 import MapContainer from "@/components/common/GoogleMap/MapContainer";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
+import PropertyMarker from "@/components/common/GoogleMap/PropertyMarker";
 
 function PropertiesMap() {
     const location = useLocation();
@@ -399,18 +400,24 @@ function PropertiesMap() {
                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-14 min-h-0">
                     {/* Map - cố định, không scroll */}
                     <div className="lg:col-span-8 h-full">
-                        <MapContainer onLoad={onLoad} zoom={6} style={{ height: "100%", width: "100%" }}>
+                        <MapContainer onLoad={onLoad} zoom={6} style={{ height: "100%", width: "100%", cursor: "default" }}>
                             {properties && properties.length > 0 && (
-                                <MarkerLayer
-                                    items={properties
-                                        .filter(p => p.address?.location?.coordinates?.length === 2) // chỉ lấy những item có tọa độ hợp lệ
-                                        .map((p) => ({
-                                            id: p._id,
-                                            lat: p.address?.location?.coordinates[1], // GeoJSON: [lng, lat]
-                                            lng: p.address?.location?.coordinates[0]
-                                        }))}
-                                    onMarkerClick={(item) => console.log(item)}
-                                />
+                                // <MarkerLayer
+                                //     items={properties
+                                //         .filter(p => p.address?.location?.coordinates?.length === 2) // chỉ lấy những item có tọa độ hợp lệ
+                                //         .map((p) => ({
+                                //             id: p._id,
+                                //             lat: p.address?.location?.coordinates[1], // GeoJSON: [lng, lat]
+                                //             lng: p.address?.location?.coordinates[0]
+                                //         }))}
+                                //     onMarkerClick={(item) => console.log(item)}
+                                // />
+
+                                properties
+                                .filter(p => p.address?.location?.coordinates?.length === 2)
+                                .map((p) => (
+                                    <PropertyMarker property = {p} />
+                                ))
                             )}
 
                         </MapContainer>

@@ -247,11 +247,7 @@ const getPropertyDetails = async (propertyId) => {
       { 
         $match : {
         _id: new Types.ObjectId(propertyId),
-        _destroy: { $ne: true },
-        $or: [
-          { expireAt: null },
-          { expireAt: { $gt: new Date() } }
-        ]
+        _destroy: { $ne: true }
         } 
       },
       {
@@ -580,6 +576,5 @@ export const propertyService = {
     getPropertyById,
     getProperties,
     getPropertyDetails,
-    getPropertiesWithinPolygon,
-    getPropertiesWithMap
+    getPropertiesWithinPolygon
 }

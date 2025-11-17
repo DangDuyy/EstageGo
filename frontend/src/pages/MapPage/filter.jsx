@@ -82,23 +82,6 @@ function Filter({handlePlaceSelected}) {
                     {/* Divider */}
                     <div className="h-8 w-px bg-gray-200" />
 
-                    {/* Search Location Input */}
-                    <div className="space-y-2 flex items-center flex-1 px-3 py-2 min-w-0">
-                        <div className="relative w-full">
-                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4" />
-                            <Input
-                                type="text"
-                                placeholder="Search Location"
-                                value={searchLocation}
-                                onChange={(e) => setSearchLocation(e.target.value)}
-                                className="h-12 pl-12 pt-3 pb-3 rounded-full"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-8 w-px bg-gray-200" />
-
                     {/* Category Dropdown - Removed for now */}
 
                     {/* Advanced Search Button */}

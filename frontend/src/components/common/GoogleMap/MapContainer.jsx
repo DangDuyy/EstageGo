@@ -20,7 +20,7 @@ export default function MapContainer({
   center = centerVN,
   zoom = 5,
   onLoad,
-  style = { height: "600px", width: "100%" },
+  style = { height: "600px", width: "100%", cursor: "default" },
   children,
 }) {
   const { loaded } = useContext(MapsContext);

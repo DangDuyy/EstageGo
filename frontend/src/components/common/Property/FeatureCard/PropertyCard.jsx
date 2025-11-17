@@ -9,6 +9,7 @@ import { formatPostDate } from "@/utils/formatters";
 import { Separator } from "@/components/ui/separator";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" }) {
   if (value == null) return null;
@@ -21,7 +22,7 @@ function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" 
   );
 }
 
-export default function PropertyCard({ item, variant = "grid" }) {
+export default function PropertyCard({ item, variant = "grid", className }) {
   const { toggleItem, isInWishlist } = useWishlist();
   const propertyId = item._id || item.id;
   const inWishlist = isInWishlist(propertyId);
@@ -60,9 +61,9 @@ export default function PropertyCard({ item, variant = "grid" }) {
 
   return (
     <Card
-      className={`py-0 ${
+      className={cn(`py-0 ${
         variant === "list" ? "flex flex-row gap-5 overflow-hidden" : "overflow-hidden group"
-      }`}
+      }`, className)}
     >
       {/* Image */}
       <div className={variant === "list" ? "relative w-[200px] md:w-[300px] shrink-0" : "relative"}>
