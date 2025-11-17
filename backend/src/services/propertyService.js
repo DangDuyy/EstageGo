@@ -581,5 +581,11 @@ export const propertyService = {
     getProperties,
     getPropertyDetails,
     getPropertiesWithinPolygon,
-    getPropertiesWithMap
+    getPropertiesWithMap,
+    getUserById,
+    getPropertiesByFilters,
+    updateImageTags,
+    searchPropertiesByImageTag,
+    getUserPropertiesWithMedia,
+    getAllImageTags
 }
