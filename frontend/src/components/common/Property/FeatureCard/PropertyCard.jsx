@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" }) {
   if (value == null) return null;
   return (
-    <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
+    <div className={`flex items-center gap-1 text-xs lg:text-sm text-muted-foreground whitespace-nowrap ${className}`}>
       <Icon className={iconClass} />
-      <span>{label}:</span>
+      <span className="hidden sm:inline">{label}:</span>
       <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
@@ -43,7 +43,7 @@ export default function PropertyCard({ item, variant = "grid", className }) {
 
   const statIconClass = variant === "grid" ? "h-4 w-4" : "h-6 w-6"; // list to hơn
   const statTextClass = variant === "grid" ? "" : "text-base md:text-lg"; // list to hơn
-  const statGapClass  = variant === "grid" ? "gap-4" : "gap-6";           // list nới gap
+  const statGapClass  = variant === "grid" ? "gap-2.5 lg:gap-3" : "gap-4 lg:gap-5";           // list nới gap
 
   // Badge: VIP + Featured + purpose (sale/rent)
   const mapPurpose = (p) => {
@@ -66,8 +66,8 @@ export default function PropertyCard({ item, variant = "grid", className }) {
       }`, className)}
     >
       {/* Image */}
-      <div className={variant === "list" ? "relative w-[200px] md:w-[300px] shrink-0" : "relative"}>
-        <Link to={item.href ?? "#"} className="block">
+      <div className={variant === "list" ? "relative w-[200px] md:w-[300px] shrink-0" : "relative aspect-[4/3] lg:aspect-[16/10]"}>
+        <Link to={item.href ?? "#"} className="block h-full">
           <img
             src={imageUrl}
             alt={item.title}
@@ -76,12 +76,12 @@ export default function PropertyCard({ item, variant = "grid", className }) {
         </Link>
 
         {/* Badges */}
-        <div className="absolute inset-x-5 top-5 flex flex-wrap gap-2 justify-between items-start">
-          <div className="flex flex-wrap gap-2">
+        <div className="absolute inset-x-3 top-3 lg:inset-x-4 lg:top-4 flex flex-wrap gap-2 justify-between items-start">
+          <div className="flex flex-wrap gap-1.5 lg:gap-2">
             {badges.map((t, idx) => (
               <Badge
                 key={`${t}-${idx}`}
-                className={`text-md ${
+                className={`text-xs lg:text-sm ${
                   t === "VIP" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold" :
                   t === "Featured" ? "bg-blue-600 text-white" : 
                   "bg-gray-700 text-white"
@@ -97,10 +97,10 @@ export default function PropertyCard({ item, variant = "grid", className }) {
             variant="ghost"
             size="icon"
             onClick={handleToggleWishlist}
-            className="h-9 w-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm transition-all hover:scale-110"
+            className="h-8 w-8 lg:h-9 lg:w-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm transition-all hover:scale-110"
           >
             <Heart 
-              className={`h-5 w-5 transition-colors ${
+              className={`h-4 w-4 lg:h-5 lg:w-5 transition-colors ${
                 inWishlist 
                   ? 'fill-red-500 text-red-500' 
                   : 'text-gray-700'
@@ -111,16 +111,16 @@ export default function PropertyCard({ item, variant = "grid", className }) {
 
         {/* Location overlay: chỉ giữ cho GRID để không trùng với dòng địa chỉ bên phải */}
         {variant !== "list" && locationText ? (
-          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-full px-3 py-1 text-md text-white bg-black/40 backdrop-blur">
-            <MapPin className="h-3.5 w-3.5" />
-            <span className="line-clamp-1 lg:text-sm">{locationText}</span>
+          <div className="absolute bottom-2 left-2 right-2 lg:bottom-3 lg:left-3 lg:right-3 flex items-center gap-1.5 lg:gap-2 rounded-full px-2.5 py-1 lg:px-3 text-xs lg:text-sm text-white bg-black/40 backdrop-blur">
+            <MapPin className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
+            <span className="line-clamp-1">{locationText}</span>
           </div>
         ) : null}
       </div>
 
       {/* Content */}
       <CardContent
-        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10 pl-0" : "p-4 pt-0"}
+        className={variant === "list" ? "flex flex-col justify-between flex-1 py-10 pl-0" : "p-3 lg:p-3.5 pt-0"}
       >
         {variant === "list" ? (
           <>
@@ -172,38 +172,38 @@ export default function PropertyCard({ item, variant = "grid", className }) {
           </>
         ) : (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-2.5">
               <Link
                 to={`/properties/${item._id}`}
-                className="text-left text-lg font-semibold no-underline hover:underline line-clamp-1"
+                className="text-left text-base lg:text-lg font-semibold no-underline hover:underline line-clamp-1"
               >
                 {item.title}
               </Link>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className={`flex flex-wrap items-center ${statGapClass}`}>
                 <Stat icon={Bed}  label="Beds" value={beds}  iconClass={statIconClass} />
                 <Stat icon={Bath} label="Baths" value={baths} iconClass={statIconClass} />
                 <Stat icon={Ruler} label={item.sqft ? "Sqft" : "Area"} value={area} iconClass={statIconClass} />
               </div>
               {item.createdAt && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm text-muted-foreground">
+                  <Calendar className="h-3 w-3 lg:h-3.5 lg:w-3.5" />
                   <span>{formatPostDate(item.createdAt)}</span>
                 </div>
               )}
             </div>
 
-            <Separator className="my-4" />
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
+            <Separator className="my-3 lg:my-3.5" />
+            <div className="mt-3 lg:mt-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2 lg:gap-2.5">
+                <Avatar className="h-7 w-7 lg:h-8 lg:w-8">
                   <AvatarImage src={item.ownerInfo?.avatar} alt={item.ownerInfo?.fullName} />
                   <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
                 </Avatar>
                 {item.ownerInfo?.fullName && (
-                  <span className="text-md text-muted-foreground">{item.ownerInfo.fullName}</span>
+                  <span className="text-xs lg:text-sm text-muted-foreground">{item.ownerInfo.fullName}</span>
                 )}
               </div>
-              {priceText && <div className="text-md font-semibold lg:text-lg ">{priceText}</div>}
+              {priceText && <div className="text-sm lg:text-base font-semibold">{priceText}</div>}
             </div>
           </>
         )}

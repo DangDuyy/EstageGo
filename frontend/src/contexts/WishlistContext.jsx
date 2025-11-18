@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useSelector } from 'react-redux';
-import { getWishlistAPI, toggleWishlistAPI } from '@/apis';
+import { getWishlistAPI, toggleWishlistAPI, trackActivityAPI } from '@/apis';
 import { toast } from 'react-toastify';
 
 const WishlistContext = createContext();
@@ -100,6 +100,14 @@ export function WishlistProvider({ children }) {
       }));
       
       setItems(transformedItems);
+      
+      // Track wishlist activity for recommendations
+      if (user?._id) {
+        const eventType = response.action === 'added' ? 'WISHLIST_ADD' : 'WISHLIST_REMOVE';
+        trackActivityAPI(eventType, propertyId, {
+          timestamp: new Date().toISOString()
+        });
+      }
       
       if (response.action === 'added') {
         toast.success('Added to wishlist');

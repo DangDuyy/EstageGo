@@ -29,7 +29,21 @@ const MENU = [
     ],
   },
 
-  { label: "Properties", to: "/properties" },
+  {
+    label: "Properties",
+    to: "/listing/grid",
+    children: [
+      { label: "Apartments", to: "/listing/grid?types=apartment" },
+      { label: "Houses", to: "/listing/grid?types=house" },
+      { label: "Condos", to: "/listing/grid?types=condo" },
+      { label: "Land", to: "/listing/grid?types=land" },
+      { label: "Commercial", to: "/listing/grid?types=commercial" },
+      { label: "Offices", to: "/listing/grid?types=office" },
+      { label: "Villas", to: "/listing/grid?types=villa" },
+      { label: "Townhouses", to: "/listing/grid?types=townhouse" },
+      { label: "Other", to: "/listing/grid?types=other" },
+    ],
+  },
   { label: "Agents", to: "/agents" },
   { label: "Pages", to: "/pages" },
   { label: "Blog", to: "/blog" },
@@ -70,10 +84,21 @@ const MENU = [
 ];
 
 /* ========== Helpers ========== */
-function isParentActive(item, pathname) {
+function isParentActive(item, pathname, search = "") {
   if (!item) return false;
   // Home: "/" hoặc "/home"
   if (item.to === "/") return pathname === "/" || pathname === "/home";
+  
+  // Special case for Properties menu - chỉ active khi có query param types
+  if (item.label === "Properties" && item.children?.length > 0) {
+    // Check if any child with query params is active
+    return item.children.some((c) => {
+      if (!c.to.includes('?')) return false;
+      const [childPath, childQuery] = c.to.split('?');
+      return pathname === childPath && search.includes(childQuery);
+    });
+  }
+  
   // Parent active khi path bắt đầu bằng chính nó hoặc bất kỳ child nào trùng
   if (pathname === item.to || pathname.startsWith(item.to + "/")) return true;
   if (item.children?.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))) return true;
@@ -126,7 +151,18 @@ function PlainItem({ item, pathname }) {
 function DropdownItem({ item, pathname }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const parentActive = isParentActive(item, pathname);
+  const location = useLocation();
+  const parentActive = isParentActive(item, pathname, location.search);
+
+  // Helper to check if a child link is active (including query params)
+  const isChildActive = (childTo) => {
+    if (!childTo) return false;
+    const [childPath, childQuery] = childTo.split('?');
+    const [currentPath, currentQuery] = (pathname + location.search).split('?');
+    
+    // Check if paths match and query params match
+    return childPath === currentPath && childQuery === currentQuery;
+  };
 
   return (
     <NavigationMenuItem
@@ -156,20 +192,22 @@ function DropdownItem({ item, pathname }) {
 
         <DropdownMenuContent align="start" side="bottom" className="p-2 mt-5">
           <ul className="space-y-1 min-w-[200px]">
-            {item.children?.map((c) => (
-              <li key={c.to}>
-                <NavLink
-                  to={c.to}
-                  className={({ isActive }) =>
-                    `${linkBase} block text-left w-full ${
+            {item.children?.map((c) => {
+              const isActive = isChildActive(c.to);
+              return (
+                <li key={c.to}>
+                  <Link
+                    to={c.to}
+                    onClick={() => setOpen(false)}
+                    className={`${linkBase} block text-left w-full ${
                       isActive ? activeClass : inactiveClass
-                    }`
-                  }
-                >
-                  {c.label}
-                </NavLink>
-              </li>
-            ))}
+                    }`}
+                  >
+                    {c.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -180,7 +218,8 @@ function DropdownItem({ item, pathname }) {
 function MegaItem({ item, pathname }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const parentActive = isParentActive(item, pathname);
+  const location = useLocation();
+  const parentActive = isParentActive(item, pathname, location.search);
 
   return (
     <NavigationMenuItem

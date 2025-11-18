@@ -109,7 +109,7 @@ export default function AgentProfile() {
     <>
       <NavBar />
       <div className="min-h-screen bg-background pt-32 pb-20">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl">
           {/* User Header */}
           <Card className="mb-8">
             <CardContent className="p-8">
