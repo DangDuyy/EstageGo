@@ -241,7 +241,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   if (!property) {
     // Skeleton
     return (
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-10">
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-2/3 rounded bg-muted" />
           <div className="h-64 rounded bg-muted" />
@@ -287,7 +287,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   return (
     <div className="w-full pt-20">
       {/* Header */}
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl">
         <div className="flex flex-col gap-4 py-6 md:flex-col md:justify-between">
           <div className="flex justify-between">
             <h1 className="text-4xl font-bold tracking-tight">{property.title}</h1>
@@ -362,11 +362,11 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
       </div>
 
       {/* Gallery */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-6">
         <ImagesCarousel images={mediaImages} />
       </div>
 
-      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 pb-10 lg:grid-cols-12">
+      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 lg:px-8 xl:px-12 max-w-7xl pb-10 lg:grid-cols-12">
         {/* LEFT */}
         <div className="lg:col-span-8 space-y-6">
           {/* Description */}
@@ -611,7 +611,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
       {/* Similar Properties Section */}
       {similarProperties.length > 0 && (
-        <div className="container mx-auto px-4 py-10">
+        <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-10">
           <div className="mb-6">
             <h2 className="text-2xl font-bold">Similar Properties</h2>
             <p className="text-muted-foreground">You might also be interested in these properties</p>

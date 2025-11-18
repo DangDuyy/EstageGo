@@ -248,7 +248,7 @@ const ImageTaggingPage = () => {
 
   if (!currentUser) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-8">
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <p className="text-lg text-muted-foreground">Please login to use Image Tagging</p>
@@ -260,7 +260,7 @@ const ImageTaggingPage = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
@@ -269,7 +269,8 @@ const ImageTaggingPage = () => {
   return (
     <>
      <NavBar/>
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background pt-32 pb-20">
+    <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">AI Image Tagging</h1>
         <p className="text-muted-foreground">
@@ -598,6 +599,7 @@ const ImageTaggingPage = () => {
           )}
         </DialogContent>
       </Dialog>
+    </div>
     </div>
     <FooterBar/>
     </>

@@ -67,7 +67,7 @@ export default function SemanticRecommendPage() {
     <>
       <NavBar />
       <div className="min-h-screen bg-background pt-32 pb-20">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
