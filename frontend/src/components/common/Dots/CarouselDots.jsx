@@ -38,20 +38,20 @@ const CarouselDots = ({ total, current, maxDots = 5 }) => {
         // Tính toán size và opacity gradient
         let size, opacity, height;
         if (isActive) {
-          size = "w-3.5";
-          height = "h-2";
+          size = "w-3";
+          height = "h-1.5";
           opacity = "bg-white";
         } else if (distance === 1) {
-          size = "w-2";
-          height = "h-2";
-          opacity = "bg-white/80";
-        } else if (distance === 2) {
           size = "w-1.5";
           height = "h-1.5";
-          opacity = "bg-white/50";
-        } else {
+          opacity = "bg-white/80";
+        } else if (distance === 2) {
           size = "w-1";
           height = "h-1";
+          opacity = "bg-white/50";
+        } else {
+          size = "w-0.5";
+          height = "h-0.5";
           opacity = "bg-white/30";
         }
         
