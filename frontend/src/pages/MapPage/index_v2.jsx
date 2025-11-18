@@ -390,7 +390,7 @@ function PropertiesMap() {
     return (
         <>
             <NavBar />
-            <div className="w-full pt-25 h-screen flex flex-col fixed inset-0 overflow-hidden">
+            <div className="w-full pt-20 h-screen flex flex-col fixed inset-0 overflow-hidden">
                 {/* Filter - cố định ở trên */}
                 <div className="flex-shrink-0 z-10">
                     <Filter handlePlaceSelected={handlePlaceSelected} />
