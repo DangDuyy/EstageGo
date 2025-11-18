@@ -178,7 +178,7 @@ export default function SemanticRecommendPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={() => navigate('/properties')}>
+                <Button onClick={() => navigate('/listing/map')}>
                   Browse Properties
                 </Button>
               </CardContent>
@@ -207,7 +207,7 @@ export default function SemanticRecommendPage() {
                 <p className="text-muted-foreground mb-4">
                   No recommendations available at the moment.
                 </p>
-                <Button onClick={() => navigate('/properties')}>
+                <Button onClick={() => navigate('/listing/map')}>
                   Browse All Properties
                 </Button>
               </CardContent>

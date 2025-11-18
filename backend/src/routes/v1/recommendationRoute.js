@@ -14,7 +14,7 @@ Router.route('/similar/:propertyId')
 
 // Track activity (optional auth - works for both logged in and guest users)
 Router.route('/track')
-  .post(recommendationController.trackActivity)
+  .post(authMiddleware.isOptionallyAuthorized, recommendationController.trackActivity)
 
 // Get user activity history (requires auth, for debugging)
 Router.route('/history')

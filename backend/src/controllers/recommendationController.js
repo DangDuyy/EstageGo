@@ -51,7 +51,8 @@ const getSimilarProperties = async (req, res, next) => {
 // Track user activity
 const trackActivity = async (req, res, next) => {
   try {
-    const userId = req.jwtDecoded?._id || null
+    // Handle both authenticated and guest users
+    const userId = (req.jwtDecoded && req.jwtDecoded._id) ? req.jwtDecoded._id : null
     const { sessionId, eventType, propertyId, metadata } = req.body
 
     // Validate eventType
@@ -60,12 +61,15 @@ const trackActivity = async (req, res, next) => {
       throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid eventType. Must be one of: ${validEventTypes.join(', ')}`)
     }
 
+    // Generate session ID if not provided
+    const finalSessionId = sessionId || (req.sessionID ? req.sessionID : `session_${Date.now()}_${Math.random().toString(36).substring(7)}`)
+
     const activity = await recommendationService.trackActivity({
       userId,
-      sessionId: sessionId || req.sessionID || `session_${Date.now()}`,
+      sessionId: finalSessionId,
       eventType,
-      propertyId,
-      metadata
+      propertyId: propertyId || null,
+      metadata: metadata || {}
     })
 
     res.status(StatusCodes.CREATED).json({
