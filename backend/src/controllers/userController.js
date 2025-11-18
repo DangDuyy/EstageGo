@@ -241,8 +241,8 @@ const getAllAgents = async (req, res, next) => {
 // ✅ Get agent by ID
 const getAgentById = async (req, res, next) => {
   try {
-    const { id } = req.params
-    const result = await userService.getAgentById(id)
+    const { agentId } = req.params
+    const result = await userService.getAgentById(agentId)
 
     res.status(StatusCodes.OK).json(result)
   } catch (error) {
@@ -253,8 +253,8 @@ const getAgentById = async (req, res, next) => {
 // ✅ Get user profile by ID
 const getUserProfileById = async (req, res, next) => {
   try {
-    const { id } = req.params
-    const result = await userService.getUserProfileById(id)
+    const { userId } = req.params
+    const result = await userService.getUserProfileById(userId)
 
     res.status(StatusCodes.OK).json(result)
   } catch (error) {

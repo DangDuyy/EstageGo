@@ -242,7 +242,7 @@ export function NavMenu(props) {
 
   return (
     <NavigationMenu {...props}>
-      <NavigationMenuList className="gap-5 lg:gap-2 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start font-semibold md:text-lg texl-4xl">
+      <NavigationMenuList className="gap-5 lg:gap-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start font-semibold md:text-lg texl-4xl">
         {items.map((item) => {
           // AI Trend (mega)
           if (item.type === "mega") {
