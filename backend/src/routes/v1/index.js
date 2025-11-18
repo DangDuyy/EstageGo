@@ -8,6 +8,7 @@ import { conversationRoutes } from './conversationRoute'
 import { messageRoutes } from './messageRoute'
 import { adminRoutes } from './adminRoute'
 import { agentRequestRoutes } from './agentRequestRoute'
+import { recommendationRoutes } from './recommendationRoute'
 
 const Router = express.Router()
 
@@ -30,5 +31,7 @@ Router.use('/messages', messageRoutes)
 Router.use('/admin', adminRoutes)
 
 Router.use('/agent-requests', agentRequestRoutes)
+
+Router.use('/recommendations', recommendationRoutes)
 
 export const APIs_V1 = Router

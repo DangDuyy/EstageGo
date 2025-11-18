@@ -26,8 +26,9 @@ import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Textarea } from "@/components/ui/textarea";
 import { capitalizeFirstLetter, formatPostDate } from "@/utils/formatters";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { createOrGetConversationAPI } from "@/apis";
+import { createOrGetConversationAPI, trackActivityAPI, getSimilarPropertiesAPI } from "@/apis";
 import { toast } from "react-toastify";
+import PropertyCard from "./FeatureCard/PropertyCard";
 
 /* ============ Small utils ============ */
 function PriceTag({ value, currency, unit }) {
@@ -160,6 +161,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const { toggleItem, isInWishlist } = useWishlist()
   const inWishlist = isInWishlist(propertyId)
   const [startingChat, setStartingChat] = React.useState(false)
+  const [similarProperties, setSimilarProperties] = React.useState([])
+  const [loadingSimilar, setLoadingSimilar] = React.useState(true)
 
   // Handle start chat with owner
   const handleStartChat = async () => {
@@ -208,13 +211,37 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   }, [property?.description]);
 
   React.useEffect(() => {
-    if (propertyId) dispatch(fetchPropertyDetailsAPI(propertyId));
-  }, [dispatch, propertyId]);
+    if (propertyId) {
+      dispatch(fetchPropertyDetailsAPI(propertyId));
+      
+      // Track VIEW activity
+      if (currentUser?._id) {
+        trackActivityAPI('VIEW', propertyId, {
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Fetch similar properties
+      const fetchSimilar = async () => {
+        try {
+          setLoadingSimilar(true);
+          const result = await getSimilarPropertiesAPI(propertyId, 6);
+          setSimilarProperties(result.data || []);
+        } catch (error) {
+          console.error('Error fetching similar properties:', error);
+        } finally {
+          setLoadingSimilar(false);
+        }
+      };
+
+      fetchSimilar();
+    }
+  }, [dispatch, propertyId, currentUser]);
 
   if (!property) {
     // Skeleton
     return (
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-10">
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-2/3 rounded bg-muted" />
           <div className="h-64 rounded bg-muted" />
@@ -260,7 +287,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   return (
     <div className="w-full pt-20">
       {/* Header */}
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl">
         <div className="flex flex-col gap-4 py-6 md:flex-col md:justify-between">
           <div className="flex justify-between">
             <h1 className="text-4xl font-bold tracking-tight">{property.title}</h1>
@@ -335,11 +362,11 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
       </div>
 
       {/* Gallery */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-6">
         <ImagesCarousel images={mediaImages} />
       </div>
 
-      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 pb-10 lg:grid-cols-12">
+      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 lg:px-8 xl:px-12 max-w-7xl pb-10 lg:grid-cols-12">
         {/* LEFT */}
         <div className="lg:col-span-8 space-y-6">
           {/* Description */}
@@ -581,6 +608,30 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
           </Card>
         </div>
       </div>
+
+      {/* Similar Properties Section */}
+      {similarProperties.length > 0 && (
+        <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-10">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold">Similar Properties</h2>
+            <p className="text-muted-foreground">You might also be interested in these properties</p>
+          </div>
+
+          {loadingSimilar ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-80 rounded-lg bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {similarProperties.map(prop => (
+                <PropertyCard key={prop._id} item={prop} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

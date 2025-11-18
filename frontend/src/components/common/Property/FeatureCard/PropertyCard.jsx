@@ -20,7 +20,7 @@ function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" 
   return (
     <div className={cn("flex items-center gap-1 text-sm text-muted-foreground", className)}>
       <Icon className={iconClass} />
-      <span>{label}:</span>
+      <span className="hidden sm:inline">{label}:</span>
       <span className="font-semibold text-foreground">{value}</span>
     </div>
   );

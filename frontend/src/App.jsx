@@ -14,6 +14,7 @@ import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
 import AISearchPage from './pages/AI/AISearchPage'
 import ImageTaggingPage from './pages/AI/ImageTaggingPage'
+import SemanticRecommendPage from './pages/AI/SemanticRecommendPage'
 import DashboardPage from './pages/DashboardPage/DashBoard'
 import Message from './pages/DashboardPage/Message'
 import NewPost from './pages/DashboardPage/Post/NewPost'
@@ -24,6 +25,7 @@ import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
 import Wishlist from './pages/DashboardPage/Wishlist'
 import HomePage from './pages/HomePage'
 import VerifyAccountPage from './pages/HomePage/verifyAccount'
+import VerifyPhoneRegister from './pages/HomePage/verifyPhoneRegister'
 import MapPage from './pages/MapPage'
 import PropertiesMap from './pages/MapPage/index_v2'
 import PropertyPages from './pages/PropertyPage'
@@ -45,6 +47,7 @@ function App() {
 
       <Route path="/home" element={<HomePage />} />
       <Route path="/verify-account" element={<VerifyAccountPage />} />
+      <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
       <Route path="/properties/:propertyId" element={<PropertyPage />} />
 
       <Route path="/listing/grid" element={<PropertyPages />} />
@@ -60,6 +63,7 @@ function App() {
       <Route path="/ai/chatbot" element={<ChatBot />} />
       <Route path="/ai/nl-search" element={<AISearchPage />} />
       <Route path="/ai/image-tagging" element={<ImageTaggingPage />} />
+      <Route path="/ai/semantic-recommend" element={<SemanticRecommendPage />} />
 
       <Route path="/map" element={<MapPage />} />
       <Route path="/dashboard" element={<DashboardLayout />}>

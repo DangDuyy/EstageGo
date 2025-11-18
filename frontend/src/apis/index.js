@@ -16,12 +16,28 @@ export const verifyCodeAPI = async (data) => {
 
 export const registerUserAPI = async (data) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/register`, data)
-  toast.success('Account created successfully! Please check your email to verify account')
   return response.data
 }
 
 export const verifyUserAPI = async (data) => {
   const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/verify`, data)
+  return response.data
+}
+
+export const verifyPhoneRegistrationAPI = async (phone, code) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/verify-registration`, { phone, code })
+  return response.data
+}
+
+export const loginUserAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/login`, data)
+  return response.data
+}
+
+export const logoutUserAPI = async () => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/users/logout`)
+  localStorage.removeItem('accessToken')
+  toast.success('Logged out successfully')
   return response.data
 }
 
@@ -344,4 +360,70 @@ export const clearImageTagsAPI = async (propertyId, imageId) => {
   const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/tags`)
   toast.success('Tags cleared successfully!')
   return response.data
+}
+// Send phone verification code (for profile update)
+export const sendPhoneVerificationAPI = async (phone) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/send-code`, { phone })
+  toast.success('Verification code sent to your phone!')
+  return response.data
+}
+
+// Verify phone with code (for profile update)
+export const verifyPhoneAPI = async (phone, code) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/verify`, { phone, code })
+  toast.success('Phone verified successfully!')
+  return response.data
+}
+
+// ========== RECOMMENDATION APIs ==========
+
+// Get personalized recommendations for current user
+export const getPersonalizedRecommendationsAPI = async (limit = 10) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/personalized`, {
+    params: { limit }
+  })
+  return response.data
+}
+
+// Get similar properties based on a specific property
+export const getSimilarPropertiesAPI = async (propertyId, limit = 6) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/similar/${propertyId}`, {
+    params: { limit }
+  })
+  return response.data
+}
+
+// Track user activity
+export const trackActivityAPI = async (eventType, propertyId = null, metadata = {}) => {
+  try {
+    const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/recommendations/track`, {
+      eventType,
+      propertyId,
+      metadata,
+      sessionId: getOrCreateSessionId()
+    })
+    return response.data
+  } catch (error) {
+    // Silent fail for tracking - don't interrupt user experience
+    console.warn('Failed to track activity:', error)
+    return null
+  }
+}
+
+// Get user activity history (for debugging)
+export const getUserActivityHistoryAPI = async (limit = 50) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/history`, {
+    params: { limit }
+  })
+  return response.data
+}
+
+// Helper function to get or create session ID
+const getOrCreateSessionId = () => {
+  let sessionId = sessionStorage.getItem('sessionId')
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    sessionStorage.setItem('sessionId', sessionId)
+  }
+  return sessionId
 }

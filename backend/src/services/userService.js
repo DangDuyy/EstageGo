@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from 'crypto'
+import { randomBytes } from 'crypto'
 import bcryptjs from 'bcryptjs'
 import { StatusCodes } from "http-status-codes"
 import ApiError from "~/utils/ApiError"
@@ -9,20 +9,46 @@ import { JwtProvider } from "~/providers/JwtProvider"
 import { env } from "~/config/environment"
 
 /**
- * Đăng ký user mới - gửi email xác thực
- * payload: { email, userName, password }
+ * Generate random fullName
+ */
+const generateFullName = () => {
+  const randomNum = Math.floor(10000000 + Math.random() * 90000000)
+  return `User_${randomNum}`
+}
+
+/**
+ * Đăng ký user mới - hỗ trợ email hoặc phone
+ * payload: { email?, phone?, userName, password, contactType }
  */
 const createNew = async (reqBody) => {
   try {
-    const { email, userName, password } = reqBody
-    if (!email || !userName || !password) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Email, username and password are required')
+    const { email, phone, userName, password, contactType } = reqBody
+    
+    const usePhone = contactType === 'phone' || (!contactType && phone && !email)
+    console.log('🆕 Register request:', { contactType, usePhone, email, phone, userName })
+    
+    if (!userName || !password) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Username and password are required')
+    }
+
+    if (!email && !phone) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Email or phone is required')
     }
 
     // Check email đã tồn tại
-    const existEmail = await userModel.findOne({ email })
-    if (existEmail) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Email already exists')
+    if (email) {
+      const existEmail = await userModel.findOne({ email })
+      if (existEmail) {
+        throw new ApiError(StatusCodes.CONFLICT, 'Email already exists')
+      }
+    }
+
+    // Check phone đã tồn tại
+    if (phone) {
+      const existPhone = await userModel.findOne({ phone })
+      if (existPhone) {
+        throw new ApiError(StatusCodes.CONFLICT, 'Phone number already exists')
+      }
     }
 
     // Check username đã tồn tại
@@ -33,34 +59,65 @@ const createNew = async (reqBody) => {
 
     // Hash password
     const hashedPassword = bcryptjs.hashSync(password, 10)
+    const fullName = generateFullName()
+    console.log('✅ Generated fullName:', fullName)
 
-    // Tạo verify token
-    const verifyToken = randomBytes(32).toString('hex')
-
-    // Tạo user mới
-    const newUser = await userModel.create({
-      email,
+    // Tạo user data
+    const userData = {
       userName,
+      fullName, // Random fullName
       password: hashedPassword,
-      isActive: false,
-      verifyToken
-    })
-
-    // Link verify đến trang verify-account
-    const verifyLink = `${env.WEBSITE_DOMAIN_DEVELOPMENT}/verify-account?token=${verifyToken}&email=${encodeURIComponent(email)}`
-    
-    console.log('🔗 Verify link:', verifyLink)
-    
-    await sendVerificationEmail({ 
-      to: email, 
-      verifyLink,
-      userName 
-    })
-
-    return { 
-      ok: true, 
-      message: 'Registration successful! Please check your email to verify your account.'
+      isActive: false
     }
+
+    // Email flow
+    if (!usePhone && email) {
+      const verifyToken = randomBytes(32).toString('hex')
+      const tokenExpires = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+      
+      userData.email = email
+      userData.verifyToken = verifyToken
+      userData.verifyTokenExpires = tokenExpires
+
+      const newUser = await userModel.create(userData)
+
+      const verifyLink = `${env.WEBSITE_DOMAIN_DEVELOPMENT}/verify-account?token=${verifyToken}&email=${encodeURIComponent(email)}`
+      
+      await sendVerificationEmail({ 
+        to: email, 
+        verifyLink,
+        userName: fullName // Dùng fullName trong email
+      })
+
+      console.log('✅ Verification email sent to:', email)
+
+      return { 
+        ok: true, 
+        message: 'Registration successful! Please check your email to verify your account.',
+        contactType: 'email',
+        userId: newUser._id
+      }
+    }
+
+    // Phone flow
+    if (usePhone && phone) {
+      userData.phone = phone
+      
+      const newUser = await userModel.create(userData)
+
+      console.log('✅ User created with phone:', phone)
+
+      return {
+        ok: true,
+        message: 'Registration successful! Please verify your phone number.',
+        contactType: 'phone',
+        userId: newUser._id,
+        phone
+      }
+    }
+
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid registration data')
+
   } catch (error) {
     if (error instanceof ApiError) throw error
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, error.message || 'Failed to create new user')
@@ -69,7 +126,6 @@ const createNew = async (reqBody) => {
 
 /**
  * Xác thực account qua email link
- * payload: { email, token }
  */
 const verifyAccount = async (reqBody) => {
   try {
@@ -81,31 +137,114 @@ const verifyAccount = async (reqBody) => {
     if (existUser.isActive) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Account is already active')
     if (token !== existUser.verifyToken) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Token is invalid')
 
+    if (existUser.verifyTokenExpires && existUser.verifyTokenExpires < Date.now()) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Verification token expired')
+    }
+
     const updateData = {
       isActive: true,
-      verifyToken: null
+      isEmailVerified: true,
+      verifyToken: null,
+      verifyTokenExpires: null
     }
 
     const updateUser = await userModel.findByIdAndUpdate(existUser._id, { $set: updateData }, { new: true })
     return pickUser(updateUser)
   } catch (error) {
-    throw new Error
+    throw error
   }
 }
 
+/**
+ * ✅ Verify phone OTP và active account (sau khi đăng ký)
+ */
+const verifyPhoneRegistration = async (phone, code) => {
+  try {
+    const user = await userModel.findOne({ phone })
+    
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    if (user.isActive) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Account is already active')
+    }
+
+    user.isActive = true
+    user.isPhoneVerified = true
+    await user.save()
+
+    console.log('✅ Phone verified and account activated:', phone)
+
+    return pickUser(user)
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Login - email/password hoặc phone/password
+ */
 const login = async (reqBody) => {
   try {
-    const existUser = await userModel.findOne({email: reqBody.email})
+    const { email, phone, password, contactType } = reqBody
+    
+    const usePhone = contactType === 'phone' || (!contactType && phone && !email)
+    
+    console.log('🔐 Login request:', { contactType, usePhone, email, phone })
 
-    if (!existUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
-    if (!existUser.isActive) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Account is not active. Please verify your email.')
+    if (!password) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is required')
+    }
 
-    if (!bcryptjs.compareSync(reqBody.password, existUser.password))
-      throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Your email or password is incorrect')
+    let existUser
 
+    // ✅ Phone login
+    if (usePhone) {
+      if (!phone) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Phone number is required')
+      }
+
+      existUser = await userModel.findOne({ phone })
+      
+      if (!existUser) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
+      }
+    } 
+    // ✅ Email login
+    else {
+      if (!email) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Email is required')
+      }
+
+      existUser = await userModel.findOne({ email })
+      
+      if (!existUser) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
+      }
+    }
+
+    // Check account active
+    if (!existUser.isActive) {
+      throw new ApiError(
+        StatusCodes.NOT_ACCEPTABLE, 
+        `Account is not active. Please verify your ${usePhone ? 'phone number' : 'email'}.`
+      )
+    }
+
+    // Verify password
+    if (!bcryptjs.compareSync(password, existUser.password)) {
+      throw new ApiError(
+        StatusCodes.NOT_ACCEPTABLE, 
+        `Your ${usePhone ? 'phone number' : 'email'} or password is incorrect`
+      )
+    }
+
+    // Generate tokens
     const userInfo = {
       _id: existUser._id,
-      email: existUser.email
+      email: existUser.email,
+      phone: existUser.phone
     }
 
     const accessToken = await JwtProvider.generateToken(
@@ -120,9 +259,11 @@ const login = async (reqBody) => {
       env.REFRESH_TOKEN_LIFE
     )
 
+    console.log('✅ Login successful:', usePhone ? phone : email)
+
     return { accessToken, refreshToken, ...pickUser(existUser) }
   } catch (error) {
-    throw new Error(error)
+    throw error
   }
 }
 
@@ -331,9 +472,21 @@ const getUserProfileById = async (userId) => {
   }
 }
 
+const updatePhone = async (userId, phone) => {
+  const updated = await userModel.findByIdAndUpdate(
+    userId,
+    { phone },
+    { new: true }
+  ).select('-password -verifyToken -__v')
+
+  if (!updated) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+  return updated
+}
+
 export const userService = {
   createNew,
   verifyAccount,
+  verifyPhoneRegistration, // ✅ Export function verify phone registration
   login,
   refreshToken,
   updateProfile,
@@ -342,5 +495,6 @@ export const userService = {
   removeAgentRole,
   getAllAgents,
   getAgentById,
-  getUserProfileById
+  getUserProfileById,
+  updatePhone
 }
