@@ -374,3 +374,56 @@ export const verifyPhoneAPI = async (phone, code) => {
   toast.success('Phone verified successfully!')
   return response.data
 }
+
+// ========== RECOMMENDATION APIs ==========
+
+// Get personalized recommendations for current user
+export const getPersonalizedRecommendationsAPI = async (limit = 10) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/personalized`, {
+    params: { limit }
+  })
+  return response.data
+}
+
+// Get similar properties based on a specific property
+export const getSimilarPropertiesAPI = async (propertyId, limit = 6) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/similar/${propertyId}`, {
+    params: { limit }
+  })
+  return response.data
+}
+
+// Track user activity
+export const trackActivityAPI = async (eventType, propertyId = null, metadata = {}) => {
+  try {
+    const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/recommendations/track`, {
+      eventType,
+      propertyId,
+      metadata,
+      sessionId: getOrCreateSessionId()
+    })
+    return response.data
+  } catch (error) {
+    // Silent fail for tracking - don't interrupt user experience
+    console.warn('Failed to track activity:', error)
+    return null
+  }
+}
+
+// Get user activity history (for debugging)
+export const getUserActivityHistoryAPI = async (limit = 50) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/history`, {
+    params: { limit }
+  })
+  return response.data
+}
+
+// Helper function to get or create session ID
+const getOrCreateSessionId = () => {
+  let sessionId = sessionStorage.getItem('sessionId')
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    sessionStorage.setItem('sessionId', sessionId)
+  }
+  return sessionId
+}
