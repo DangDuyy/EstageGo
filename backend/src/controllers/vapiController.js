@@ -129,6 +129,38 @@ export const getContext = async (req, res) => {
 }
 
 /**
+ * Get greeting message for voice assistant
+ */
+export const getGreeting = async (req, res) => {
+  try {
+    const userProfile = req.user || null
+    
+    // Build greeting with ESTAGEGO identity
+    let greeting = '🎯 Xin chào! Tôi là EstageGo AI Assistant - trợ lý thông minh về bất động sản.'
+    
+    if (userProfile) {
+      greeting += ` Chào ${userProfile.fullName || userProfile.userName}!`
+    }
+    
+    greeting += ' Tôi có thể giúp bạn tìm kiếm BĐS, tư vấn về thị trường, hoặc hướng dẫn sử dụng các tính năng. Bạn cần giúp gì không?'
+    
+    res.status(StatusCodes.OK).json({
+      success: true,
+      greeting,
+      identity: 'ESTAGEGO AI ASSISTANT - TRỢ LÝ THÔNG MINH VỀ BẤT ĐỘNG SẢN'
+    })
+    
+  } catch (error) {
+    console.error('Error in getGreeting controller:', error)
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    })
+  }
+}
+
+/**
  * Stream chat response (for real-time streaming)
  */
 export const streamChat = async (req, res) => {
@@ -233,5 +265,6 @@ export const vapiController = {
   executeFunction,
   getFunctions,
   getContext,
-  streamChat
+  streamChat,
+  getGreeting
 }

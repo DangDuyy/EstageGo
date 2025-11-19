@@ -9,6 +9,7 @@ import { env } from '~/config/environment.js'
 import { contextBuilderService } from './contextBuilderService.js'
 import { routeKnowledgeService } from './routeKnowledgeService.js'
 import propertyModel from '~/models/properties.js'
+import userModel from '~/models/users.js'
 
 /**
  * Function definitions for VAPI/LLM to call
@@ -63,6 +64,40 @@ export const getFunctionDefinitions = () => {
           bathrooms: {
             type: 'number',
             description: 'Số phòng tắm'
+          },
+          limit: {
+            type: 'number',
+            description: 'Số lượng kết quả tối đa (default: 5)',
+            default: 5
+          }
+        }
+      }
+    },
+    {
+      name: 'searchAgents',
+      description: 'Tìm kiếm môi giới/agents bất động sản. Trả về danh sách agents/brokers phù hợp với tiêu chí.',
+      parameters: {
+        type: 'object',
+        properties: {
+          province: {
+            type: 'string',
+            description: 'Tỉnh/Thành phố mà agent hoạt động (VD: Hồ Chí Minh, Hà Nội)'
+          },
+          district: {
+            type: 'string',
+            description: 'Quận/Huyện mà agent hoạt động'
+          },
+          specialization: {
+            type: 'string',
+            description: 'Chuyên môn của agent (VD: căn hộ cao cấp, nhà phố, đất nền...)'
+          },
+          minExperience: {
+            type: 'number',
+            description: 'Số năm kinh nghiệm tối thiểu'
+          },
+          companyName: {
+            type: 'string',
+            description: 'Tên công ty môi giới'
           },
           limit: {
             type: 'number',
@@ -133,6 +168,9 @@ export const executeFunction = async (functionName, args) => {
       case 'searchProperties':
         return await searchPropertiesFunction(args)
       
+      case 'searchAgents':
+        return await searchAgentsFunction(args)
+      
       case 'getPropertyDetails':
         return await getPropertyDetailsFunction(args)
       
@@ -154,6 +192,83 @@ export const executeFunction = async (functionName, args) => {
 /**
  * Function implementations
  */
+
+// Search agents/brokers
+const searchAgentsFunction = async (args) => {
+  const {
+    province,
+    district,
+    specialization,
+    minExperience,
+    companyName,
+    limit = 5
+  } = args
+  
+  // Build query - only active agents
+  const query = { 
+    role: 'agent',
+    isActive: true
+  }
+  
+  // Filter by areas served (province/district)
+  if (province) {
+    query.areasServed = { $regex: province, $options: 'i' }
+  }
+  if (district) {
+    query.areasServed = { $regex: district, $options: 'i' }
+  }
+  
+  // Filter by specialization
+  if (specialization) {
+    query.specializations = { $regex: specialization, $options: 'i' }
+  }
+  
+  // Filter by experience
+  if (minExperience) {
+    query.experience = { $gte: minExperience }
+  }
+  
+  // Filter by company name
+  if (companyName) {
+    query.companyName = { $regex: companyName, $options: 'i' }
+  }
+  
+  // Execute query
+  const agents = await userModel
+    .find(query)
+    .limit(Math.min(limit, 10))
+    .select('userName fullName avatar phone email companyName agentTitle bio specializations areasServed experience licenseNumber website socialLinks')
+    .lean()
+  
+  // Format results
+  const results = agents.map(a => ({
+    id: a._id.toString(),
+    name: a.fullName || a.userName,
+    userName: a.userName,
+    avatar: a.avatar,
+    phone: a.phone,
+    email: a.email,
+    company: a.companyName || 'Môi giới độc lập',
+    title: a.agentTitle || 'Môi giới BĐS',
+    bio: a.bio,
+    specializations: a.specializations || [],
+    areasServed: a.areasServed || [],
+    experience: a.experience ? `${a.experience} năm` : 'Chưa cập nhật',
+    licenseNumber: a.licenseNumber,
+    website: a.website,
+    socialLinks: a.socialLinks,
+    profileUrl: `/agent/${a.userName}`
+  }))
+  
+  return {
+    success: true,
+    count: results.length,
+    results,
+    message: results.length > 0 
+      ? `Tìm thấy ${results.length} môi giới phù hợp.` 
+      : 'Không tìm thấy môi giới nào phù hợp với tiêu chí.'
+  }
+}
 
 // Search properties
 const searchPropertiesFunction = async (args) => {
@@ -472,20 +587,33 @@ export const chatWithAI = async (userMessage, options = {}) => {
 export const chatWithFunctionCalling = async (userMessage, options = {}) => {
   const { messages = [], userProfile = null } = options
   
-  // First, get AI response
-  const aiResult = await chatWithAI(userMessage, { messages, userProfile, includeContext: true })
-  
-  if (!aiResult.success) {
-    return aiResult
-  }
-  
-  // Analyze if we need to call functions
-  // Simple keyword-based detection (can be improved with LLM-based detection)
+  // Analyze if we need to call functions FIRST (before AI response)
   const query = userMessage.toLowerCase()
   const functionCalls = []
   
-  // Detect search intent
-  if (/tìm|tìm kiếm|search|có|cần|cho tôi/i.test(query)) {
+  // Detect agent/broker search intent
+  if (/môi giới|agent|broker|cò nhà|sales|tư vấn viên/i.test(query)) {
+    const agentParams = {}
+    
+    // Extract location for agents
+    if (/quận 1|quan 1/i.test(query)) agentParams.district = 'Quận 1'
+    if (/quận 2|quan 2/i.test(query)) agentParams.district = 'Quận 2'
+    if (/hồ chí minh|hcm|sài gòn|saigon/i.test(query)) agentParams.province = 'Hồ Chí Minh'
+    if (/hà nội|ha noi|hanoi/i.test(query)) agentParams.province = 'Hà Nội'
+    
+    // Extract specialization
+    if (/căn hộ|can ho|apartment/i.test(query)) agentParams.specialization = 'căn hộ'
+    if (/nhà phố|nha pho/i.test(query)) agentParams.specialization = 'nhà phố'
+    if (/villa/i.test(query)) agentParams.specialization = 'villa'
+    if (/đất nền|dat nen/i.test(query)) agentParams.specialization = 'đất nền'
+    
+    functionCalls.push({
+      function: 'searchAgents',
+      args: agentParams
+    })
+  }
+  // Detect property search intent
+  else if (/tìm|tìm kiếm|search|có|cần|cho tôi/i.test(query) && !/môi giới|agent|broker/i.test(query)) {
     // Extract search parameters from query (simplified)
     const searchParams = {}
     
@@ -540,14 +668,107 @@ export const chatWithFunctionCalling = async (userMessage, options = {}) => {
     })
   }
   
-  // Execute function calls
+  // Execute function calls FIRST
   const functionResults = []
   for (const call of functionCalls) {
+    console.log(`[VAPI Service] Executing function: ${call.function}`, call.args)
     const result = await executeFunction(call.function, call.args)
+    console.log(`[VAPI Service] Function result:`, result)
     functionResults.push({
       function: call.function,
       result
     })
+  }
+  
+  // If we have function results, format response directly from data (NO AI generation)
+  if (functionResults.length > 0) {
+    console.log('[VAPI Service] Formatting response directly from function results (no AI)')
+    
+    let directResponse = ''
+    
+    for (const fr of functionResults) {
+      const { function: funcName, result } = fr
+      
+      if (result.success === false) {
+        directResponse += `⚠️ Xin lỗi, tôi gặp lỗi khi tìm kiếm: ${result.error || result.message}\n\n`
+        continue
+      }
+      
+      // Format based on function type - DIRECT FORMATTING, NO AI
+      if (funcName === 'searchAgents') {
+        if (result.count === 0) {
+          directResponse += `🔍 Không tìm thấy môi giới nào phù hợp với tiêu chí trong database.\n\nBạn có thể thử:\n- Tìm với khu vực khác\n- Hoặc xem tất cả môi giới tại /agents`
+        } else {
+          directResponse += `👔 Tìm thấy ${result.count} môi giới trong database:\n\n`
+          
+          result.results.forEach((agent, idx) => {
+            directResponse += `**${idx + 1}. ${agent.name}**`
+            if (agent.userName) directResponse += ` (@${agent.userName})`
+            directResponse += `\n`
+            directResponse += `🏢 Công ty: ${agent.company}\n`
+            if (agent.phone) directResponse += `📞 Phone: ${agent.phone}\n`
+            if (agent.email) directResponse += `📧 Email: ${agent.email}\n`
+            if (agent.specializations && agent.specializations.length > 0) {
+              directResponse += `🎯 Chuyên môn: ${agent.specializations.join(', ')}\n`
+            }
+            if (agent.areasServed && agent.areasServed.length > 0) {
+              directResponse += `📍 Khu vực: ${agent.areasServed.join(', ')}\n`
+            }
+            directResponse += `⏳ Kinh nghiệm: ${agent.experience}\n`
+            directResponse += `🔗 Profile: ${agent.profileUrl}\n\n`
+          })
+          
+          directResponse += `Bạn có thể xem profile chi tiết hoặc liên hệ trực tiếp!`
+        }
+      } else if (funcName === 'searchProperties') {
+        if (result.count === 0) {
+          directResponse += `🏠 Không tìm thấy properties nào phù hợp với tiêu chí.\n\n`
+        } else {
+          directResponse += `🏠 Tìm thấy ${result.count} properties:\n\n`
+          
+          result.results.forEach((prop, idx) => {
+            directResponse += `**${idx + 1}. ${prop.title}**\n`
+            directResponse += `💰 Giá: ${prop.price}\n`
+            directResponse += `📐 Diện tích: ${prop.area}\n`
+            directResponse += `📍 Vị trí: ${prop.location}\n`
+            directResponse += `🔗 Xem chi tiết: ${prop.detailUrl}\n\n`
+          })
+        }
+      } else if (funcName === 'getPropertyStatistics') {
+        const stats = result.statistics
+        directResponse += `📊 Thống kê bất động sản:\n\n`
+        directResponse += `📈 Tổng số: ${stats.total} properties\n`
+        directResponse += `💰 Giá: ${stats.price.formatted.min} - ${stats.price.formatted.max}\n`
+        directResponse += `📐 Diện tích: ${stats.area.formatted.min} - ${stats.area.formatted.max}\n\n`
+      } else if (funcName === 'getNavigationRoute') {
+        if (result.success && result.route) {
+          directResponse += `🎯 Bạn có thể vào: **${result.route}**\n\n`
+          if (result.details) {
+            directResponse += `${result.details.description}\n`
+          }
+        } else {
+          directResponse += `❓ ${result.message || 'Không tìm thấy route phù hợp'}\n\n`
+        }
+      }
+    }
+    
+    return {
+      success: true,
+      response: directResponse.trim(),
+      functionCalls: functionResults,
+      model: 'direct-formatting'
+    }
+  }
+  
+  // No function calls, use AI for general questions only
+  const aiResult = await chatWithAI(userMessage, { 
+    messages, 
+    userProfile, 
+    includeContext: true 
+  })
+  
+  if (!aiResult.success) {
+    return aiResult
   }
   
   return {

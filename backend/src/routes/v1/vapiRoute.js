@@ -40,6 +40,13 @@ Router.get('/functions', vapiController.getFunctions)
 Router.post('/context', authMiddleware.isOptionallyAuthorized, vapiController.getContext)
 
 /**
+ * @route   GET /api/v1/vapi/greeting
+ * @desc    Get greeting message for voice assistant
+ * @access  Public (but personalized if authenticated)
+ */
+Router.get('/greeting', authMiddleware.isOptionallyAuthorized, vapiController.getGreeting)
+
+/**
  * @route   GET /api/v1/vapi/health
  * @desc    Health check
  * @access  Public

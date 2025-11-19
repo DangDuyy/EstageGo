@@ -149,6 +149,19 @@ export const getVAPIContext = async (userQuery = '', messages = []) => {
 }
 
 /**
+ * Get greeting message from backend (ESTAGEGO AI identity)
+ */
+export const getVAPIGreeting = async () => {
+  try {
+    const response = await authorizeAxiosInstance.get(`${VAPI_ENDPOINT}/greeting`)
+    return response.data
+  } catch (error) {
+    console.error('Error getting VAPI greeting:', error)
+    throw error
+  }
+}
+
+/**
  * Health check
  */
 export const checkVAPIHealth = async () => {
@@ -167,6 +180,7 @@ export const vapiAPI = {
   executeFunction: executeVAPIFunction,
   getFunctions: getVAPIFunctions,
   getContext: getVAPIContext,
+  getGreeting: getVAPIGreeting,
   checkHealth: checkVAPIHealth
 }
 

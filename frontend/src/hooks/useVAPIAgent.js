@@ -1,10 +1,11 @@
 /* eslint-disable no-empty */
 import { useCallback, useEffect, useRef, useState } from "react"
 import Vapi from "@vapi-ai/web"
+import { sendVAPIMessage, getVAPIGreeting } from "@/apis/vapiAPI"
 
 /**
- * Hook VAPI Agent - Realtime Voice Chat
- * Giống Konnect, dùng VAPI SDK thật
+ * Hook VAPI Agent - Hybrid Mode
+ * VAPI handles voice I/O, Backend handles AI response with database knowledge
  * ------------------------------------------------
  * EXPOSE:
  * - callStatus      : "idle" | "connecting" | "active" | "ended"
@@ -26,6 +27,9 @@ export function useVAPIAgent() {
 
   // Timer for auto-clear speaker
   const clearSpeakerTimeoutRef = useRef(null)
+  
+  // Flag to track if we sent backend greeting (to ignore VAPI's greeting)
+  const backendGreetingSentRef = useRef(false)
 
   // Set active speaker and auto-clear after 1s
   const bumpActiveSpeaker = useCallback((role) => {
@@ -37,6 +41,64 @@ export function useVAPIAgent() {
       setActiveSpeaker(null)
     }, 1000)
   }, [])
+
+  // Get AI response from backend (with database + route knowledge)
+  const getBackendResponse = useCallback(async (userText, currentHistory) => {
+    try {
+      bumpActiveSpeaker("assistant")
+      
+      // Show live turn
+      setLiveTurn({ role: "assistant", text: "" })
+
+      // Call OUR backend (has database knowledge)
+      const historyForBackend = currentHistory.map(h => ({
+        role: h.role,
+        content: h.text
+      }))
+
+      const response = await sendVAPIMessage(userText, historyForBackend)
+
+      if (response.success) {
+        const aiText = response.response || "Xin lỗi, tôi không hiểu."
+        
+        // Simulate streaming for better UX
+        const words = aiText.split(" ")
+        for (let i = 0; i < words.length; i++) {
+          const partial = words.slice(0, i + 1).join(" ")
+          setLiveTurn({ role: "assistant", text: partial })
+          await new Promise(resolve => setTimeout(resolve, 30))
+        }
+
+        // Finalize
+        setLiveTurn(null)
+        setHistory((prev) => [...prev, {
+          role: "assistant",
+          text: aiText,
+          at: Date.now(),
+        }])
+
+        // Use VAPI to SPEAK the response (but don't use VAPI AI)
+        if (vapiRef.current) {
+          try {
+            // VAPI say() method to speak custom text
+            vapiRef.current.say(aiText)
+          } catch (err) {
+            console.error("[VAPI] say() error:", err)
+            // Fallback to browser TTS
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel()
+              const utterance = new SpeechSynthesisUtterance(aiText)
+              utterance.lang = 'vi-VN'
+              window.speechSynthesis.speak(utterance)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("[Backend] Error getting AI response:", error)
+      setLiveTurn(null)
+    }
+  }, [bumpActiveSpeaker])
 
   // Handle partial transcript
   const handlePartial = useCallback(
@@ -70,29 +132,30 @@ export function useVAPIAgent() {
         return prev
       })
 
+      // Add user message to history
+      const newMessage = {
+        role,
+        text,
+        at: Date.now(),
+      }
+
       setHistory((prev) => {
-        // Prevent duplicate assistant messages
+        // Prevent duplicate messages
         const last = prev[prev.length - 1]
-        if (
-          role === "assistant" &&
-          last &&
-          last.role === "assistant" &&
-          last.text === text
-        ) {
+        if (last && last.role === role && last.text === text) {
           return prev
         }
-
-        return [
-          ...prev,
-          {
-            role,
-            text,
-            at: Date.now(),
-          },
-        ]
+        return [...prev, newMessage]
       })
+
+      // If user spoke, get AI response from OUR backend (with database knowledge)
+      if (role === "user") {
+        // Pass updated history (including the new user message)
+        const updatedHistory = [...history, newMessage]
+        await getBackendResponse(text, updatedHistory)
+      }
     },
-    [bumpActiveSpeaker]
+    [bumpActiveSpeaker, history, getBackendResponse]
   )
 
   // Init VAPI client once
@@ -111,12 +174,70 @@ export function useVAPIAgent() {
     vapiRef.current = client
 
     // Call start
-    client.on("call-start", () => {
+    client.on("call-start", async () => {
       console.log("[VAPI] call-start")
       setCallStatus("active")
       setHistory([])
       setLiveTurn(null)
       setActiveSpeaker(null)
+
+      // Reset greeting flag
+      backendGreetingSentRef.current = false
+
+      // Get greeting from OUR backend (with ESTAGEGO AI identity)
+      try {
+        const greetingResponse = await getVAPIGreeting()
+        if (greetingResponse.success && greetingResponse.greeting) {
+          const greetingText = greetingResponse.greeting
+          
+          console.log("[EstageGo] Backend greeting:", greetingText)
+          
+          // Mark that we sent backend greeting
+          backendGreetingSentRef.current = true
+          
+          // Add greeting to history
+          setHistory([{
+            role: "assistant",
+            text: greetingText,
+            at: Date.now(),
+          }])
+
+          // Use VAPI to SPEAK the greeting (but greeting text is from OUR backend)
+          if (client) {
+            try {
+              // VAPI say() method to speak our custom greeting
+              client.say(greetingText)
+              bumpActiveSpeaker("assistant")
+            } catch (err) {
+              console.error("[VAPI] say() error:", err)
+              // Fallback to browser TTS
+              if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel()
+                const utterance = new SpeechSynthesisUtterance(greetingText)
+                utterance.lang = 'vi-VN'
+                window.speechSynthesis.speak(utterance)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("[Backend] Error getting greeting:", error)
+        // Fallback greeting if backend fails
+        const fallbackGreeting = "Xin chào! Tôi là EstageGo AI Assistant. Tôi có thể giúp gì cho bạn?"
+        backendGreetingSentRef.current = true
+        setHistory([{
+          role: "assistant",
+          text: fallbackGreeting,
+          at: Date.now(),
+        }])
+        if (client) {
+          try {
+            client.say(fallbackGreeting)
+          } catch (err) {
+            console.error("[VAPI] say() fallback error:", err)
+          }
+        }
+      }
     })
 
     // Call end
@@ -145,20 +266,24 @@ export function useVAPIAgent() {
         const text = evt?.transcript || evt?.text || ""
         const final = evt?.transcriptType === "final" || !!evt?.final
         if (!text) return
+        
+        // Ignore assistant transcripts from VAPI (we use backend only)
+        if (role === "assistant") {
+          console.log("[VAPI] Ignoring assistant transcript from VAPI, using backend AI instead")
+          return
+        }
+        
         return final
           ? handleFinal({ role, text })
           : handlePartial({ role, text })
       }
 
-      // Model output (assistant response)
+      // Model output (assistant response) - DISABLED
+      // We handle AI response from our backend instead
       if (t === "model-output") {
-        const role = "assistant"
-        const text = evt?.content || evt?.text || evt?.message || ""
-        const final = !!evt?.final
-        if (!text) return
-        return final
-          ? handleFinal({ role, text })
-          : handlePartial({ role, text })
+        // Ignore VAPI's AI response, we use our own backend
+        console.log("[VAPI] Ignoring model-output, using backend AI instead")
+        return
       }
 
       // Voice input
