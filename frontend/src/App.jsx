@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { ChatBot } from './components/common/AITrend/ChatBot'
 import { MapProvider } from './components/common/GoogleMap/MapProvider'
 import { SocketManager } from './components/common/SocketManager'
 import { useAuth } from './hooks/useAuth'
@@ -13,6 +12,7 @@ import AdminUsers from './pages/AdminPage/AdminUsers'
 import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
 import AISearchPage from './pages/AI/AISearchPage'
+import VoiceAssistantPage from './pages/AI/VoiceAssigntantPage'
 import ImageTaggingPage from './pages/AI/ImageTaggingPage'
 import SemanticRecommendPage from './pages/AI/SemanticRecommendPage'
 import DashboardPage from './pages/DashboardPage/DashBoard'
@@ -64,7 +64,7 @@ function App() {
         <Route path="/agents" element={<AgentListPage />} />
         <Route path="/agents/:agentId" element={<AgentProfile />} />
 
-        <Route path="/ai/chatbot" element={<ChatBot />} />
+        <Route path="/ai/chatbot" element={<VoiceAssistantPage />} />
         <Route path="/ai/nl-search" element={<AISearchPage />} />
         <Route path="/ai/image-tagging" element={<ImageTaggingPage />} />
         <Route path="/ai/semantic-recommend" element={<SemanticRecommendPage />} />

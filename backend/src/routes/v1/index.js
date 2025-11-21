@@ -9,6 +9,7 @@ import { messageRoutes } from './messageRoute'
 import { adminRoutes } from './adminRoute'
 import { agentRequestRoutes } from './agentRequestRoute'
 import { recommendationRoutes } from './recommendationRoute'
+import { vapiRoutes } from './vapiRoute'
 
 const Router = express.Router()
 
@@ -21,6 +22,8 @@ Router.use('/users', userRoutes)
 Router.use('/properties', propertyRoutes)
 
 Router.use('/ollama-chat', ollamaChatRoutes)
+
+Router.use('/vapi', vapiRoutes)
 
 Router.use('/wishlist', wishlistRoute)
 
