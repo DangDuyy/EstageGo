@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { MapsContext } from "./MapProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MapContainer from "./MapContainer";
-import { InfoWindow, Marker } from "@react-google-maps/api";
+import { DirectionsRenderer, InfoWindow, Marker } from "@react-google-maps/api";
 import CustomOverlayMarker from "./CustomOverlayMarker";
 import { MARKER_TYPES } from "./data";
 import { Separator } from "@/components/ui/separator";
@@ -33,6 +33,10 @@ export const PropertyDetailMap = ({ property }) => {
     const [selected, setSelected] = useState(null);
     const [position, setPosition] = useState({ lat: property.address?.location?.coordinates[1], lng: property.address?.location?.coordinates[0] })
     const [typeMetaData, setTypeMetaData] = useState()
+    const [travelInfo, setTravelInfo] = useState([]);
+    const [route, setRoute] = useState(null);
+
+
 
     useEffect(() => {
         const metaData = MARKER_TYPES[activeType]
@@ -62,7 +66,7 @@ export const PropertyDetailMap = ({ property }) => {
         try {
             const result = await Place.searchNearby({
                 fields: ["id", "displayName", "location", "formattedAddress"],
-                includedTypes: [type], // giống như type: ['restaurant']
+                includedTypes: [type],
                 locationRestriction: {
                     center: position,
                     radius: 2000
@@ -74,17 +78,12 @@ export const PropertyDetailMap = ({ property }) => {
                 name: p.displayName,
                 vicinity: p.formattedAddress,
                 geometry: { location: p.location },
-                distance: calcDistance(
-                    position.lat,
-                    position.lng,
-                    p.location.lat(),
-                    p.location.lng(),
-                ),
             }));
 
-            console.log(result.places[0].distance)
-
             setPlaces(enriched);
+
+            // 🎯 GỌI DISTANCE MATRIX
+            loadDistanceMatrix(enriched);
 
         } catch (err) {
             console.error("Nearby search error", err);
@@ -92,19 +91,58 @@ export const PropertyDetailMap = ({ property }) => {
     };
 
 
-    // tính khoảng cách mét
-    const calcDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371000; // m
-        const dLat = ((lat2 - lat1) * Math.PI) / 180;
-        const dLon = ((lon2 - lon1) * Math.PI) / 180;
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos((lat1 * Math.PI) / 180) *
-            Math.cos((lat2 * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    const loadDistanceMatrix = (placesList) => {
+        if (!google || !google.maps) return;
+
+        const service = new google.maps.DistanceMatrixService();
+
+        service.getDistanceMatrix(
+            {
+                origins: [position],
+                destinations: placesList.map((p) => p.geometry.location),
+                travelMode: google.maps.TravelMode.DRIVING, // hoặc WALKING, BICYCLING, TRANSIT
+                unitSystem: google.maps.UnitSystem.METRIC,
+            },
+            (response, status) => {
+                if (status !== "OK") {
+                    console.error("Distance Matrix error:", status);
+                    return;
+                }
+
+                const rows = response.rows[0].elements;
+
+                // gán vào state travelInfo
+                setTravelInfo(rows);
+            }
+        );
     };
+
+    const calculateRoute = (destination) => {
+        if (!google || !google.maps) return;
+
+        const directionsService = new google.maps.DirectionsService();
+
+        directionsService.route(
+            {
+                origin: position,
+                destination: destination,
+                travelMode: google.maps.TravelMode.DRIVING,  // WALKING, BICYCLING, TRANSIT
+            },
+            (result, status) => {
+                if (status === "OK") {
+                    setRoute(result);
+                } else {
+                    console.error("Directions request failed:", status);
+                }
+            }
+        );
+    };
+
+    useEffect(() => {
+        setRoute(null)
+    }, [activeType])
+
 
     // khi đổi tab
     const handleSelectType = (type) => {
@@ -145,6 +183,20 @@ export const PropertyDetailMap = ({ property }) => {
                             </div>
                         </InfoWindow>
                     )}
+
+                    {route && (
+                        <DirectionsRenderer
+                            directions={route}
+                            options={{
+                                suppressMarkers: true,
+                                polylineOptions: {
+                                    strokeColor: "#0ea5e9", // màu xanh đẹp
+                                    strokeWeight: 5,
+                                },
+                            }}
+                        />
+                    )}
+
                 </MapContainer>
 
                 {/* Tabs */}
@@ -172,31 +224,70 @@ export const PropertyDetailMap = ({ property }) => {
 
                 {/* Danh sách tiện ích */}
                 <div className="mt-0 h-[300px] overflow-y-auto">
-                    <p className="text-gray-500 mb-2">
+                    <p className="text-muted-foreground mb-2">
                         Có {places.length} địa điểm trong vòng 2 km
                     </p>
 
-                    {places.map((p) => (
-                        <div key={p.place_id} className="border-b py-4">
+                    {places.map((p, index) => (
+                        <div
+                            key={p.place_id}
+                            onClick={() => calculateRoute(p.geometry.location)}
+                            className="
+        border-b 
+        py-4 
+        px-2 
+        transition 
+        cursor-pointer
+        hover:bg-muted/40 
+        rounded-sm
+      "
+                        >
                             <div className="flex items-center justify-between gap-3">
 
                                 {/* ICON bên trái */}
                                 <div
-                                    className={`${typeMetaData.color} rounded-sm w-8 h-8 flex items-center justify-center flex-shrink-0`}
+                                    className={`
+            ${typeMetaData.color} 
+            rounded-md 
+            w-8 h-8 
+            flex items-center justify-center 
+            flex-shrink-0
+            shadow-sm
+          `}
                                 >
-                                    <typeMetaData.icon.type className='w-4 h-4' color="white" strokeWidth={2} />
+                                    <typeMetaData.icon.type
+                                        className="w-4 h-4 text-white"
+                                        strokeWidth={2}
+                                    />
                                 </div>
 
-                                {/* THÔNG TIN ĐỊA CHỈ ở giữa */}
+                                {/* THÔNG TIN ĐỊA CHỈ */}
                                 <div className="flex-1">
-                                    <div className="font-medium text-sm">{p.name}</div>
-                                    <div className="text-gray-500 text-xs">{p.vicinity}</div>
+                                    <div className="font-medium text-sm text-foreground">
+                                        {p.name}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {p.vicinity}
+                                    </div>
                                 </div>
 
-                                {/* KHOẢNG CÁCH + THỜI GIAN bên phải */}
+                                {/* KHOẢNG CÁCH + THỜI GIAN */}
                                 <div className="text-right flex-shrink-0">
-                                    <div className="text-sm font-medium">{p.distance.toFixed(0)} m</div>
-                                    <div className="text-xs">~ {Math.round(p.distance / 80)} phút</div>
+                                    {travelInfo[index] && travelInfo[index].status === "OK" ? (
+                                        <>
+                                            <div className="text-sm font-medium text-foreground">
+                                                {travelInfo[index].distance.text}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {travelInfo[index].duration.text}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="text-sm text-muted-foreground">--</div>
+                                            <div className="text-xs text-muted-foreground">--</div>
+                                        </>
+                                    )}
                                 </div>
 
                             </div>
