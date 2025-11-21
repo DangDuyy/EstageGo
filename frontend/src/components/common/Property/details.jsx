@@ -29,6 +29,10 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { createOrGetConversationAPI, trackActivityAPI, getSimilarPropertiesAPI } from "@/apis";
 import { toast } from "react-toastify";
 import PropertyCard from "./FeatureCard/PropertyCard";
+import { Marker } from "@react-google-maps/api";
+import MapContainer from "../GoogleMap/MapContainer";
+import { MapsContext } from "../GoogleMap/MapProvider";
+import { PropertyDetailMap } from "../GoogleMap/PropertyDetailMap";
 
 /* ============ Small utils ============ */
 function PriceTag({ value, currency, unit }) {
@@ -213,7 +217,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   React.useEffect(() => {
     if (propertyId) {
       dispatch(fetchPropertyDetailsAPI(propertyId));
-      
+
       // Track VIEW activity
       if (currentUser?._id) {
         trackActivityAPI('VIEW', propertyId, {
@@ -275,8 +279,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
   const mediaImages = Array.isArray(property.media) && property.media.length
     ? property.media
-        .filter((m) => m?.url && (m.type === "image" || !m.type))
-        .map((m) => m.url)
+      .filter((m) => m?.url && (m.type === "image" || !m.type))
+      .map((m) => m.url)
     : defaultImages;
 
   const [lng, lat] = property.address?.location?.coordinates || [];
@@ -298,7 +302,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
             />
           </div>
 
-          <Separator/>
+          <Separator />
 
           <div className="flex flex-row justify-between items-center">
             <div className="mt-2 flex flex-wrap items-center gap-10 text-sm text-muted-foreground">
@@ -396,9 +400,9 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                 { label: "Posted", value: formatPostDate(property?.createdAt, true) || "-", Icon: null },
                 { label: "Bedrooms", value: property?.rooms?.bedrooms ?? "-", Icon: Bed },
                 { label: "Bathrooms", value: property?.rooms?.bathrooms ?? "-", Icon: Bath },
-                { label: "LivingRooms", value: property?.rooms?.livingrooms ?? "-", Icon: Sofa},
+                { label: "LivingRooms", value: property?.rooms?.livingrooms ?? "-", Icon: Sofa },
                 { label: "Land Size", value: property?.area ? `${property.area} Sqft` : "-", Icon: Ruler },
-                { label: "Year Built", value: property?.yearBuilt ?? "-" , Icon: Hammer },
+                { label: "Year Built", value: property?.yearBuilt ?? "-", Icon: Hammer },
                 { label: "Size", value: property?.area ? `${property.area} Sqft` : "-", Icon: Ruler },
               ]
 
@@ -411,7 +415,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{it.label}</div>
                         <div className="text-sm font-medium truncate">
                           {capitalizeFirstLetter(String(it.value))}
-                        </div>                      
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -422,21 +426,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
           {/* Map (nếu có toạ độ) */}
           {gmapSrc && (
-            <Card>
-              <CardHeader><CardTitle>Map location</CardTitle></CardHeader>
-              <CardContent>
-                <div className="overflow-hidden rounded-lg border">
-                  <iframe
-                    title="property-map"
-                    src={gmapSrc}
-                    className="h-[380px] w-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    allowFullScreen
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <PropertyDetailMap property={property} />
           )}
 
           {/* Amenities */}
@@ -537,62 +527,62 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
               <CardTitle className="text-xl font-semibold">Contact Sellers</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-                  {/* Owner Info */}
-                  {(() => {
-                    const owner = property.ownerInfo || {};
-                    const ownerName = owner.fullName || "Seller name";
-                    const ownerAvatar = owner.avatar || null;
-                    const isOwnProperty = currentUser?._id === owner._id;
+              {/* Owner Info */}
+              {(() => {
+                const owner = property.ownerInfo || {};
+                const ownerName = owner.fullName || "Seller name";
+                const ownerAvatar = owner.avatar || null;
+                const isOwnProperty = currentUser?._id === owner._id;
 
-                    return (
-                      <div className="space-y-4">
-                        <div className="flex flex-row items-center space-y-2 space-x-6">
-                          <Avatar className="h-20 w-20">
-                            {ownerAvatar ? (
-                              <AvatarImage src={ownerAvatar} alt={ownerName} />
-                            ) : (
-                              <AvatarFallback>{ownerName.slice(0, 1)}</AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-lg">{ownerName}</div>
-                            {owner.phone && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Phone className="h-4 w-4" />
-                                <span>{owner.phone}</span>
-                              </div>
-                            )}
-                            {owner.email && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Mail className="h-4 w-4" />
-                                <span>{owner.email}</span>
-                              </div>
-                            )}
+                return (
+                  <div className="space-y-4">
+                    <div className="flex flex-row items-center space-y-2 space-x-6">
+                      <Avatar className="h-20 w-20">
+                        {ownerAvatar ? (
+                          <AvatarImage src={ownerAvatar} alt={ownerName} />
+                        ) : (
+                          <AvatarFallback>{ownerName.slice(0, 1)}</AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-lg">{ownerName}</div>
+                        {owner.phone && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-4 w-4" />
+                            <span>{owner.phone}</span>
                           </div>
-                        </div>
-                        {!isOwnProperty && currentUser && (
-                          <Button 
-                            variant="default" 
-                            className="w-full"
-                            onClick={handleStartChat}
-                            disabled={startingChat}
-                          >
-                            {startingChat ? (
-                              <>
-                                <span className="animate-spin mr-2">⏳</span>
-                                Starting conversation...
-                              </>
-                            ) : (
-                              <>
-                                <MessageCircle className="h-4 w-4 mr-2" />
-                                Message Owner
-                              </>
-                            )}
-                          </Button>
+                        )}
+                        {owner.email && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="h-4 w-4" />
+                            <span>{owner.email}</span>
+                          </div>
                         )}
                       </div>
-                    );
-                  })()}
+                    </div>
+                    {!isOwnProperty && currentUser && (
+                      <Button
+                        variant="default"
+                        className="w-full"
+                        onClick={handleStartChat}
+                        disabled={startingChat}
+                      >
+                        {startingChat ? (
+                          <>
+                            <span className="animate-spin mr-2">⏳</span>
+                            Starting conversation...
+                          </>
+                        ) : (
+                          <>
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Message Owner
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Form */}
               <div className="space-y-3">
