@@ -210,6 +210,12 @@ export const checkWishlistAPI = async (propertyId) => {
   return response.data
 }
 
+// Clear all items from wishlist
+export const clearAllWishlistAPI = async () => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/wishlist`)
+  return response.data
+}
+
 // ========== USER PROFILE APIs ==========
 
 // Update user profile

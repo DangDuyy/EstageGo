@@ -2,57 +2,82 @@ import UserActivity from '../models/userActivity.js'
 import propertyModel from '../models/properties.js'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '../utils/ApiError.js'
+import { collaborativeFilteringService } from './collaborativeFilteringService.js'
 
-// Content-Based Filtering: Recommend properties based on user's viewing history
+/**
+ * User-Based Collaborative Filtering Recommendations
+ * Implementation based on: https://viblo.asia/p/xay-dung-collaborative-filtering-rs-recommender-system-co-ban-phan-3-Az45bMqolxY
+ * 
+ * Algorithm:
+ * 1. Build User-Property Preference Matrix from UserActivity
+ * 2. Calculate Cosine Similarity between users
+ * 3. Find top-K similar users (neighbors)
+ * 4. Predict ratings for properties user hasn't seen
+ * 5. Return top-N recommendations
+ */
 const getPersonalizedRecommendations = async (userId, limit = 10) => {
   try {
-    // 1. Get user's recent VIEW activities (last 10 views)
-    const recentViews = await UserActivity.find({ 
-      userId, 
-      eventType: 'VIEW',
-      propertyId: { $ne: null }
-    })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .populate('propertyId')
+    // Use Collaborative Filtering algorithm
+    const cfResult = await collaborativeFilteringService.getCollaborativeFilteringRecommendations(
+      userId.toString(),
+      parseInt(limit)
+    )
 
-    // If no viewing history, return popular properties
-    if (recentViews.length === 0) {
-      return getPopularProperties(limit)
+    // If CF has recommendations, return them
+    if (cfResult.recommendations && cfResult.recommendations.length > 0) {
+      return {
+        recommendations: cfResult.recommendations,
+        basedOn: cfResult.metadata.basedOn,
+        totalViewed: cfResult.metadata.totalInteractions || 0,
+        metadata: cfResult.metadata
+      }
     }
 
-    // 2. Extract valid properties (filter out null/deleted properties)
-    const viewedProperties = recentViews
-      .map(v => v.propertyId)
-      .filter(p => p && p.status === 'active')
-
-    if (viewedProperties.length === 0) {
-      return getPopularProperties(limit)
-    }
-
-    // 3. Analyze user preferences from viewed properties
-    const preferences = analyzeUserPreferences(viewedProperties)
-
-    // 4. Create list of viewed property IDs to exclude
-    const viewedIds = viewedProperties.map(p => p._id)
-
-    // 5. Build recommendation query based on preferences
-    const recommendationQuery = buildRecommendationQuery(preferences, viewedIds)
-
-    // 6. Get recommended properties
-    const recommendations = await propertyModel
-      .find(recommendationQuery)
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .populate('owner', 'fullName userName avatar email phone role')
-
+    // If no CF recommendations (no similar users, no interactions, etc.), return empty with CF metadata
+    // Frontend will show message explaining why CF is not available
+    // Do NOT fallback to popular - frontend only accepts CF recommendations
     return {
-      recommendations,
-      basedOn: preferences,
-      totalViewed: viewedProperties.length
+      recommendations: [],
+      basedOn: {
+        type: 'collaborative' // Keep CF type even when no recommendations
+      },
+      totalViewed: cfResult.metadata?.totalInteractions || 0,
+      metadata: {
+        ...cfResult.metadata,
+        algorithm: 'user-based-cf',
+        similarUsersCount: cfResult.metadata?.similarUsersCount || 0,
+        kNeighbors: 50,
+        avgSimilarityScore: 0,
+        totalInteractions: cfResult.metadata?.totalInteractions || 0,
+        basedOn: {
+          type: 'collaborative'
+        },
+        reason: cfResult.metadata?.reason || 'no_recommendations'
+      }
     }
   } catch (error) {
-    throw error
+    console.error('Error in getPersonalizedRecommendations (CF):', error)
+    // On error, return empty with CF metadata (don't fallback to popular)
+    // Frontend only accepts CF recommendations
+    return {
+      recommendations: [],
+      basedOn: {
+        type: 'collaborative'
+      },
+      totalViewed: 0,
+      metadata: {
+        algorithm: 'user-based-cf',
+        similarUsersCount: 0,
+        kNeighbors: 50,
+        avgSimilarityScore: 0,
+        totalInteractions: 0,
+        basedOn: {
+          type: 'collaborative'
+        },
+        error: true,
+        reason: 'backend_error'
+      }
+    }
   }
 }
 

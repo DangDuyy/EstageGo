@@ -52,11 +52,53 @@ export default function SemanticRecommendPage() {
       const result = await getPersonalizedRecommendationsAPI(12)
       
       if (result.success) {
-        setRecommendations(result.data || [])
-        setMetadata(result.meta || {})
+        const basedOn = result.meta?.basedOn || {}
+        const metadata = result.meta || {}
+        
+        // Check if backend is using Content-Based (has districts, types, etc.) instead of CF
+        const isContentBased = !!(basedOn.districts || basedOn.types || basedOn.purposes || basedOn.priceRange)
+        const isPopular = basedOn.type === 'popular' || basedOn.type === 'latest'
+        
+        // Check if it's truly Collaborative Filtering (must have CF metadata)
+        const hasCFMetadata = !!(metadata.similarUsersCount || metadata.avgSimilarityScore || metadata.algorithm || metadata.kNeighbors)
+        const isCollaborativeFiltering = !isContentBased && !isPopular && hasCFMetadata
+        
+        // ONLY set recommendations if it's from Collaborative Filtering
+        if (isCollaborativeFiltering && result.data && result.data.length > 0) {
+          console.log('✅ Collaborative Filtering recommendations received!', {
+            count: result.data.length,
+            similarUsersCount: metadata.similarUsersCount,
+            algorithm: metadata.algorithm
+          })
+          setRecommendations(result.data)
+          setMetadata(metadata)
+        } else {
+          // Reject Content-Based or Popular recommendations
+          console.warn('⚠️ Rejecting non-CF recommendations:', {
+            isContentBased,
+            isPopular,
+            hasCFMetadata,
+            dataCount: result.data?.length || 0,
+            basedOn: basedOn
+          })
+          
+          if (isContentBased) {
+            console.warn('❌ Content-Based detected - rejecting (need Collaborative Filtering)')
+          } else if (isPopular) {
+            console.warn('❌ Popular/Latest detected - rejecting (need Collaborative Filtering)')
+          } else if (!hasCFMetadata) {
+            console.warn('❌ No CF metadata found - backend needs to implement CF algorithm')
+          }
+          
+          // Clear recommendations - only show CF recommendations
+          setRecommendations([])
+          setMetadata(metadata)
+        }
       }
     } catch (error) {
-      console.error('Error fetching recommendations:', error)
+      console.error('❌ Error fetching recommendations:', error)
+      setRecommendations([])
+      setMetadata(null)
     } finally {
       setLoading(false)
     }
@@ -79,7 +121,18 @@ export default function SemanticRecommendPage() {
 
   const basedOn = metadata?.basedOn || {}
   const totalViewed = metadata?.totalViewed || metadata?.totalInteractions || 0
-  const isPersonalized = basedOn.type !== 'popular' && basedOn.type !== 'latest' && recommendations.length > 0
+  
+  // Detect recommendation type
+  const isContentBased = !!(basedOn.districts || basedOn.types || basedOn.purposes || basedOn.priceRange)
+  const isPopular = basedOn.type === 'popular' || basedOn.type === 'latest'
+  const hasCFMetadata = !!(metadata?.similarUsersCount || metadata?.avgSimilarityScore || metadata?.algorithm || metadata?.kNeighbors)
+  
+  // ONLY show recommendations if they're from Collaborative Filtering
+  // Reject Content-Based, Popular, or any non-CF recommendations
+  const isPersonalized = !isContentBased && 
+                         !isPopular && 
+                         hasCFMetadata && 
+                         recommendations.length > 0
 
   return (
     <>
@@ -187,31 +240,72 @@ export default function SemanticRecommendPage() {
             </Card>
           )}
 
-          {/* No History Message */}
-          {!isPersonalized && basedOn.type === 'popular' && (
-            <Card className="mb-8">
+          {/* No CF Recommendations Message */}
+          {!isPersonalized && (
+            <Card className="mb-8 border-orange-200 bg-orange-50">
               <CardHeader>
-                <CardTitle>Start Building Your Preferences</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-orange-600" />
+                  {isContentBased ? 'Content-Based Detected' : 
+                   isPopular ? 'Popular Properties Detected' : 
+                   'Collaborative Filtering Not Available'}
+                </CardTitle>
                 <CardDescription>
-                  We need more interaction data to find users with similar preferences. Browse, view, and save properties to get personalized collaborative recommendations!
+                  {isContentBased ? (
+                    <>
+                      Backend is currently using <strong>Content-Based</strong> recommendations (based on districts, types, purposes). 
+                      We only show recommendations from <strong>User-Based Collaborative Filtering</strong> algorithm. 
+                      Please ask backend to implement CF algorithm according to the Viblo article.
+                    </>
+                  ) : isPopular ? (
+                    <>
+                      Backend is returning <strong>popular/latest properties</strong> instead of Collaborative Filtering recommendations. 
+                      We need <strong>User-Based Collaborative Filtering</strong> based on similar users. 
+                      {totalViewed > 0 && ` You have ${totalViewed} interaction${totalViewed === 1 ? '' : 's'}.`}
+                    </>
+                  ) : recommendations.length === 0 ? (
+                    <>
+                      No Collaborative Filtering recommendations available yet. 
+                      {totalViewed > 0 
+                        ? ` You have ${totalViewed} interaction${totalViewed === 1 ? '' : 's'}, but backend needs to rebuild Similarity Matrix or find similar users.`
+                        : ' Browse properties, add them to wishlist, or contact agents to build your preference profile!'
+                      }
+                    </>
+                  ) : (
+                    <>
+                      Collaborative Filtering recommendations are not available. 
+                      Backend needs to implement User-Based Collaborative Filtering algorithm according to Viblo article.
+                    </>
+                  )}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <Button onClick={() => navigate('/listing/map')}>
                   Browse Properties
                 </Button>
+                {totalViewed > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={fetchRecommendations}
+                    className="w-full"
+                  >
+                    Refresh Recommendations
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Recommendations Grid */}
-          {recommendations.length > 0 ? (
+          {/* Recommendations Grid - ONLY show if Collaborative Filtering */}
+          {isPersonalized && recommendations.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold">
-                  {isPersonalized ? 'Recommended For You' : 'Popular Properties'}
+                  Recommended For You
                 </h2>
-                <Badge variant="outline">{recommendations.length} properties</Badge>
+                <Badge variant="outline" className="bg-primary/10">
+                  {recommendations.length} Collaborative Filtering recommendations
+                </Badge>
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -231,18 +325,7 @@ export default function SemanticRecommendPage() {
                 ))}
               </div>
             </>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground mb-4">
-                  No recommendations available at the moment.
-                </p>
-                <Button onClick={() => navigate('/listing/map')}>
-                  Browse All Properties
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          ) : null}
         </div>
       </div>
       <FooterBar />
