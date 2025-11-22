@@ -17,8 +17,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         match: [EMAIL_RULE, EMAIL_RULE_MESSAGE],
         sparse: true,
-        unique: true,
-        default: null
+        unique: true
     },
     password: {
         type: String,
@@ -46,7 +45,6 @@ const userSchema = new mongoose.Schema({
         type: String,
         sparse: true,
         unique: true,
-        default: null,
         validate: {
             validator: function (v) {
                 if (!v) return true
@@ -160,9 +158,7 @@ userSchema.pre('save', function(next) {
 })
 
 // Tạo index
-userSchema.index({ email: 1 }, { sparse: true, unique: true })
 userSchema.index({ userName: 1 }, { unique: true })
-userSchema.index({ phone: 1 }, { sparse: true, unique: true })
 
 // Middleware để loại bỏ các field không được phép update
 userSchema.pre('findOneAndUpdate', function() {
