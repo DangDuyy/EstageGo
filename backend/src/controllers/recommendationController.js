@@ -15,11 +15,18 @@ const getPersonalizedRecommendations = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      data: result.recommendations,
+      data: result.recommendations || [],
       meta: {
-        basedOn: result.basedOn,
-        totalViewed: result.totalViewed,
-        count: result.recommendations.length
+        basedOn: result.basedOn || {},
+        totalViewed: result.totalViewed || 0,
+        totalInteractions: result.totalViewed || 0,
+        count: result.recommendations?.length || 0,
+        // Add CF metadata if available
+        ...(result.metadata || {}),
+        algorithm: result.metadata?.algorithm || 'user-based-cf',
+        similarUsersCount: result.metadata?.similarUsersCount || 0,
+        avgSimilarityScore: result.metadata?.avgSimilarityScore || 0,
+        kNeighbors: result.metadata?.kNeighbors || 0
       }
     })
   } catch (error) {

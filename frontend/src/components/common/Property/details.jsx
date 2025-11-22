@@ -189,6 +189,17 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     try {
       setStartingChat(true)
       const conversation = await createOrGetConversationAPI(ownerId)
+      
+      // Track CONTACT activity for Collaborative Filtering
+      // CONTACT has weight 3 in the CF algorithm
+      if (propertyId && currentUser._id) {
+        trackActivityAPI('CONTACT', propertyId, {
+          timestamp: new Date().toISOString(),
+          ownerId: ownerId,
+          conversationId: conversation._id
+        });
+      }
+      
       navigate('/dashboard/messages', { state: { conversationId: conversation._id } })
     } catch (error) {
       console.error('Error starting chat:', error)
@@ -214,16 +225,53 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     return String(property.description).split(/\n{2,}|\r?\n/).filter(Boolean);
   }, [property?.description]);
 
+  /**
+   * Track view duration for Collaborative Filtering
+   * 
+   * QUAN TRỌNG: Đây KHÔNG phải là điều kiện để hiển thị recommendations!
+   * 
+   * Cách hoạt động:
+   * - Khi user xem property > 10 giây → gửi VIEW event với weight = 1
+   * - Dữ liệu này được lưu vào UserActivity để backend xây dựng ma trận
+   * - Backend sử dụng TẤT CẢ interactions (VIEW, CONTACT, WISHLIST_ADD) 
+   *   để tìm similar users và tính recommendations
+   * - Recommendations được hiển thị khi user truy cập trang /ai/recommendation
+   *   (không phụ thuộc vào việc có VIEW >10s hay không)
+   * 
+   * Trọng số events:
+   * - WISHLIST_ADD: weight 5 (ưu tiên cao nhất)
+   * - CONTACT: weight 3 (quan tâm nghiêm túc)
+   * - VIEW >10s: weight 1 (chỉ xem qua)
+   */
+  React.useEffect(() => {
+    if (!propertyId || !currentUser?._id) return;
+
+    const startTime = Date.now();
+    let viewTimer = null;
+
+    // Track VIEW activity only if user views for more than 10 seconds
+    // This data is used by backend to build User-Property Preference Matrix
+    viewTimer = setTimeout(() => {
+      const duration = (Date.now() - startTime) / 1000; // in seconds
+      if (duration >= 10) {
+        trackActivityAPI('VIEW', propertyId, {
+          timestamp: new Date().toISOString(),
+          duration: duration
+        });
+      }
+    }, 10000); // 10 seconds
+
+    // Cleanup on unmount or property change
+    return () => {
+      if (viewTimer) {
+        clearTimeout(viewTimer);
+      }
+    };
+  }, [propertyId, currentUser]);
+
   React.useEffect(() => {
     if (propertyId) {
       dispatch(fetchPropertyDetailsAPI(propertyId));
-
-      // Track VIEW activity
-      if (currentUser?._id) {
-        trackActivityAPI('VIEW', propertyId, {
-          timestamp: new Date().toISOString()
-        });
-      }
 
       // Fetch similar properties
       const fetchSimilar = async () => {
@@ -240,7 +288,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
       fetchSimilar();
     }
-  }, [dispatch, propertyId, currentUser]);
+  }, [dispatch, propertyId]);
 
   if (!property) {
     // Skeleton

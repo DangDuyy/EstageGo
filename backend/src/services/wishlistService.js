@@ -220,10 +220,44 @@ const toggleWishlist = async (userId, propertyId) => {
   }
 }
 
+// Clear all properties from wishlist
+const clearAllWishlist = async (userId) => {
+  try {
+    const wishlist = await wishlistModel.findOne({ user: userId })
+
+    if (!wishlist) {
+      // Wishlist doesn't exist, return empty wishlist
+      return {
+        success: true,
+        message: 'Wishlist cleared',
+        wishlist: {
+          user: userId,
+          properties: []
+        },
+        count: 0
+      }
+    }
+
+    // Clear all properties
+    wishlist.properties = []
+    await wishlist.save()
+
+    return {
+      success: true,
+      message: 'Wishlist cleared successfully',
+      wishlist: wishlist,
+      count: 0
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const wishlistService = {
   getUserWishlist,
   addToWishlist,
   removeFromWishlist,
   isInWishlist,
-  toggleWishlist
+  toggleWishlist,
+  clearAllWishlist
 }

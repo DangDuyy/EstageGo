@@ -16,6 +16,9 @@ Router.post('/toggle', wishlistController.toggleWishlist)
 // POST /api/v1/wishlist - Add property to wishlist
 Router.post('/', wishlistController.addToWishlist)
 
+// DELETE /api/v1/wishlist - Clear all properties from wishlist (must be before /:propertyId route)
+Router.delete('/', wishlistController.clearAllWishlist)
+
 // DELETE /api/v1/wishlist/:propertyId - Remove property from wishlist
 Router.delete('/:propertyId', wishlistController.removeFromWishlist)
 
