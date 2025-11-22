@@ -376,8 +376,15 @@ export const verifyPhoneAPI = async (phone, code) => {
 }
 
 // ========== RECOMMENDATION APIs ==========
+// These APIs support User-Based Collaborative Filtering (CF) algorithm
+// The backend builds a User-Property Preference Matrix from UserActivity events:
+// - WISHLIST_ADD: weight 5 (highest preference)
+// - CONTACT: weight 3 (serious interest)
+// - VIEW (>10s): weight 1 (low interest)
+// Then uses Cosine Similarity to find similar users and weighted sum for predictions
 
-// Get personalized recommendations for current user
+// Get personalized recommendations using Collaborative Filtering
+// Returns properties recommended by users with similar preferences
 export const getPersonalizedRecommendationsAPI = async (limit = 10) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/recommendations/personalized`, {
     params: { limit }
@@ -393,7 +400,9 @@ export const getSimilarPropertiesAPI = async (propertyId, limit = 6) => {
   return response.data
 }
 
-// Track user activity
+// Track user activity for Collaborative Filtering
+// eventType can be: 'WISHLIST_ADD' (weight 5), 'CONTACT' (weight 3), 'VIEW' (weight 1, only if duration >= 10s)
+// This builds the User-Property Preference Matrix used in CF algorithm
 export const trackActivityAPI = async (eventType, propertyId = null, metadata = {}) => {
   try {
     const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/recommendations/track`, {
