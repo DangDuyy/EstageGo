@@ -89,10 +89,24 @@ const toggleWishlist = async (req, res, next) => {
   }
 }
 
+// Clear all properties from wishlist
+const clearAllWishlist = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+
+    const result = await wishlistService.clearAllWishlist(userId)
+    
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const wishlistController = {
   getWishlist,
   addToWishlist,
   removeFromWishlist,
   checkWishlist,
-  toggleWishlist
+  toggleWishlist,
+  clearAllWishlist
 }
