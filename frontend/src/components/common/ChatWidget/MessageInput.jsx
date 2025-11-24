@@ -1,20 +1,47 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { sendMessageToChatBotAPI } from "@/apis";
+import { set } from "lodash";
 
-export default function MessageInput() {
+export default function MessageInput({ setMessages, setTyping }) {
   const [text, setText] = useState("");
+  const [sender, setSender] = useState("user");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!text.trim()) return;
     console.log("Send message:", text);
     setText("");
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { id: Date.now(), text: text, sender: "user", timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), status: "sent" },
+    ]);
+
+    setTyping(true);
+
+    setTimeout(async () => {
+      const response = await sendMessageToChatBotAPI(sender, text);
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        ...response.map((res, index) => ({
+          id: Date.now() + index + 1,
+          text: res.text,
+          sender: "bot",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: "read",
+        })),
+      ]);
+
+      setTyping(false);
+
+    }, 1000);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = async (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      await handleSend();
     }
   };
 

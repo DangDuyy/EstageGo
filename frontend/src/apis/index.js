@@ -442,3 +442,9 @@ const getOrCreateSessionId = () => {
   }
   return sessionId
 }
+
+// ========== CHATBOT APIs ==========
+export const sendMessageToChatBotAPI = async (sender, message) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/chatbot`, { sender, message })
+  return response.data
+}
