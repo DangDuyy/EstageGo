@@ -10,6 +10,7 @@ import { adminRoutes } from './adminRoute'
 import { agentRequestRoutes } from './agentRequestRoute'
 import { recommendationRoutes } from './recommendationRoute'
 import { vapiRoutes } from './vapiRoute'
+import { paymentRoute } from './paymentRoute'
 
 const Router = express.Router()
 
@@ -36,5 +37,7 @@ Router.use('/admin', adminRoutes)
 Router.use('/agent-requests', agentRequestRoutes)
 
 Router.use('/recommendations', recommendationRoutes)
+
+Router.use('/payment', paymentRoute)
 
 export const APIs_V1 = Router
