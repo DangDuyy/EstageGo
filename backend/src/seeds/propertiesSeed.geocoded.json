@@ -1,0 +1,4117 @@
+[
+  {
+    "title": "Giỏ hàng Sunrise City 1PN 4tỷ5 56m2 - 2PN 5t,1tỷ 76m2 - 3PN 6tỷ 109m2, sẵn khóa xem nhà mọi lúc",
+    "description": "Giỏ hàng Sunrise City, nhiều căn 1PN, 2PN, 3PN giá tốt. Liên hệ để xem nhà thực tế, hỗ trợ vay ngân hàng lên đến 70% giá trị căn hộ.",
+    "slug": "gio-hang-sunrise-city-1pn-4ty5-56m2-2pn-5t-1ty-76m2-3pn-6ty-109m2-san-khoa-xem-nha-moi-luc-38248917-fq74",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2014,
+    "area": 113,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "playground",
+      "parking",
+      "elevator"
+    ],
+    "address": {
+      "fullAddress": "Dự án Sunrise City, Đường Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, Hồ Chí Minh",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Phường Tân Hưng",
+      "street": "Đường Nguyễn Hữu Thọ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7036685,
+          10.7222031
+        ]
+      }
+    },
+    "price": {
+      "value": 20375928138,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-1-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:41.531Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-7ba1_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-1-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:41.531Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-8d8c_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-1-3.jpg",
+          "size": 220000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:41.531Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:41.531Z",
+    "updatedAt": "2025-11-24T04:29:41.531Z"
+  },
+  {
+    "title": "1 căn thông duy nhất Sunrise City, South - 5PN, 4WC - 266m2 - Giá 23 tỷ còn TL",
+    "description": "Căn thông duy nhất tại Sunrise City South, diện tích 266m2, 5 phòng ngủ, 4WC, phù hợp gia đình lớn hoặc kết hợp làm văn phòng.",
+    "slug": "1-can-thong-duy-nhat-sunrise-city-south-5pn-4wc-266m2-gia-23-ty-con-tl-44621955-k3zq",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2021,
+    "area": 115,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "bbq area",
+      "swimming pool",
+      "24/7 security",
+      "elevator",
+      "park",
+      "parking"
+    ],
+    "address": {
+      "fullAddress": "Sunrise City, Đường Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, Hồ Chí Minh",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Phường Tân Hưng",
+      "street": "Đường Nguyễn Hữu Thọ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7005935,
+          10.7413084
+        ]
+      }
+    },
+    "price": {
+      "value": 15252028859,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-2-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:41.912Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-2-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:41.912Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-2-3.jpg",
+          "size": 220000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:41.912Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:41.912Z",
+    "updatedAt": "2025-11-24T04:29:41.912Z"
+  },
+  {
+    "title": "Căn hộ cao cấp Sunrise City View 2PN, 2WC, full nội thất, view đẹp Quận 7",
+    "description": "Căn hộ Sunrise City View, 2 phòng ngủ, 2WC, full nội thất, chỉ cần xách vali vào ở. View thoáng, tiện ích nội khu đầy đủ.",
+    "slug": "can-ho-cao-cap-sunrise-city-view-2pn-2wc-full-noi-that-view-ep-quan-7-40146375-82oc",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2015,
+    "area": 116,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "parking",
+      "playground",
+      "24/7 security",
+      "park",
+      "gym"
+    ],
+    "address": {
+      "fullAddress": "Sunrise City View, Đường Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, Hồ Chí Minh",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Phường Tân Hưng",
+      "street": "Đường Nguyễn Hữu Thọ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7010799,
+          10.7455781
+        ]
+      }
+    },
+    "price": {
+      "value": 12847145609,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-3-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.306Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-3-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.306Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131833-948b.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-3-3.jpg",
+          "size": 220000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.306Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:42.306Z",
+    "updatedAt": "2025-11-24T04:29:42.306Z"
+  },
+  {
+    "title": "Căn góc Sunrise City North 3PN, 2WC, 126m2, view hồ bơi nội khu, giá tốt",
+    "description": "Căn góc 3 phòng ngủ tại khu North, diện tích rộng 126m2, ban công thoáng, view hồ bơi. Phù hợp gia đình cần không gian rộng.",
+    "slug": "can-goc-sunrise-city-north-3pn-2wc-126m2-view-ho-boi-noi-khu-gia-tot-44406654-92kp",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2017,
+    "area": 118,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "shopping mall",
+      "24/7 security",
+      "bbq area",
+      "elevator",
+      "gym",
+      "parking"
+    ],
+    "address": {
+      "fullAddress": "Sunrise City North, Đường Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, Hồ Chí Minh",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Phường Tân Hưng",
+      "street": "Đường Nguyễn Hữu Thọ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7009801,
+          10.7431997
+        ]
+      }
+    },
+    "price": {
+      "value": 11523127426,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-4-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.857Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155444-1aaa.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-4-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.857Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-4-3.jpg",
+          "size": 220000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.857Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:42.857Z",
+    "updatedAt": "2025-11-24T04:29:42.857Z"
+  },
+  {
+    "title": "Bán nhanh căn hộ 2PN, 2WC, 95m2 giá tốt 8,25 tỷ, Sunrise City South",
+    "description": "Căn hộ 2 phòng ngủ, 2WC, diện tích 95m2, giá 8,25 tỷ tại khu South Sunrise City. Thích hợp an cư lâu dài, khu dân cư văn minh.",
+    "slug": "ban-nhanh-can-ho-2pn-2wc-95m2-gia-tot-8-25-ty-sunrise-city-south-44343627-awvc",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2016,
+    "area": 124,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "school nearby",
+      "gym",
+      "elevator"
+    ],
+    "address": {
+      "fullAddress": "Dự án Sunrise City, Đường Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, Hồ Chí Minh",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Phường Tân Hưng",
+      "street": "Đường Nguyễn Hữu Thọ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7036685,
+          10.7222031
+        ]
+      }
+    },
+    "price": {
+      "value": 23618363450,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022114947-6021_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-5-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.858Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115000-ad5b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-5-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.858Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115029-0456_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-5-3.jpg",
+          "size": 220000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:42.858Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:42.858Z",
+    "updatedAt": "2025-11-24T04:29:42.858Z"
+  },
+  {
+    "title": "Nhà phố 1 tầng trung tâm Thành phố Thủ Đức",
+    "description": "Nhà phố 1 tầng trung tâm Thành phố Thủ Đức Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-1-tang-trung-tam-thanh-pho-thu-uc-6-zc59",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "office",
+    "yearBuilt": 2020,
+    "area": 52,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "school nearby",
+      "gym",
+      "shopping mall",
+      "elevator",
+      "park"
+    ],
+    "address": {
+      "fullAddress": "35 Lê Văn Việt, Hiệp Phú, TP. Thủ Đức, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Thành phố Thủ Đức",
+      "ward": "Hiệp Phú",
+      "street": "Lê Văn Việt",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7752993,
+          10.8482611
+        ]
+      }
+    },
+    "price": {
+      "value": 57885890,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-6-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:43.222Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022114947-6021_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-6-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:43.222Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "68bd181fc9119fda03f989fe"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:43.222Z",
+    "updatedAt": "2025-11-24T04:29:43.222Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Quận 7",
+    "description": "Đất nền tiềm năng tại Quận 7 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-quan-7-7-k3g9",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "villa",
+    "yearBuilt": 2013,
+    "area": 108,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "playground",
+      "24/7 security",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "45 Lê Văn Lương, Tân Phong, Quận 7, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Tân Phong",
+      "street": "Lê Văn Lương",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.6989672,
+          10.7276275
+        ]
+      }
+    },
+    "price": {
+      "value": 4137165566,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-7-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:43.668Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-7-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:43.668Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:43.668Z",
+    "updatedAt": "2025-11-24T04:29:43.668Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Thành phố Thủ Đức",
+    "description": "Đất nền tiềm năng tại Thành phố Thủ Đức Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-thanh-pho-thu-uc-8-yi7g",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "townhouse",
+    "yearBuilt": 2020,
+    "area": 283,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "playground",
+      "bbq area",
+      "24/7 security",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "15 Phạm Văn Đồng, Linh Tây, TP. Thủ Đức, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Thành phố Thủ Đức",
+      "ward": "Linh Tây",
+      "street": "Phạm Văn Đồng",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7457426,
+          10.8441007
+        ]
+      }
+    },
+    "price": {
+      "value": 48388382,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-8-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:44.014Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-8-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:44.014Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:44.014Z",
+    "updatedAt": "2025-11-24T04:29:44.014Z"
+  },
+  {
+    "title": "Shophouse kinh doanh sầm uất Tân Bình",
+    "description": "Shophouse kinh doanh sầm uất Tân Bình Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "shophouse-kinh-doanh-sam-uat-tan-binh-9-lr16",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2017,
+    "area": 98,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "school nearby",
+      "shopping mall"
+    ],
+    "address": {
+      "fullAddress": "20 Trường Sơn, Phường 2, Tân Bình, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Tân Bình",
+      "ward": "Phường 2",
+      "street": "Trường Sơn",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.664967,
+          10.80834
+        ]
+      }
+    },
+    "price": {
+      "value": 4882577747,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-9-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:44.337Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-9-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:44.337Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "68bd181fc9119fda03f989fe"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:44.337Z",
+    "updatedAt": "2025-11-24T04:29:44.337Z"
+  },
+  {
+    "title": "Studio view đẹp tại Quận 1",
+    "description": "Studio view đẹp tại Quận 1 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-quan-1-10-18br",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "house",
+    "yearBuilt": 2020,
+    "area": 291,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "playground",
+      "school nearby",
+      "24/7 security",
+      "elevator",
+      "swimming pool",
+      "gym"
+    ],
+    "address": {
+      "fullAddress": "25 Nguyễn Thị Minh Khai, Bến Nghé, Quận 1, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 1",
+      "ward": "Bến Nghé",
+      "street": "Nguyễn Thị Minh Khai",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.6992548,
+          10.7838168
+        ]
+      }
+    },
+    "price": {
+      "value": 48338127,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-10-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:44.702Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-10-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:44.702Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:44.702Z",
+    "updatedAt": "2025-11-24T04:29:44.702Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Cầu Giấy",
+    "description": "Đất nền tiềm năng tại Cầu Giấy Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-cau-giay-11-uaxn",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "condo",
+    "yearBuilt": 2015,
+    "area": 117,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "bbq area",
+      "parking",
+      "swimming pool",
+      "24/7 security"
+    ],
+    "address": {
+      "fullAddress": "302 Cầu Giấy, Dịch Vọng, Cầu Giấy, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Cầu Giấy",
+      "ward": "Dịch Vọng",
+      "street": "Cầu Giấy",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7939884,
+          21.0355648
+        ]
+      }
+    },
+    "price": {
+      "value": 12552130385,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115029-0456_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-11-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:45.047Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-11-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:45.047Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:45.047Z",
+    "updatedAt": "2025-11-24T04:29:45.047Z"
+  },
+  {
+    "title": "Biệt thự sân vườn cao cấp Cầu Giấy",
+    "description": "Biệt thự sân vườn cao cấp Cầu Giấy Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "biet-thu-san-vuon-cao-cap-cau-giay-12-czom",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "land",
+    "yearBuilt": 2021,
+    "area": 189,
+    "rooms": {
+      "bedrooms": 0,
+      "bathrooms": 0,
+      "livingrooms": 0,
+      "kitchens": 0
+    },
+    "amenities": [
+      "park",
+      "parking",
+      "elevator"
+    ],
+    "address": {
+      "fullAddress": "125 Hoàng Quốc Việt, Nghĩa Tân, Cầu Giấy, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Cầu Giấy",
+      "ward": "Nghĩa Tân",
+      "street": "Hoàng Quốc Việt",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7936091,
+          21.0459178
+        ]
+      }
+    },
+    "price": {
+      "value": 21922096,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115000-ad5b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-12-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:45.378Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-12-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:45.378Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:45.378Z",
+    "updatedAt": "2025-11-24T04:29:45.378Z"
+  },
+  {
+    "title": "Chung cư đầy đủ tiện ích khu vực Thanh Xuân",
+    "description": "Chung cư đầy đủ tiện ích khu vực Thanh Xuân Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "chung-cu-ay-u-tien-ich-khu-vuc-thanh-xuan-13-tkvq",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "commercial",
+    "yearBuilt": 2012,
+    "area": 261,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "playground",
+      "shopping mall",
+      "parking",
+      "bbq area",
+      "school nearby",
+      "park"
+    ],
+    "address": {
+      "fullAddress": "25 Lê Văn Lương, Nhân Chính, Thanh Xuân, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Thanh Xuân",
+      "ward": "Nhân Chính",
+      "street": "Lê Văn Lương",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.8053305,
+          21.0054934
+        ]
+      }
+    },
+    "price": {
+      "value": 3091906074,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115029-0456_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-13-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:45.727Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155444-1aaa.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-13-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:45.727Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:45.727Z",
+    "updatedAt": "2025-11-24T04:29:45.727Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Nam Từ Liêm",
+    "description": "Đất nền tiềm năng tại Nam Từ Liêm Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-nam-tu-liem-14-mr1x",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "office",
+    "yearBuilt": 2016,
+    "area": 89,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "elevator",
+      "gym",
+      "playground",
+      "shopping mall"
+    ],
+    "address": {
+      "fullAddress": "1 Phạm Hùng, Mỹ Đình 2, Nam Từ Liêm, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Nam Từ Liêm",
+      "ward": "Mỹ Đình 2",
+      "street": "Phạm Hùng",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7803182,
+          21.029553
+        ]
+      }
+    },
+    "price": {
+      "value": 22090395,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-14-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:46.070Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-14-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:46.070Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:46.070Z",
+    "updatedAt": "2025-11-24T04:29:46.070Z"
+  },
+  {
+    "title": "Studio view đẹp tại Hoàn Kiếm",
+    "description": "Studio view đẹp tại Hoàn Kiếm Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-hoan-kiem-15-z6aa",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "villa",
+    "yearBuilt": 2022,
+    "area": 200,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "24/7 security",
+      "parking",
+      "park",
+      "elevator",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "8 Tràng Thi, Hàng Trống, Hoàn Kiếm, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Hoàn Kiếm",
+      "ward": "Hàng Trống",
+      "street": "Tràng Thi",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.8493145,
+          21.0267226
+        ]
+      }
+    },
+    "price": {
+      "value": 5971764679,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-15-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:46.415Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-15-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:46.415Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:46.415Z",
+    "updatedAt": "2025-11-24T04:29:46.415Z"
+  },
+  {
+    "title": "Studio view đẹp tại Sơn Trà",
+    "description": "Studio view đẹp tại Sơn Trà Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-son-tra-16-2pwd",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "townhouse",
+    "yearBuilt": 2022,
+    "area": 300,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "swimming pool",
+      "gym",
+      "elevator"
+    ],
+    "address": {
+      "fullAddress": "18 Võ Nguyên Giáp, Phước Mỹ, Sơn Trà, Đà Nẵng",
+      "country": "Vietnam",
+      "province": "Đà Nẵng",
+      "district": "Sơn Trà",
+      "ward": "Phước Mỹ",
+      "street": "Võ Nguyên Giáp",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          108.2461463,
+          16.0654253
+        ]
+      }
+    },
+    "price": {
+      "value": 55878317,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131833-948b.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-16-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:46.848Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-16-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:46.848Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:46.848Z",
+    "updatedAt": "2025-11-24T04:29:46.848Z"
+  },
+  {
+    "title": "Nhà phố 1 tầng trung tâm Hải Châu",
+    "description": "Nhà phố 1 tầng trung tâm Hải Châu Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-1-tang-trung-tam-hai-chau-17-aoj8",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2024,
+    "area": 110,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "elevator",
+      "gym",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "2 Nguyễn Văn Linh, Bình Hiên, Hải Châu, Đà Nẵng",
+      "country": "Vietnam",
+      "province": "Đà Nẵng",
+      "district": "Hải Châu",
+      "ward": "Bình Hiên",
+      "street": "Nguyễn Văn Linh",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          108.2218124,
+          16.0606885
+        ]
+      }
+    },
+    "price": {
+      "value": 9181986536,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-17-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:47.204Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-17-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:47.204Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "68bd181fc9119fda03f989fe"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:47.204Z",
+    "updatedAt": "2025-11-24T04:29:47.204Z"
+  },
+  {
+    "title": "Nhà phố 3 tầng trung tâm Nha Trang",
+    "description": "Nhà phố 3 tầng trung tâm Nha Trang Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-3-tang-trung-tam-nha-trang-18-6pql",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "house",
+    "yearBuilt": 2011,
+    "area": 171,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "gym",
+      "swimming pool",
+      "playground",
+      "elevator",
+      "park"
+    ],
+    "address": {
+      "fullAddress": "76 Trần Phú, Lộc Thọ, Nha Trang, Khánh Hòa",
+      "country": "Vietnam",
+      "province": "Khánh Hòa",
+      "district": "Nha Trang",
+      "ward": "Lộc Thọ",
+      "street": "Trần Phú",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          109.1974312,
+          12.233452
+        ]
+      }
+    },
+    "price": {
+      "value": 70132240,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-18-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:47.660Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-18-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:47.660Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:47.660Z",
+    "updatedAt": "2025-11-24T04:29:47.660Z"
+  },
+  {
+    "title": "Căn hộ 1PN cao cấp tại Đà Lạt",
+    "description": "Căn hộ 1PN cao cấp tại Đà Lạt Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "can-ho-1pn-cao-cap-tai-a-lat-19-m7mh",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "condo",
+    "yearBuilt": 2013,
+    "area": 63,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "gym",
+      "school nearby",
+      "swimming pool",
+      "playground"
+    ],
+    "address": {
+      "fullAddress": "1 Bùi Thị Xuân, Phường 2, Đà Lạt, Lâm Đồng",
+      "country": "Vietnam",
+      "province": "Lâm Đồng",
+      "district": "Đà Lạt",
+      "ward": "Phường 2",
+      "street": "Bùi Thị Xuân",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          108.4399667,
+          11.9444498
+        ]
+      }
+    },
+    "price": {
+      "value": 10399667773,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-19-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:48.165Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-19-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:48.165Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:48.165Z",
+    "updatedAt": "2025-11-24T04:29:48.165Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Ninh Kiều",
+    "description": "Đất nền tiềm năng tại Ninh Kiều Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-ninh-kieu-20-79n2",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "land",
+    "yearBuilt": 2011,
+    "area": 155,
+    "rooms": {
+      "bedrooms": 0,
+      "bathrooms": 0,
+      "livingrooms": 0,
+      "kitchens": 0
+    },
+    "amenities": [
+      "shopping mall",
+      "park",
+      "swimming pool",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "20 Đường 30/4, Xuân Khánh, Ninh Kiều, Cần Thơ",
+      "country": "Vietnam",
+      "province": "Cần Thơ",
+      "district": "Ninh Kiều",
+      "ward": "Xuân Khánh",
+      "street": "30/4",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7689646,
+          10.0185483
+        ]
+      }
+    },
+    "price": {
+      "value": 27682290,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-20-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:48.683Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-20-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:48.683Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:48.683Z",
+    "updatedAt": "2025-11-24T04:29:48.683Z"
+  },
+  {
+    "title": "Nhà phố 1 tầng trung tâm Hồng Bàng",
+    "description": "Nhà phố 1 tầng trung tâm Hồng Bàng Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-1-tang-trung-tam-hong-bang-21-4sjm",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "commercial",
+    "yearBuilt": 2015,
+    "area": 287,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "parking",
+      "shopping mall",
+      "bbq area",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "5 Điện Biên Phủ, Hoàng Văn Thụ, Hồng Bàng, Hải Phòng",
+      "country": "Vietnam",
+      "province": "Hải Phòng",
+      "district": "Hồng Bàng",
+      "ward": "Hoàng Văn Thụ",
+      "street": "Điện Biên Phủ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.6920498,
+          20.8612388
+        ]
+      }
+    },
+    "price": {
+      "value": 2061770260,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-21-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:49.306Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-21-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:49.306Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:49.306Z",
+    "updatedAt": "2025-11-24T04:29:49.306Z"
+  },
+  {
+    "title": "Biệt thự sân vườn cao cấp Thuận An",
+    "description": "Biệt thự sân vườn cao cấp Thuận An Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "biet-thu-san-vuon-cao-cap-thuan-an-22-0dav",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "office",
+    "yearBuilt": 2013,
+    "area": 115,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "elevator",
+      "parking",
+      "shopping mall"
+    ],
+    "address": {
+      "fullAddress": "22 Đại lộ Bình Dương, Thuận Giao, Thuận An, Bình Dương",
+      "country": "Vietnam",
+      "province": "Bình Dương",
+      "district": "Thuận An",
+      "ward": "Thuận Giao",
+      "street": "Đại lộ Bình Dương",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7038741,
+          10.9534211
+        ]
+      }
+    },
+    "price": {
+      "value": 70896945,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-7ba1_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-22-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:49.668Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-22-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:49.668Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:49.668Z",
+    "updatedAt": "2025-11-24T04:29:49.668Z"
+  },
+  {
+    "title": "Shophouse kinh doanh sầm uất Biên Hòa",
+    "description": "Shophouse kinh doanh sầm uất Biên Hòa Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "shophouse-kinh-doanh-sam-uat-bien-hoa-23-n5q1",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "villa",
+    "yearBuilt": 2015,
+    "area": 294,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "shopping mall",
+      "parking",
+      "playground",
+      "gym",
+      "park",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "1 Phạm Văn Thuận, Tân Tiến, Biên Hòa, Đồng Nai",
+      "country": "Vietnam",
+      "province": "Đồng Nai",
+      "district": "Biên Hòa",
+      "ward": "Tân Tiến",
+      "street": "Phạm Văn Thuận",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.8411157,
+          10.9578614
+        ]
+      }
+    },
+    "price": {
+      "value": 4286611705,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-8d8c_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-23-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:50.006Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-7ba1_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-23-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:50.006Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:50.006Z",
+    "updatedAt": "2025-11-24T04:29:50.006Z"
+  },
+  {
+    "title": "Căn hộ 2PN cao cấp tại Thành phố Hải Dương",
+    "description": "Căn hộ 2PN cao cấp tại Thành phố Hải Dương Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "can-ho-2pn-cao-cap-tai-thanh-pho-hai-duong-24-nwx9",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "townhouse",
+    "yearBuilt": 2011,
+    "area": 233,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "elevator",
+      "park",
+      "school nearby",
+      "playground",
+      "bbq area",
+      "swimming pool",
+      "gym"
+    ],
+    "address": {
+      "fullAddress": "10 Thanh Niên, Quang Trung, Thành phố Hải Dương, Hải Dương",
+      "country": "Vietnam",
+      "province": "Hải Dương",
+      "district": "Thành phố Hải Dương",
+      "ward": "Quang Trung",
+      "street": "Thanh Niên",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.3361069,
+          20.9467824
+        ]
+      }
+    },
+    "price": {
+      "value": 57458576,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-24-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:50.418Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-24-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:50.418Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:50.418Z",
+    "updatedAt": "2025-11-24T04:29:50.418Z"
+  },
+  {
+    "title": "Văn phòng hạng B tại Bình Thạnh",
+    "description": "Văn phòng hạng B tại Bình Thạnh Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "van-phong-hang-b-tai-binh-thanh-25-f6dn",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2012,
+    "area": 86,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "parking",
+      "bbq area",
+      "swimming pool",
+      "elevator",
+      "gym",
+      "park",
+      "shopping mall"
+    ],
+    "address": {
+      "fullAddress": "720A Điện Biên Phủ, Phường 22, Bình Thạnh, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Bình Thạnh",
+      "ward": "Phường 22",
+      "street": "Điện Biên Phủ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7220907,
+          10.7950932
+        ]
+      }
+    },
+    "price": {
+      "value": 21021310408,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-25-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:50.824Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-25-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:50.824Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:50.824Z",
+    "updatedAt": "2025-11-24T04:29:50.824Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Quận 1",
+    "description": "Đất nền tiềm năng tại Quận 1 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-quan-1-26-5ahc",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "house",
+    "yearBuilt": 2020,
+    "area": 178,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "park",
+      "parking",
+      "24/7 security",
+      "school nearby",
+      "bbq area",
+      "playground"
+    ],
+    "address": {
+      "fullAddress": "2 Hải Triều, Bến Nghé, Quận 1, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 1",
+      "ward": "Bến Nghé",
+      "street": "Hải Triều",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7043759,
+          10.7717064
+        ]
+      }
+    },
+    "price": {
+      "value": 38440233,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-26-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:51.158Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-26-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:51.158Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:51.158Z",
+    "updatedAt": "2025-11-24T04:29:51.158Z"
+  },
+  {
+    "title": "Nhà phố 1 tầng trung tâm Quận 7",
+    "description": "Nhà phố 1 tầng trung tâm Quận 7 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-1-tang-trung-tam-quan-7-27-o5vy",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "condo",
+    "yearBuilt": 2013,
+    "area": 65,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "bbq area",
+      "parking",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "101 Tôn Dật Tiên, Tân Phú, Quận 7, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Tân Phú",
+      "street": "Tôn Dật Tiên",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7188731,
+          10.7290836
+        ]
+      }
+    },
+    "price": {
+      "value": 2762538447,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-27-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:51.481Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-27-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:51.481Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:51.481Z",
+    "updatedAt": "2025-11-24T04:29:51.481Z"
+  },
+  {
+    "title": "Shophouse kinh doanh sầm uất Thành phố Thủ Đức",
+    "description": "Shophouse kinh doanh sầm uất Thành phố Thủ Đức Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "shophouse-kinh-doanh-sam-uat-thanh-pho-thu-uc-28-emdu",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "land",
+    "yearBuilt": 2021,
+    "area": 235,
+    "rooms": {
+      "bedrooms": 0,
+      "bathrooms": 0,
+      "livingrooms": 0,
+      "kitchens": 0
+    },
+    "amenities": [
+      "shopping mall",
+      "24/7 security",
+      "swimming pool",
+      "parking",
+      "school nearby",
+      "bbq area",
+      "gym"
+    ],
+    "address": {
+      "fullAddress": "512 Nguyễn Xiển, Long Thạnh Mỹ, TP. Thủ Đức, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Thành phố Thủ Đức",
+      "ward": "Long Thạnh Mỹ",
+      "street": "Nguyễn Xiển",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.8298735,
+          10.8339865
+        ]
+      }
+    },
+    "price": {
+      "value": 47720589,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-28-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:51.815Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-28-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:51.815Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:51.815Z",
+    "updatedAt": "2025-11-24T04:29:51.815Z"
+  },
+  {
+    "title": "Biệt thự sân vườn cao cấp Nhà Bè",
+    "description": "Biệt thự sân vườn cao cấp Nhà Bè Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "biet-thu-san-vuon-cao-cap-nha-be-29-ir3l",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "commercial",
+    "yearBuilt": 2015,
+    "area": 96,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "elevator",
+      "gym",
+      "school nearby",
+      "park"
+    ],
+    "address": {
+      "fullAddress": "12 Nguyễn Hữu Thọ, Phước Kiển, Nhà Bè, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Nhà Bè",
+      "ward": "Phước Kiển",
+      "street": "Nguyễn Hữu Thọ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7073075,
+          10.7124618
+        ]
+      }
+    },
+    "price": {
+      "value": 17674935679,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-29-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-29-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.159Z",
+    "updatedAt": "2025-11-24T04:29:52.159Z"
+  },
+  {
+    "title": "Văn phòng hạng B tại Thành phố Thủ Đức",
+    "description": "Văn phòng hạng B tại Thành phố Thủ Đức Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "van-phong-hang-b-tai-thanh-pho-thu-uc-30-gq9k",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "office",
+    "yearBuilt": 2012,
+    "area": 54,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "elevator",
+      "bbq area",
+      "shopping mall",
+      "park",
+      "parking",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "35 Lê Văn Việt, Hiệp Phú, TP. Thủ Đức, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Thành phố Thủ Đức",
+      "ward": "Hiệp Phú",
+      "street": "Lê Văn Việt",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7752993,
+          10.8482611
+        ]
+      }
+    },
+    "price": {
+      "value": 32151288,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115029-0456_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-30-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-30-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.159Z",
+    "updatedAt": "2025-11-24T04:29:52.159Z"
+  },
+  {
+    "title": "Nhà phố 5 tầng trung tâm Quận 7",
+    "description": "Nhà phố 5 tầng trung tâm Quận 7 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-5-tang-trung-tam-quan-7-31-ysmw",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "villa",
+    "yearBuilt": 2020,
+    "area": 167,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "parking",
+      "park",
+      "school nearby",
+      "playground"
+    ],
+    "address": {
+      "fullAddress": "45 Lê Văn Lương, Tân Phong, Quận 7, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 7",
+      "ward": "Tân Phong",
+      "street": "Lê Văn Lương",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.6989672,
+          10.7276275
+        ]
+      }
+    },
+    "price": {
+      "value": 19597867302,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-31-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-31-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "68bd181fc9119fda03f989fe"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.159Z",
+    "updatedAt": "2025-11-24T04:29:52.159Z"
+  },
+  {
+    "title": "Nhà phố 4 tầng trung tâm Thành phố Thủ Đức",
+    "description": "Nhà phố 4 tầng trung tâm Thành phố Thủ Đức Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "nha-pho-4-tang-trung-tam-thanh-pho-thu-uc-32-bwl0",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "townhouse",
+    "yearBuilt": 2019,
+    "area": 168,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "gym",
+      "park",
+      "24/7 security",
+      "playground",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "15 Phạm Văn Đồng, Linh Tây, TP. Thủ Đức, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Thành phố Thủ Đức",
+      "ward": "Linh Tây",
+      "street": "Phạm Văn Đồng",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7457426,
+          10.8441007
+        ]
+      }
+    },
+    "price": {
+      "value": 44952546,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-32-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-8d8c_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-32-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.159Z",
+    "updatedAt": "2025-11-24T04:29:52.159Z"
+  },
+  {
+    "title": "Studio view đẹp tại Tân Bình",
+    "description": "Studio view đẹp tại Tân Bình Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-tan-binh-33-rnnz",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2024,
+    "area": 116,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "parking",
+      "elevator",
+      "playground",
+      "shopping mall",
+      "school nearby"
+    ],
+    "address": {
+      "fullAddress": "20 Trường Sơn, Phường 2, Tân Bình, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Tân Bình",
+      "ward": "Phường 2",
+      "street": "Trường Sơn",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.664967,
+          10.80834
+        ]
+      }
+    },
+    "price": {
+      "value": 24135207980,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-33-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155444-1aaa.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-33-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.159Z",
+    "updatedAt": "2025-11-24T04:29:52.159Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Quận 1",
+    "description": "Đất nền tiềm năng tại Quận 1 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-quan-1-34-6sk8",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "house",
+    "yearBuilt": 2013,
+    "area": 198,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "24/7 security",
+      "playground",
+      "bbq area"
+    ],
+    "address": {
+      "fullAddress": "25 Nguyễn Thị Minh Khai, Bến Nghé, Quận 1, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 1",
+      "ward": "Bến Nghé",
+      "street": "Nguyễn Thị Minh Khai",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.6992548,
+          10.7838168
+        ]
+      }
+    },
+    "price": {
+      "value": 43195164,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-7ba1_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-34-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-34-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.159Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.159Z",
+    "updatedAt": "2025-11-24T04:29:52.159Z"
+  },
+  {
+    "title": "Studio view đẹp tại Cầu Giấy",
+    "description": "Studio view đẹp tại Cầu Giấy Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-cau-giay-35-5j78",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "condo",
+    "yearBuilt": 2013,
+    "area": 64,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "24/7 security",
+      "playground"
+    ],
+    "address": {
+      "fullAddress": "302 Cầu Giấy, Dịch Vọng, Cầu Giấy, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Cầu Giấy",
+      "ward": "Dịch Vọng",
+      "street": "Cầu Giấy",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7939884,
+          21.0355648
+        ]
+      }
+    },
+    "price": {
+      "value": 9936398133,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-35-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115000-ad5b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-35-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Chung cư đầy đủ tiện ích khu vực Cầu Giấy",
+    "description": "Chung cư đầy đủ tiện ích khu vực Cầu Giấy Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "chung-cu-ay-u-tien-ich-khu-vuc-cau-giay-36-i4zq",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "land",
+    "yearBuilt": 2021,
+    "area": 177,
+    "rooms": {
+      "bedrooms": 0,
+      "bathrooms": 0,
+      "livingrooms": 0,
+      "kitchens": 0
+    },
+    "amenities": [
+      "bbq area",
+      "parking",
+      "school nearby",
+      "gym",
+      "shopping mall"
+    ],
+    "address": {
+      "fullAddress": "125 Hoàng Quốc Việt, Nghĩa Tân, Cầu Giấy, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Cầu Giấy",
+      "ward": "Nghĩa Tân",
+      "street": "Hoàng Quốc Việt",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7936091,
+          21.0459178
+        ]
+      }
+    },
+    "price": {
+      "value": 45185413,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-8d8c_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-36-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115000-ad5b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-36-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Thanh Xuân",
+    "description": "Đất nền tiềm năng tại Thanh Xuân Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-thanh-xuan-37-7zkr",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "commercial",
+    "yearBuilt": 2017,
+    "area": 270,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "bbq area",
+      "gym",
+      "elevator",
+      "shopping mall",
+      "parking",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "25 Lê Văn Lương, Nhân Chính, Thanh Xuân, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Thanh Xuân",
+      "ward": "Nhân Chính",
+      "street": "Lê Văn Lương",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.8053305,
+          21.0054934
+        ]
+      }
+    },
+    "price": {
+      "value": 2984773339,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200913-96db_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-37-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-7ba1_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-37-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Chung cư đầy đủ tiện ích khu vực Nam Từ Liêm",
+    "description": "Chung cư đầy đủ tiện ích khu vực Nam Từ Liêm Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "chung-cu-ay-u-tien-ich-khu-vuc-nam-tu-liem-38-v0mn",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "office",
+    "yearBuilt": 2011,
+    "area": 45,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "school nearby",
+      "24/7 security",
+      "shopping mall",
+      "bbq area",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "1 Phạm Hùng, Mỹ Đình 2, Nam Từ Liêm, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Nam Từ Liêm",
+      "ward": "Mỹ Đình 2",
+      "street": "Phạm Hùng",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7803182,
+          21.029553
+        ]
+      }
+    },
+    "price": {
+      "value": 11763192,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-38-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-38-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Căn hộ 2PN cao cấp tại Hoàn Kiếm",
+    "description": "Căn hộ 2PN cao cấp tại Hoàn Kiếm Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "can-ho-2pn-cao-cap-tai-hoan-kiem-39-6erh",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "villa",
+    "yearBuilt": 2024,
+    "area": 150,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "school nearby",
+      "24/7 security",
+      "parking",
+      "playground",
+      "park",
+      "shopping mall"
+    ],
+    "address": {
+      "fullAddress": "8 Tràng Thi, Hàng Trống, Hoàn Kiếm, Hà Nội",
+      "country": "Vietnam",
+      "province": "Hà Nội",
+      "district": "Hoàn Kiếm",
+      "ward": "Hàng Trống",
+      "street": "Tràng Thi",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.8493145,
+          21.0267226
+        ]
+      }
+    },
+    "price": {
+      "value": 15625883846,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-39-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-39-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Văn phòng hạng B tại Sơn Trà",
+    "description": "Văn phòng hạng B tại Sơn Trà Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "van-phong-hang-b-tai-son-tra-40-5vpq",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "townhouse",
+    "yearBuilt": 2020,
+    "area": 154,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "school nearby",
+      "bbq area",
+      "shopping mall",
+      "24/7 security",
+      "park",
+      "elevator"
+    ],
+    "address": {
+      "fullAddress": "18 Võ Nguyên Giáp, Phước Mỹ, Sơn Trà, Đà Nẵng",
+      "country": "Vietnam",
+      "province": "Đà Nẵng",
+      "district": "Sơn Trà",
+      "ward": "Phước Mỹ",
+      "street": "Võ Nguyên Giáp",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          108.2461463,
+          16.0654253
+        ]
+      }
+    },
+    "price": {
+      "value": 53629361,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115000-ad5b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-40-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-40-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136d14e0ab0808ffc7eb7b"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Studio view đẹp tại Hải Châu",
+    "description": "Studio view đẹp tại Hải Châu Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-hai-chau-41-zajy",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2012,
+    "area": 44,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "24/7 security",
+      "playground",
+      "parking"
+    ],
+    "address": {
+      "fullAddress": "2 Nguyễn Văn Linh, Bình Hiên, Hải Châu, Đà Nẵng",
+      "country": "Vietnam",
+      "province": "Đà Nẵng",
+      "district": "Hải Châu",
+      "ward": "Bình Hiên",
+      "street": "Nguyễn Văn Linh",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          108.2218124,
+          16.0606885
+        ]
+      }
+    },
+    "price": {
+      "value": 2146228185,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155300-9f46.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-41-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2025/05/16/20250516200835-8d8c_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-41-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.161Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.161Z",
+    "updatedAt": "2025-11-24T04:29:52.161Z"
+  },
+  {
+    "title": "Văn phòng hạng B tại Nha Trang",
+    "description": "Văn phòng hạng B tại Nha Trang Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "van-phong-hang-b-tai-nha-trang-42-bqw3",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "house",
+    "yearBuilt": 2020,
+    "area": 253,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "playground",
+      "gym"
+    ],
+    "address": {
+      "fullAddress": "76 Trần Phú, Lộc Thọ, Nha Trang, Khánh Hòa",
+      "country": "Vietnam",
+      "province": "Khánh Hòa",
+      "district": "Nha Trang",
+      "ward": "Lộc Thọ",
+      "street": "Trần Phú",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          109.1974312,
+          12.233452
+        ]
+      }
+    },
+    "price": {
+      "value": 77640338,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022114947-6021_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-42-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155444-1aaa.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-42-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Studio view đẹp tại Đà Lạt",
+    "description": "Studio view đẹp tại Đà Lạt Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-a-lat-43-gakt",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "condo",
+    "yearBuilt": 2021,
+    "area": 110,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "shopping mall",
+      "24/7 security",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "1 Bùi Thị Xuân, Phường 2, Đà Lạt, Lâm Đồng",
+      "country": "Vietnam",
+      "province": "Lâm Đồng",
+      "district": "Đà Lạt",
+      "ward": "Phường 2",
+      "street": "Bùi Thị Xuân",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          108.4399667,
+          11.9444498
+        ]
+      }
+    },
+    "price": {
+      "value": 15500944831,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155628-b264.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-43-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155444-1aaa.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-43-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c1e705dc81a44a52604"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Studio view đẹp tại Ninh Kiều",
+    "description": "Studio view đẹp tại Ninh Kiều Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-ninh-kieu-44-5aju",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "land",
+    "yearBuilt": 2014,
+    "area": 79,
+    "rooms": {
+      "bedrooms": 0,
+      "bathrooms": 0,
+      "livingrooms": 0,
+      "kitchens": 0
+    },
+    "amenities": [
+      "shopping mall",
+      "bbq area",
+      "park",
+      "24/7 security",
+      "parking",
+      "elevator"
+    ],
+    "address": {
+      "fullAddress": "20 Đường 30/4, Xuân Khánh, Ninh Kiều, Cần Thơ",
+      "country": "Vietnam",
+      "province": "Cần Thơ",
+      "district": "Ninh Kiều",
+      "ward": "Xuân Khánh",
+      "street": "30/4",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          105.7689646,
+          10.0185483
+        ]
+      }
+    },
+    "price": {
+      "value": 23472672,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095752-e19b_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-44-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131833-948b.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-44-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Shophouse kinh doanh sầm uất Hồng Bàng",
+    "description": "Shophouse kinh doanh sầm uất Hồng Bàng Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "shophouse-kinh-doanh-sam-uat-hong-bang-45-br1d",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "commercial",
+    "yearBuilt": 2023,
+    "area": 160,
+    "rooms": {
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "gym",
+      "school nearby",
+      "24/7 security",
+      "bbq area",
+      "shopping mall",
+      "park",
+      "playground"
+    ],
+    "address": {
+      "fullAddress": "5 Điện Biên Phủ, Hoàng Văn Thụ, Hồng Bàng, Hải Phòng",
+      "country": "Vietnam",
+      "province": "Hải Phòng",
+      "district": "Hồng Bàng",
+      "ward": "Hoàng Văn Thụ",
+      "street": "Điện Biên Phủ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.6920498,
+          20.8612388
+        ]
+      }
+    },
+    "price": {
+      "value": 29174252864,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022115029-0456_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-45-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-45-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Studio view đẹp tại Thuận An",
+    "description": "Studio view đẹp tại Thuận An Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "studio-view-ep-tai-thuan-an-46-ry45",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "office",
+    "yearBuilt": 2018,
+    "area": 92,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "playground",
+      "bbq area",
+      "swimming pool"
+    ],
+    "address": {
+      "fullAddress": "22 Đại lộ Bình Dương, Thuận Giao, Thuận An, Bình Dương",
+      "country": "Vietnam",
+      "province": "Bình Dương",
+      "district": "Thuận An",
+      "ward": "Thuận Giao",
+      "street": "Đại lộ Bình Dương",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7038741,
+          10.9534211
+        ]
+      }
+    },
+    "price": {
+      "value": 52263693,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-46-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2016/09/26/lGk9zKqg/20160926155444-1aaa.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-46-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "68bd181fc9119fda03f989fe"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Biệt thự sân vườn cao cấp Biên Hòa",
+    "description": "Biệt thự sân vườn cao cấp Biên Hòa Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "biet-thu-san-vuon-cao-cap-bien-hoa-47-27mt",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "sale",
+    "type": "villa",
+    "yearBuilt": 2024,
+    "area": 151,
+    "rooms": {
+      "bedrooms": 1,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "24/7 security",
+      "shopping mall",
+      "park",
+      "elevator",
+      "gym",
+      "parking"
+    ],
+    "address": {
+      "fullAddress": "1 Phạm Văn Thuận, Tân Tiến, Biên Hòa, Đồng Nai",
+      "country": "Vietnam",
+      "province": "Đồng Nai",
+      "district": "Biên Hòa",
+      "ward": "Tân Tiến",
+      "street": "Phạm Văn Thuận",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.8411157,
+          10.9578614
+        ]
+      }
+    },
+    "price": {
+      "value": 8374288767,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022114947-6021_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-47-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-47-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Văn phòng hạng B tại Thành phố Hải Dương",
+    "description": "Văn phòng hạng B tại Thành phố Hải Dương Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "van-phong-hang-b-tai-thanh-pho-hai-duong-48-k8ep",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "townhouse",
+    "yearBuilt": 2024,
+    "area": 254,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "swimming pool",
+      "parking",
+      "park"
+    ],
+    "address": {
+      "fullAddress": "10 Thanh Niên, Quang Trung, Thành phố Hải Dương, Hải Dương",
+      "country": "Vietnam",
+      "province": "Hải Dương",
+      "district": "Thành phố Hải Dương",
+      "ward": "Quang Trung",
+      "street": "Thanh Niên",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.3361069,
+          20.9467824
+        ]
+      }
+    },
+    "price": {
+      "value": 69283727,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095850-05c9_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-48-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/11/24/20251124095829-8cfb_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-48-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69213fec9568ff85ba8bf4e8"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Đất nền tiềm năng tại Bình Thạnh",
+    "description": "Đất nền tiềm năng tại Bình Thạnh Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "at-nen-tiem-nang-tai-binh-thanh-49-pzwx",
+    "status": "active",
+    "visibility": "public",
+    "postType": "vip",
+    "purpose": "sale",
+    "type": "apartment",
+    "yearBuilt": 2023,
+    "area": 85,
+    "rooms": {
+      "bedrooms": 4,
+      "bathrooms": 2,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "bbq area",
+      "park",
+      "parking"
+    ],
+    "address": {
+      "fullAddress": "720A Điện Biên Phủ, Phường 22, Bình Thạnh, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Bình Thạnh",
+      "ward": "Phường 22",
+      "street": "Điện Biên Phủ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7220907,
+          10.7950932
+        ]
+      }
+    },
+    "price": {
+      "value": 26508914165,
+      "currency": "VND",
+      "period": "other"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131815-dd51.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-49-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131833-948b.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-49-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "69136c08705dc81a44a525ff"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  },
+  {
+    "title": "Biệt thự sân vườn cao cấp Quận 1",
+    "description": "Biệt thự sân vườn cao cấp Quận 1 Nội thất hiện đại, khu dân cư an ninh, tiện ích nội khu và ngoại khu đầy đủ. Gần trường học, bệnh viện, trung tâm thương mại, di chuyển thuận tiện. Phù hợp để ở lâu dài hoặc đầu tư cho thuê.",
+    "slug": "biet-thu-san-vuon-cao-cap-quan-1-50-rb2j",
+    "status": "active",
+    "visibility": "public",
+    "postType": "normal",
+    "purpose": "rent",
+    "type": "house",
+    "yearBuilt": 2016,
+    "area": 86,
+    "rooms": {
+      "bedrooms": 2,
+      "bathrooms": 3,
+      "livingrooms": 1,
+      "kitchens": 1
+    },
+    "amenities": [
+      "bbq area",
+      "school nearby",
+      "park",
+      "shopping mall",
+      "playground"
+    ],
+    "address": {
+      "fullAddress": "2 Hải Triều, Bến Nghé, Quận 1, TP.HCM",
+      "country": "Vietnam",
+      "province": "Hồ Chí Minh",
+      "district": "Quận 1",
+      "ward": "Bến Nghé",
+      "street": "Hải Triều",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          106.7043759,
+          10.7717064
+        ]
+      }
+    },
+    "price": {
+      "value": 73934939,
+      "currency": "VND",
+      "period": "month"
+    },
+    "media": [
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/1275x717/2025/10/22/20251022114947-6021_wm.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-50-1.jpg",
+          "size": 200000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      },
+      {
+        "url": "https://file4.batdongsan.com.vn/resize/200x200/2017/03/02/20170302131824-bfff.jpg",
+        "type": "image",
+        "metadata": {
+          "filename": "p-50-2.jpg",
+          "size": 210000,
+          "mimetype": "image/jpeg",
+          "uploadedAt": "2025-11-24T04:29:52.162Z"
+        },
+        "tags": [],
+        "detectedObjects": [],
+        "analyzed": false,
+        "analyzedAt": null
+      }
+    ],
+    "owner": {
+      "$oid": "68bd181fc9119fda03f989fe"
+    },
+    "expireAt": null,
+    "createdAt": "2025-11-24T04:29:52.162Z",
+    "updatedAt": "2025-11-24T04:29:52.162Z"
+  }
+]

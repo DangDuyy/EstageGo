@@ -1,4 +1,5 @@
 import ToogleMode from "../NavBar/toggle-mode";
+import BalanceAndDeposit from "./balance-deposit";
 import { SheetMenu } from "./sheet-menu";
 import { UserNav } from "./user-nav";
 
@@ -12,6 +13,7 @@ export function Navbar({ title }) {
         </div>
         <div className="flex flex-1 items-center justify-end gap-4">
           <ToogleMode />
+          <BalanceAndDeposit/>
           <UserNav />
         </div>
       </div>
