@@ -5,6 +5,7 @@ import HeroSearch from '@/components/common/HeroSearch'
 import LocationCard from '@/components/common/LocationCard'
 import NavBar from '@/components/common/NavBar'
 import ReviewForm from '@/components/common/Review'
+import ChatWidget from '@/components/common/ChatWidget/ChatWidget'
 
 function HomePage() {
 
@@ -16,13 +17,14 @@ function HomePage() {
 
   return (
     <>
-      <NavBar/>
-      <HeroSearch backgroundUrl="/images/slider/slider-1.jpg" onSearch={handleSearch}/>
-      <FeatureCard/>
-      <LocationCard/>
-      <ReviewForm/>
-      <AgentForm/>
-      <FooterBar/>
+      <NavBar />
+      <HeroSearch backgroundUrl="/images/slider/slider-1.jpg" onSearch={handleSearch} />
+      <FeatureCard />
+      <LocationCard />
+      <ReviewForm />
+      <AgentForm />
+      <FooterBar />
+      <ChatWidget />
     </>
   )
 }
