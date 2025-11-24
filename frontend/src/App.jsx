@@ -49,7 +49,7 @@ function App() {
         <Route path="/verify-account" element={<VerifyAccountPage />} />
         <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
         <Route path="/properties/:propertyId" element={
-          <MapProvider libraries={["places"]}>
+          <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
             <PropertyPage />
           </MapProvider>
         } />
