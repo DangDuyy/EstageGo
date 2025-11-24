@@ -37,5 +37,12 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS || process.env.EMAIL_PASS || '',
   EMAIL_FROM: process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.EMAIL_SENDER || '',
 
+  // VNPay
+  VNPAY_TMN_CODE: process.env.VNPAY_TMN_CODE,
+  VNPAY_HASH_SECRET: process.env.VNPAY_HASH_SECRET,
+  VNPAY_URL: process.env.VNPAY_URL,
+  VNPAY_RETURN_URL: process.env.VNPAY_RETURN_URL,
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+
   GEMINI_API_KEY: process.env.GEMINI_API_KEY
 }

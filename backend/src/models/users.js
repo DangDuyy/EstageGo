@@ -152,6 +152,11 @@ const userSchema = new mongoose.Schema({
         default: null, // Sẽ được tạo và liên kết ngay sau khi User đăng ký
         sparse: true
     },
+    balance: {
+        type: Number,
+        default: 0,
+        min: 0
+    }
 }, { timestamps: true })
 
 // Validate: phải có ít nhất email HOẶC phone
