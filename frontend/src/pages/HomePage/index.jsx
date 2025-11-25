@@ -6,6 +6,7 @@ import LocationCard from '@/components/common/LocationCard'
 import NavBar from '@/components/common/NavBar'
 import ReviewForm from '@/components/common/Review'
 import ChatWidget from '@/components/common/ChatWidget/ChatWidget'
+import MainLayout from '@/components/common/Layout/MainLayout'
 
 function HomePage() {
 
@@ -17,14 +18,11 @@ function HomePage() {
 
   return (
     <>
-      <NavBar />
-      <HeroSearch backgroundUrl="/images/slider/slider-1.jpg" onSearch={handleSearch} />
-      <FeatureCard />
-      <LocationCard />
-      <ReviewForm />
-      <AgentForm />
-      <FooterBar />
-      <ChatWidget />
+        <HeroSearch backgroundUrl="/images/slider/slider-1.jpg" onSearch={handleSearch} />
+        <FeatureCard />
+        <LocationCard />
+        <ReviewForm />
+        <AgentForm />
     </>
   )
 }

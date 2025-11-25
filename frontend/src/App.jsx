@@ -30,6 +30,7 @@ import MapPage from './pages/MapPage'
 import PropertiesMap from './pages/MapPage/index_v2'
 import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
+import MainLayout from './components/common/Layout/MainLayout'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -45,16 +46,18 @@ function App() {
           <Navigate to="/home" replace={true} />
         } />
 
-        <Route path="/home" element={<HomePage />} />
+        <Route path="/" element={<MainLayout />} >
+          <Route index element={<HomePage />} />
+          <Route path="properties/:propertyId" element={
+            <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
+              <PropertyPage />
+            </MapProvider>
+          } />
+          <Route path="listing/grid" element={<PropertyPages />} />
+        </Route>
         <Route path="/verify-account" element={<VerifyAccountPage />} />
         <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
-        <Route path="/properties/:propertyId" element={
-          <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
-            <PropertyPage />
-          </MapProvider>
-        } />
 
-        <Route path="/listing/grid" element={<PropertyPages />} />
         <Route path="/listing/map" element={
           <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
             <PropertiesMap />
