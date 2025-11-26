@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ContentLayout } from "@/components/common/SidebarMenu/content-layout";
@@ -29,6 +29,7 @@ import TourLinkModal from "@/components/common/Upload/tour-link-modal";
 import MapContainer from "@/components/common/GoogleMap/MapContainer";
 import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
+import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
@@ -41,10 +42,10 @@ const period = ['month', 'year', 'other']
 
 // ----- Utils -----
 const currency = (n) =>
-  Number(n || 0).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  Number(n || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
 function Stepper({ step, setStep }) {
-  const items = ["Verify & Details", "Agent", "Documents & Payment"];
+  const items = ["Listing Details", "Verify Documents", "Agent & Payment"];
   return (
     <div className="mb-8">
       <div className="grid grid-cols-3 border-b">
@@ -85,17 +86,26 @@ const propertyDefaultValue = {
   address: {
     province: '',
     district: '',
-    ward: ''
+    ward: '',
+    street: '',
+    location: {
+      coordinates: []
+    }
   },
   price: {
-    value: 0
+    value: 0,
+    currency: 'VND',
+    period: 'month'
   },
+  purpose: 'sale',
+  visibility: 'public',
   rooms: {
     bedrooms: 0,
     bathrooms: 0,
     livingrooms: 0,
     kitchens: 0,
-  }
+  },
+  files: []
 }
 
 export default function AddPropertyWizard() {
@@ -118,6 +128,7 @@ export default function AddPropertyWizard() {
   const [provinces, setProvinces] = useState([])
   const [districts, setDistricts] = useState([])
   const [wards, setWards] = useState([])
+  const skipGeocodeRef = useRef(false)
 
   // ----- Agent (Step 2) -----
   const [agentType, setAgentType] = useState("owner"); // "owner" | "broker"
@@ -131,11 +142,9 @@ export default function AddPropertyWizard() {
   const [houseDocs, setHouseDocs] = useState([]);
   const [idDocs, setIdDocs] = useState([]);
   const docsValid = houseDocs.length > 0 && idDocs.length > 0;
-  // const listingFee = useMemo(() => {
-  //   const base = listingMode === "sale" ? 50 : 30;
-  //   const perImage = 5 * (images?.length || 0);
-  //   return base + perImage;
-  // }, [listingMode, images.length]);
+  const listingFee = useMemo(() => {
+    return listingMode === "sale" ? 500000 : 300000;
+  }, [listingMode]);
   const [paid, setPaid] = useState(false);
 
   // ----- Effects -----
@@ -146,6 +155,13 @@ export default function AddPropertyWizard() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
+
+  // react-hook-form setup (must be defined before helper functions)
+  const form = useForm({
+    defaultValues: propertyDefaultValue,
+    resolver: zodResolver(propertySchema),
+    mode: 'onSubmit'
+  })
 
   // Demo login cần phải xóa
   // useEffect(() => {
@@ -162,6 +178,143 @@ export default function AddPropertyWizard() {
     if (kind === "house") setHouseDocs(arr);
     else setIdDocs(arr);
   }
+
+  const getAddressComponent = (components = [], type) =>
+    components.find((c) => c.types.includes(type))?.long_name || "";
+
+  const populateAddressFromComponents = (components = [], fallbackStreet = "") => {
+    const provinceName = getAddressComponent(components, "administrative_area_level_1");
+    const districtName = getAddressComponent(components, "administrative_area_level_2");
+    const wardName =
+      getAddressComponent(components, "administrative_area_level_3") ||
+      getAddressComponent(components, "sublocality_level_1");
+    const streetNumber = getAddressComponent(components, "street_number");
+    const routeName = getAddressComponent(components, "route");
+    const streetValue = [streetNumber, routeName].filter(Boolean).join(" ") || fallbackStreet;
+
+    if (provinceName) form.setValue("address.province", provinceName, { shouldDirty: true });
+    if (districtName) form.setValue("address.district", districtName, { shouldDirty: true });
+    if (wardName) form.setValue("address.ward", wardName, { shouldDirty: true });
+    if (streetValue) form.setValue("address.street", streetValue, { shouldDirty: true });
+  };
+
+  const handleGeocodeSuccess = useCallback(
+    (results, { updateFullAddress = false } = {}) => {
+      if (!results || results.length === 0) return;
+
+      const markers = results.map((r, index) => ({
+        id: r.place_id || index,
+        lat: r.geometry.location.lat(),
+        lng: r.geometry.location.lng(),
+        address: r.formatted_address,
+      }));
+
+      setResults(markers);
+
+      const primary = results[0];
+      const loc = primary.geometry.location;
+      const lat = loc.lat();
+      const lng = loc.lng();
+
+      setCenter({ lat, lng });
+      form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
+      populateAddressFromComponents(primary.address_components, primary.formatted_address);
+
+      if (updateFullAddress && primary.formatted_address) {
+        skipGeocodeRef.current = true;
+        setFullAddress(primary.formatted_address);
+      }
+    },
+    [form]
+  );
+
+  const reverseGeocodeCoordinates = useCallback(
+    (lat, lng) => {
+      if (!window.google) return;
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === "OK") {
+          handleGeocodeSuccess(results, { updateFullAddress: true });
+        } else {
+          console.error("Reverse geocode failed:", status);
+        }
+      });
+    },
+    [handleGeocodeSuccess]
+  );
+
+  const handlePlaceSelected = (place) => {
+    if (!place?.geometry) return;
+    const location = place.geometry.location;
+    const lat = location.lat();
+    const lng = location.lng();
+    const formattedAddress = place.formatted_address || place.name || "";
+
+    setCenter({ lat, lng });
+    form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
+    setResults([
+      {
+        id: place.place_id || Date.now(),
+        lat,
+        lng,
+        address: formattedAddress,
+      },
+    ]);
+
+    populateAddressFromComponents(place.address_components || [], formattedAddress);
+    if (formattedAddress) {
+      skipGeocodeRef.current = true;
+      setFullAddress(formattedAddress);
+    }
+  };
+
+  const handleMapClick = (event) => {
+    const lat = event?.latLng?.lat();
+    const lng = event?.latLng?.lng();
+    if (lat == null || lng == null) return;
+    reverseGeocodeCoordinates(lat, lng);
+  };
+
+  const handleMarkerClick = (marker) => {
+    if (!marker) return;
+    reverseGeocodeCoordinates(marker.lat, marker.lng);
+  };
+
+  const handleContinueFromStep1 = async () => {
+    const isValid = await form.trigger([
+      "title",
+      "description",
+      "address.province",
+      "address.district",
+      "address.ward",
+      "address.street",
+      "price.value",
+      "price.currency",
+      "type",
+      "purpose",
+    ]);
+
+    if (!isValid) {
+      toast.error("Please complete the required fields before continuing.");
+      return;
+    }
+
+    const coords = form.getValues("address.location.coordinates");
+    if (!coords || coords.length !== 2) {
+      toast.error("Please pick the location on the map or via the search box.");
+      return;
+    }
+
+    setStep(2);
+  };
+
+  const handleContinueFromStep2 = () => {
+    if (!docsValid) {
+      toast.error("Please upload ID card and house ownership documents.");
+      return;
+    }
+    setStep(3);
+  };
 
   function sendSms() {
     if (!phone.trim()) {
@@ -192,13 +345,6 @@ export default function AddPropertyWizard() {
     toast.success("Payment completed.");
   }
 
-  // Config form sử dụng react-hook-form và zod
-  const form = useForm({
-    defaultValues: propertyDefaultValue,
-    resolver: zodResolver(propertySchema),
-    mode: 'onSubmit'
-  })
-
   // Theo dõi các biến province, district, ward, street để cập nhật address
   const [province, district, ward, street] = form.watch([
     'address.province',
@@ -206,6 +352,15 @@ export default function AddPropertyWizard() {
     'address.ward',
     'address.street'
   ]);
+  const purposeValue = form.watch('purpose')
+
+useEffect(() => {
+  if (!purposeValue) return
+  setListingMode(purposeValue)
+  if (purposeValue === 'sale') {
+    form.setValue('price.period', 'other')
+  }
+}, [purposeValue, form])
 
   // Set fullAddress
   const handleSearch = () => {
@@ -218,6 +373,7 @@ export default function AddPropertyWizard() {
       .filter(Boolean)        // loại bỏ giá trị rỗng
       .join(', ');            // nối với dấu phẩy
 
+    skipGeocodeRef.current = false;
     setFullAddress(fullAddr);
   }
 
@@ -253,29 +409,48 @@ export default function AddPropertyWizard() {
 
   // ========== function onSubmit ==========
   const onSubmit = async (data) => {
-    // Tạo FormData
+    if (!docsValid) {
+      toast.error("Please upload the required verification documents before publishing.");
+      setStep(2);
+      return;
+    }
+
+    if (!paid) {
+      toast.error("Please complete the payment before publishing your listing.");
+      setStep(3);
+      return;
+    }
+
     const formData = new FormData();
 
-    // Append fields khác
     for (const key in data) {
       if (key !== "files") {
         const value = data[key];
         if (typeof value === "object") {
           formData.append(key, JSON.stringify(value));
         } else {
-          formData.append(key, value); // để nguyên string/number
+          formData.append(key, value);
         }
       }
     }
 
-    // Append file
-    data.files.forEach(file => {
-      formData.append("files", file);
-    });
+    if (Array.isArray(data.files)) {
+      data.files.forEach(file => {
+        formData.append("files", file);
+      });
+    }
 
-    // Gửi request
-    await createProperty(formData);
-    toast.success('Post success')
+    houseDocs.forEach(file => formData.append("houseDocs", file));
+    idDocs.forEach(file => formData.append("idDocs", file));
+
+    try {
+      await createProperty(formData);
+      toast.success('Post success');
+      navigate('/dashboard/posts');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to publish listing.');
+    }
   };
 
   useEffect(() => {
@@ -291,41 +466,26 @@ export default function AddPropertyWizard() {
   useEffect(() => {
     if (!fullAddress || !window.google || !loaded) return;
 
+    if (skipGeocodeRef.current) {
+      skipGeocodeRef.current = false;
+      return;
+    }
+
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ address: fullAddress }, (results, status) => {
-      // if (status === "OK" && results[0]) {
-      //   const location = results[0].geometry.location;
-      //   // trả về lat và lng
-      //   onResult?.({
-      //     lat: location.lat(),
-      //     lng: location.lng(),
-      //   });
-      // }
       if (status === "OK") {
-        const markers = results.map((r, index) => ({
-          id: index,  // hoặc r.place_id nếu có
-          lat: r.geometry.location.lat(),
-          lng: r.geometry.location.lng(),
-          address: r.formatted_address
-        }));
-
-        setResults(markers)
-        // const location = results[0].geometry.location;
-        const loc = results[0].geometry.location;
-        setCenter({ lat: loc.lat(), lng: loc.lng() });
-        form.setValue('address.location.coordinates', [loc.lng(), loc.lat()])
+        handleGeocodeSuccess(results, { updateFullAddress: false });
       }
       else {
         console.error("Geocode failed: ", status);
       }
     });
-  }, [fullAddress]);
+  }, [fullAddress, loaded, handleGeocodeSuccess]);
 
   // ----- Render -----
   return (
     <ContentLayout title="Add Property">
-      {/* Stepper */}
-      {/* <Stepper step={step} setStep={setStep} /> */}
+      <Stepper step={step} setStep={setStep} />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           {/* STEP 1 */}
@@ -440,6 +600,14 @@ export default function AddPropertyWizard() {
                         )}
                       />
                     </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Your address</Label>
+                    <CustomSearchBox onPlaceSelected={handlePlaceSelected} />
+                    <p className="text-xs text-muted-foreground">
+                      Start typing to get Google Maps suggestions or pick a point directly on the map.
+                    </p>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-3">
@@ -595,9 +763,12 @@ export default function AddPropertyWizard() {
                   </div>
 
                   <div>
-                    <MapContainer center={center} zoom={13}>
-                      <MarkerLayer items={results} onMarkerClick={(it) => console.log(it)} />
+                    <MapContainer center={center} zoom={13} onClick={handleMapClick}>
+                      <MarkerLayer items={results} onMarkerClick={handleMarkerClick} />
                     </MapContainer>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Click on the map to update the coordinates or drag the map to refine the position.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -662,38 +833,39 @@ export default function AddPropertyWizard() {
                     />
 
                     {/* Period */}
-                    <FormField
-                      control={form.control}
-                      name="price.period"
-                      render={({ field }) => (
-                        <FormItem className='relative pb-6'>
-                          <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Period</FormLabel>
-                          <FormControl>
-                            <Select                               // Select không dùng được với {...field}
-                              value={field.value}                 // Dùng field.value
-                              onValueChange={field.onChange}      // Dùng field.onChange
-                            >
-                              <SelectTrigger className={cn(
-                                "w-full",
-                                form.formState.errors.price?.period ? "border-red-500 focus:ring-red-500" : ''
-                              )}>
-                                <SelectValue placeholder="Select ward" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {period.map((p) => (
-                                  <SelectItem key={p} value={p}>
-                                    {p.toUpperCase()}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
+                    {listingMode === "rent" && (
+                      <FormField
+                        control={form.control}
+                        name="price.period"
+                        render={({ field }) => (
+                          <FormItem className='relative pb-6'>
+                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Period</FormLabel>
+                            <FormControl>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger className={cn(
+                                  "w-full",
+                                  form.formState.errors.price?.period ? "border-red-500 focus:ring-red-500" : ''
+                                )}>
+                                  <SelectValue placeholder="Select period" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {period.map((p) => (
+                                    <SelectItem key={p} value={p}>
+                                      {p.toUpperCase()}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
 
-                          <FormMessage className='absolute bottom-0' />
-                        </FormItem>
-                      )
-                      }
-                    />
+                            <FormMessage className='absolute bottom-0' />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -898,14 +1070,11 @@ export default function AddPropertyWizard() {
               </Card>
 
               <div className="flex items-center justify-between">
-                <div></div>
+                <div />
                 <div className="flex gap-3">
-                  <Button variant="default" disabled={form.formState.isSubmitting} type="submit">
-                    {form.formState.isSubmitting ? 'Saving...' : 'Save'}
+                  <Button variant="default" type="button" onClick={handleContinueFromStep1}>
+                    Continue to verification
                   </Button>
-                  {/* <Button type="button" disabled={!canNextFromStep1()} onClick={() => setStep(2)}>
-                    Continue
-                  </Button> */}
                 </div>
               </div>
 
@@ -938,6 +1107,63 @@ export default function AddPropertyWizard() {
 
           {/* STEP 2 */}
           {step === 2 && (
+            <div className="min-h-screen">
+              <Card className="mb-8">
+                <CardHeader><CardTitle>Verify documents</CardTitle></CardHeader>
+                <CardContent className="grid gap-6 md:grid-cols-2">
+                  <div className="rounded-lg border border-dashed p-6">
+                    <Label htmlFor="house-docs" className="mb-2 block">
+                      House ownership papers (PDF/JPG/PNG)
+                    </Label>
+                    <Input
+                      id="house-docs"
+                      type="file"
+                      accept=".pdf,image/*"
+                      multiple
+                      onChange={(e) => handleDocsChange("house", e.target.files)}
+                    />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Upload clear scans or photos of the property documents.
+                    </p>
+                    {houseDocs.length > 0 && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        {houseDocs.length} file(s) selected
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg border border-dashed p-6">
+                    <Label htmlFor="id-docs" className="mb-2 block">
+                      Owner ID card (front/back) (PDF/JPG/PNG)
+                    </Label>
+                    <Input
+                      id="id-docs"
+                      type="file"
+                      accept=".pdf,image/*"
+                      multiple
+                      onChange={(e) => handleDocsChange("id", e.target.files)}
+                    />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Upload a valid identification document.
+                    </p>
+                    {idDocs.length > 0 && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        {idDocs.length} file(s) selected
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center justify-between">
+                <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+                <Button onClick={handleContinueFromStep2} disabled={!docsValid}>Continue</Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
             <div className="min-h-screen">
               <Card className="mb-8">
                 <CardHeader><CardTitle>Choose Agent</CardTitle></CardHeader>
@@ -983,63 +1209,6 @@ export default function AddPropertyWizard() {
                 </CardContent>
               </Card>
 
-              <div className="flex items-center justify-between">
-                <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                <Button onClick={() => setStep(3)}>Continue</Button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3 */}
-          {step === 3 && (
-            <div className="min-h-screen">
-              <Card className="mb-8">
-                <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
-                <CardContent className="grid gap-6 md:grid-cols-2">
-                  <div className="rounded-lg border border-dashed p-6">
-                    <Label htmlFor="house-docs" className="mb-2 block">
-                      House ownership papers (PDF/JPG/PNG)
-                    </Label>
-                    <Input
-                      id="house-docs"
-                      type="file"
-                      accept=".pdf,image/*"
-                      multiple
-                      onChange={(e) => handleDocsChange("house", e.target.files)}
-                    />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Upload clear scans or photos of the property documents.
-                    </p>
-                    {houseDocs.length > 0 && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {houseDocs.length} file(s) selected
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="rounded-lg border border-dashed p-6">
-                    <Label htmlFor="id-docs" className="mb-2 block">
-                      Your ID card (front/back) (PDF/JPG/PNG)
-                    </Label>
-                    <Input
-                      id="id-docs"
-                      type="file"
-                      accept=".pdf,image/*"
-                      multiple
-                      onChange={(e) => handleDocsChange("id", e.target.files)}
-                    />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Upload a valid identification document.
-                    </p>
-                    {idDocs.length > 0 && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {idDocs.length} file(s) selected
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
               <Card className="mb-8">
                 <CardHeader><CardTitle>Payment</CardTitle></CardHeader>
                 <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -1047,7 +1216,7 @@ export default function AddPropertyWizard() {
                     <div className="text-sm text-muted-foreground">Listing Fee</div>
                     <div className="text-2xl font-semibold">{currency(listingFee)}</div>
                     <div className="text-xs text-muted-foreground">
-                      {/* {listingMode === "sale" ? "Base $50" : "Base $30"} + ${5} × {images.length} image(s) */}
+                      {listingMode === "sale" ? "One-time posting fee for sale listings." : "Monthly fee for rental listings."}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1065,10 +1234,10 @@ export default function AddPropertyWizard() {
               </Card>
 
               <div className="flex items-center justify-between">
-                <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-                {/* <Button type="button" onClick={onSubmitPost} disabled={!canPost()}>
-                  Post
-                </Button> */}
+                <Button variant="outline" type="button" onClick={() => setStep(2)}>Back</Button>
+                <Button type="submit" disabled={!paid || form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Publishing..." : "Publish listing"}
+                </Button>
               </div>
             </div>
           )}
