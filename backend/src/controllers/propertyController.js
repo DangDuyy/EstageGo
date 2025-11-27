@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { searchSuggestionService } from "~/services/searchSuggestionService"
 import { propertyKnowledgeService } from "~/services/propertyKnowledgeService"
 import { imageTaggingService } from "~/services/imageTaggingService"
+import { documentVerificationService } from "~/services/documentVerificationService"
 import { env } from "~/config/environment"
 
 const { StatusCodes } = require("http-status-codes")
@@ -48,6 +49,104 @@ const createProperty = async (req, res, next) => {
     }
     catch (error) {
         console.log("Error property controlelr", error)
+        next(error)
+    }
+}
+
+const verifyPropertyDocuments = async (req, res, next) => {
+    try {
+        const userId = req.jwtDecoded._id
+        const rawPropertyData = req.body?.propertyData
+        const idDocs = req.files?.idDocs || []
+        const houseDocs = req.files?.houseDocs || []
+
+        if (!rawPropertyData) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Property data is required for verification"
+            })
+        }
+
+        if (!idDocs.length || !houseDocs.length) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Both ID documents and house documents are required"
+            })
+        }
+
+        let propertyData
+        try {
+            propertyData = typeof rawPropertyData === "string"
+                ? JSON.parse(rawPropertyData)
+                : rawPropertyData
+        } catch (parseError) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Property data payload is invalid JSON"
+            })
+        }
+
+        const normalizedPropertyData = {
+            ...propertyData,
+            address: propertyData?.address || {}
+        }
+
+        const user = await propertyService.getUserById(userId)
+
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "User not found"
+            })
+        }
+
+        const userInfo = {
+            fullName: user.fullName || user.userName,
+            dob: user.dob
+        }
+
+        const cccdAnalysis = await documentVerificationService.verifyCCCD({
+            file: idDocs[0],
+            userInfo
+        })
+
+        if (!cccdAnalysis?.verificationResult?.isUserMatch || !cccdAnalysis?.verificationResult?.isFormatValid) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: cccdAnalysis?.verificationResult?.mismatchDetails || "CCCD verification failed",
+                data: {
+                    cccd: cccdAnalysis
+                }
+            })
+        }
+
+        const houseDocAnalysis = await documentVerificationService.verifyHouseDocument({
+            file: houseDocs[0],
+            propertyData: normalizedPropertyData
+        })
+
+        const verification = houseDocAnalysis?.verificationResult || {}
+        if (!verification.isFormatValid || !verification.isAddressMatch || !verification.isAreaMatch) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: verification.mismatchDetails || "House document does not match listing details",
+                data: {
+                    cccd: cccdAnalysis,
+                    houseDoc: houseDocAnalysis
+                }
+            })
+        }
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Documents verified successfully",
+            data: {
+                cccd: cccdAnalysis,
+                houseDoc: houseDocAnalysis
+            }
+        })
+    } catch (error) {
+        console.error("Error verifying property documents:", error)
         next(error)
     }
 }
@@ -798,6 +897,7 @@ const clearImageTags = async (req, res, next) => {
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
+    verifyPropertyDocuments,
     getProperties,
     getPropertyDetails,
     getPropertiesWithinPolygon,

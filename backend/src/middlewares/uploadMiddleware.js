@@ -25,3 +25,8 @@ const upload = multer({
 })
 
 export const uploadFiles = upload.array('files', 10)
+
+export const uploadVerificationDocs = upload.fields([
+  { name: 'idDocs', maxCount: 5 },
+  { name: 'houseDocs', maxCount: 5 }
+])
