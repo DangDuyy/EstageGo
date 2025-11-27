@@ -1,91 +1,76 @@
 version: "3.1"
 
 nlu:
-- intent: greet
-  examples: |
-    - hey
-    - hello
-    - hi
-    - hello there
-    - good morning
-    - good evening
-    - moin
-    - hey there
-    - let's go
-    - hey dude
-    - goodmorning
-    - goodevening
-    - good afternoon
+  - intent: greet
+    examples: |
+      - xin chào
+      - chào bạn
+      - hello
+      - hi
+      - chào
+      - hey
+  
+  - intent: goodbye
+    examples: |
+      - tạm biệt
+      - bye
+      - goodbye
+      - hẹn gặp lại
+      - cảm ơn tạm biệt
+  
+  - intent: affirm
+    examples: |
+      - có
+      - đúng
+      - đúng rồi
+      - ok
+      - được
+      - chắc chắn
+  
+  - intent: deny
+    examples: |
+      - không
+      - không phải
+      - sai rồi
+      - chưa đúng
+  
+  - intent: search_property
+    examples: |
+      - tôi muốn mua nhà ở [TP.HCM](province), [Quận 1](district), [Phường Bến Nghé](ward)
+      - tìm nhà tại [Hà Nội](province), [Quận Ba Đình](district), [Phường Ngọc Hà](ward)
+      - có nhà nào ở [Đà Nẵng](province) không
+      - tôi cần tìm nhà ở [Hồ Chí Minh](province), [Quận 3](district)
+      - nhà tại [Hà Nội](province), [Quận Hoàn Kiếm](district), [Phường Hàng Bạc](ward)
+      - tìm bất động sản ở [TP.HCM](province), [Quận 2](district), [Phường Thảo Điền](ward)
+      - mua nhà [Bình Dương](province), [Thành phố Thủ Dầu Một](district)
+      - tôi muốn mua nhà ở [Thành phố Hồ Chí Minh](province)
+      - nhà ở [Quận 7](district), [TP.HCM](province)
+      - tìm nhà tại [Phường Tân Định](ward), [Quận 1](district), [TP.HCM](province)
+      - có nhà nào ở [Quận Bình Thạnh](district) không
+      - bất động sản [Đà Nẵng](province), [Quận Hải Châu](district)
+      - nhà đất ở [Nha Trang](province), [Phường Vĩnh Hải](ward)
+      - tìm nhà [Vũng Tàu](province)
+      - mua nhà tại [Cần Thơ](province), [Quận Ninh Kiều](district), [Phường Tân An](ward)
+      - nhà ở [Hải Phòng](province), [Quận Lê Chân](district)
+  
+  - intent: provide_location
+    examples: |
+      - ở [TP.HCM](province)
+      - tại [Hà Nội](province), [Quận Đống Đa](district)
+      - [Quận 1](district)
+      - [Phường Bến Nghé](ward)
+      - [TP.HCM](province), [Quận 5](district), [Phường 1](ward)
 
-- intent: goodbye
-  examples: |
-    - cu
-    - good by
-    - cee you later
-    - good night
-    - bye
-    - goodbye
-    - have a nice day
-    - see you around
-    - bye bye
-    - see you later
-
-- intent: affirm
-  examples: |
-    - yes
-    - y
-    - indeed
-    - of course
-    - that sounds good
-    - correct
-
-- intent: deny
-  examples: |
-    - no
-    - n
-    - never
-    - I don't think so
-    - don't like that
-    - no way
-    - not really
-
-- intent: mood_great
-  examples: |
-    - perfect
-    - great
-    - amazing
-    - feeling like a king
-    - wonderful
-    - I am feeling very good
-    - I am great
-    - I am amazing
-    - I am going to save the world
-    - super stoked
-    - extremely good
-    - so so perfect
-    - so good
-    - so perfect
-
-- intent: mood_unhappy
-  examples: |
-    - my day was horrible
-    - I am sad
-    - I don't feel very well
-    - I am disappointed
-    - super sad
-    - I'm so sad
-    - sad
-    - very sad
-    - unhappy
-    - not good
-    - not very good
-    - extremly sad
-    - so saad
-    - so sad
-
-- intent: bot_challenge
-  examples: |
-    - are you a bot?
-    - are you a human?
-    - am I talking to a bot?
-    - am I talking to a human?
+  - synonym: "TP.HCM"
+    examples: |
+      - Hồ Chí Minh
+      - Thành phố Hồ Chí Minh
+      - Sài Gòn
+      - HCM
+      - TPHCM
+  
+  - synonym: "Hà Nội"
+    examples: |
+      - Ha Noi
+      - Thủ đô
+      - HN

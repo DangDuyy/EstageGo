@@ -1,30 +1,52 @@
 version: "3.1"
 
 stories:
-
-- story: happy path
-  steps:
-  - intent: greet
-  - action: utter_greet
-  - intent: mood_great
-  - action: utter_happy
-
-- story: sad path 1
-  steps:
-  - intent: greet
-  - action: utter_greet
-  - intent: mood_unhappy
-  - action: utter_cheer_up
-  - action: utter_did_that_help
-  - intent: affirm
-  - action: utter_happy
-
-- story: sad path 2
-  steps:
-  - intent: greet
-  - action: utter_greet
-  - intent: mood_unhappy
-  - action: utter_cheer_up
-  - action: utter_did_that_help
-  - intent: deny
-  - action: utter_goodbye
+  - story: happy path - search with full location
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: search_property
+        entities:
+          - province
+          - district
+          - ward
+      - action: action_search_property
+      - intent: goodbye
+      - action: utter_goodbye
+  
+  - story: search with province and district only
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: search_property
+        entities:
+          - province
+          - district
+      - action: action_search_property
+      - intent: goodbye
+      - action: utter_goodbye
+  
+  - story: search with province only
+    steps:
+      - intent: search_property
+        entities:
+          - province
+      - action: action_search_property
+  
+  - story: provide location after greeting
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: provide_location
+        entities:
+          - province
+          - district
+          - ward
+      - action: action_search_property
+  
+  - story: simple greeting
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: goodbye
+      - action: utter_goodbye

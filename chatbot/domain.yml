@@ -5,29 +5,57 @@ intents:
   - goodbye
   - affirm
   - deny
-  - mood_great
-  - mood_unhappy
-  - bot_challenge
+  - search_property
+  - provide_location
+
+entities:
+  - province
+  - district
+  - ward
+
+slots:
+  province:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: province
+  
+  district:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: district
+  
+  ward:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: ward
 
 responses:
   utter_greet:
-  - text: "Hey! How are you?"
-
-  utter_cheer_up:
-  - text: "Here is something to cheer you up:"
-    image: "https://i.imgur.com/nGF1K8f.jpg"
-
-  utter_did_that_help:
-  - text: "Did that help you?"
-
-  utter_happy:
-  - text: "Great, carry on!"
-
+    - text: "Xin chào! Tôi có thể giúp bạn tìm kiếm bất động sản. Bạn muốn tìm nhà ở đâu?"
+  
   utter_goodbye:
-  - text: "Bye"
+    - text: "Tạm biệt! Chúc bạn tìm được ngôi nhà ưng ý!"
+  
+  utter_ask_location:
+    - text: "Bạn muốn tìm nhà ở khu vực nào? Vui lòng cho tôi biết tỉnh/thành phố, quận/huyện và phường/xã."
+  
+  utter_confirm_search:
+    - text: "Để tôi tìm kiếm bất động sản tại {province}, {district}, {ward} cho bạn..."
+  
+  utter_no_results:
+    - text: "Rất tiếc, tôi không tìm thấy bất động sản nào phù hợp với yêu cầu của bạn."
+  
+  utter_default:
+    - text: "Xin lỗi, tôi không hiểu yêu cầu của bạn. Bạn có thể nói rõ hơn được không?"
 
-  utter_iamabot:
-  - text: "I am a bot, powered by Rasa."
+actions:
+  - action_search_property
 
 session_config:
   session_expiration_time: 60
