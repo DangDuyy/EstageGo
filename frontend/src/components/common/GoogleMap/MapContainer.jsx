@@ -22,6 +22,7 @@ export default function MapContainer({
   onLoad,
   style = { height: "600px", width: "100%", cursor: "default" },
   children,
+  ...rest
 }) {
   const { loaded } = useContext(MapsContext);
 
@@ -34,6 +35,7 @@ export default function MapContainer({
       zoom={zoom}
       options={mapOptions}
       onLoad={onLoad}
+      {...rest}
     >
       {children}
     </GoogleMap>
