@@ -6,12 +6,25 @@ rules:
       - intent: goodbye
       - action: utter_goodbye
   
-  - rule: Say 'I am a bot' anytime the user challenges
-    steps:
-      - intent: deny
-      - action: utter_default
-  
-  - rule: Activate search form
+  - rule: Activate property search form
     steps:
       - intent: search_property
-      - action: action_search_property
+      - action: property_search_form
+      - active_loop: property_search_form
+  
+  - rule: Submit property search form
+    condition:
+      - active_loop: property_search_form
+    steps:
+      - action: property_search_form
+      - active_loop: null
+      - action: action_submit_property_search_form
+  
+  - rule: Handle form interruption with goodbye
+    condition:
+      - active_loop: property_search_form
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+      - action: action_deactivate_loop
+      - active_loop: null

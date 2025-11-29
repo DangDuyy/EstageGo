@@ -9,6 +9,7 @@ nlu:
       - hi
       - chào
       - hey
+      - chào bot
   
   - intent: goodbye
     examples: |
@@ -17,6 +18,8 @@ nlu:
       - goodbye
       - hẹn gặp lại
       - cảm ơn tạm biệt
+      - cảm ơn
+      - thanks
   
   - intent: affirm
     examples: |
@@ -26,6 +29,9 @@ nlu:
       - ok
       - được
       - chắc chắn
+      - đồng ý
+      - ừ
+      - oke
   
   - intent: deny
     examples: |
@@ -33,9 +39,22 @@ nlu:
       - không phải
       - sai rồi
       - chưa đúng
+      - bỏ qua
+      - skip
+      - không cần
+      - thôi
   
   - intent: search_property
     examples: |
+      - tôi muốn mua nhà
+      - tìm nhà
+      - tìm kiếm nhà
+      - mua nhà
+      - cần tìm nhà
+      - tôi cần mua nhà
+      - muốn tìm bất động sản
+      - có nhà nào không
+      - tìm bất động sản
       - tôi muốn mua nhà ở [TP.HCM](province), [Quận 1](district), [Phường Bến Nghé](ward)
       - tìm nhà tại [Hà Nội](province), [Quận Ba Đình](district), [Phường Ngọc Hà](ward)
       - có nhà nào ở [Đà Nẵng](province) không
@@ -52,6 +71,56 @@ nlu:
       - tìm nhà [Vũng Tàu](province)
       - mua nhà tại [Cần Thơ](province), [Quận Ninh Kiều](district), [Phường Tân An](ward)
       - nhà ở [Hải Phòng](province), [Quận Lê Chân](district)
+      - mua nhà ở [TP.HCM](province)
+      - tìm nhà [Quận 1](district)
+  
+  - intent: inform
+    examples: |
+      - [TP.HCM](province)
+      - [Hà Nội](province)
+      - [Đà Nẵng](province)
+      - [Quận 1](district)
+      - [Quận 2](district)
+      - [Quận 3](district)
+      - [Quận Hai Bà Trưng](district)
+      - [Hai Bà Trưng](district)
+      - [Quận Ba Đình](district)
+      - [Ba Đình](district)
+      - [Quận Hoàn Kiếm](district)
+      - [Hoàn Kiếm](district)
+      - [Phường Bến Nghé](ward)
+      - [Bến Nghé](ward)
+      - [Phường 1](ward)
+      - ở [TP.HCM](province)
+      - tại [Hà Nội](province)
+      - [Hồ Chí Minh](province)
+      - [Phường Ngọc Hà](ward)
+      - [Ngọc Hà](ward)
+      - [TP.HCM](province), [Quận 1](district)
+      - [Quận 1](district), [Phường Bến Nghé](ward)
+      - [TP.HCM](province), [Quận 1](district), [Phường Bến Nghé](ward)
+      - [Thành phố Hồ Chí Minh](province)
+      - [Sài Gòn](province)
+      - [Quận 3](district), [TP.HCM](province)
+      - tôi muốn ở [Hà Nội](province)
+      - [Quận 7](district)
+      - [Quận Bình Thạnh](district)
+      - [Bình Thạnh](district)
+      - [Quận Bình Thạnh](district), [TP.HCM](province)
+      - [Quận Hải Châu](district), [Đà Nẵng](province)
+      - [Hải Châu](district)
+      - [Nha Trang](province)
+      - [Vũng Tàu](province)
+      - [Cần Thơ](province), [Quận Ninh Kiều](district)
+      - [Ninh Kiều](district)
+      - bỏ qua
+      - không cần
+      - thôi
+      - ko
+      - [Quận Đống Đa](district)
+      - [Đống Đa](district)
+      - [Quận Cầu Giấy](district)
+      - [Cầu Giấy](district)
   
   - intent: provide_location
     examples: |
@@ -60,6 +129,9 @@ nlu:
       - [Quận 1](district)
       - [Phường Bến Nghé](ward)
       - [TP.HCM](province), [Quận 5](district), [Phường 1](ward)
+      - khu vực [Quận 3](district)
+      - vùng [TP.HCM](province)
+      - [Hà Nội](province), [Quận Ba Đình](district), [Phường Ngọc Hà](ward)
 
   - synonym: "TP.HCM"
     examples: |
@@ -68,9 +140,26 @@ nlu:
       - Sài Gòn
       - HCM
       - TPHCM
+      - Tp HCM
+      - TP HCM
   
   - synonym: "Hà Nội"
     examples: |
       - Ha Noi
       - Thủ đô
       - HN
+      - Hanoi
+  
+  - synonym: "Đà Nẵng"
+    examples: |
+      - Da Nang
+      - Danang
+      - ĐN
+  
+  - synonym: "bỏ qua"
+    examples: |
+      - skip
+      - không cần
+      - thôi
+      - không
+      - ko cần

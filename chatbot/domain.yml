@@ -7,6 +7,7 @@ intents:
   - deny
   - search_property
   - provide_location
+  - inform
 
 entities:
   - province
@@ -34,7 +35,20 @@ slots:
     mappings:
       - type: from_entity
         entity: ward
+  
+  requested_slot:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
 
+forms:
+  property_search_form:
+    required_slots:
+      - province
+      - district
+      - ward
+    
 responses:
   utter_greet:
     - text: "Xin chào! Tôi có thể giúp bạn tìm kiếm bất động sản. Bạn muốn tìm nhà ở đâu?"
@@ -42,20 +56,39 @@ responses:
   utter_goodbye:
     - text: "Tạm biệt! Chúc bạn tìm được ngôi nhà ưng ý!"
   
-  utter_ask_location:
-    - text: "Bạn muốn tìm nhà ở khu vực nào? Vui lòng cho tôi biết tỉnh/thành phố, quận/huyện và phường/xã."
+  utter_ask_province:
+    - text: "Bạn muốn tìm nhà ở tỉnh/thành phố nào?"
+    - text: "Cho tôi biết bạn muốn tìm nhà ở tỉnh/thành phố nào nhé?"
+  
+  utter_ask_district:
+    - text: "Bạn có muốn chỉ định quận/huyện cụ thể trong {province} không? (nói tên quận/huyện hoặc 'bỏ qua' để tìm toàn {province})"
+    - text: "Quận/huyện nào trong {province} bạn quan tâm? (hoặc 'bỏ qua' để tìm toàn {province})"
+  
+  utter_ask_ward:
+    - text: "Bạn có muốn chỉ định phường/xã cụ thể trong {district} không? (hoặc nói 'bỏ qua' nếu không cần)"
+    - text: "Phường/xã nào trong {district} bạn quan tâm? (hoặc 'bỏ qua')"
   
   utter_confirm_search:
     - text: "Để tôi tìm kiếm bất động sản tại {province}, {district}, {ward} cho bạn..."
+  
+  utter_submit:
+    - text: "Đang tìm kiếm bất động sản cho bạn..."
   
   utter_no_results:
     - text: "Rất tiếc, tôi không tìm thấy bất động sản nào phù hợp với yêu cầu của bạn."
   
   utter_default:
     - text: "Xin lỗi, tôi không hiểu yêu cầu của bạn. Bạn có thể nói rõ hơn được không?"
+  
+  utter_search_started:
+    - text: "Tốt! Hãy cho tôi biết thông tin về vị trí bạn muốn tìm nhà."
 
 actions:
   - action_search_property
+  - action_submit_property_search_form
+  - validate_property_search_form
+  - action_ask_district
+  - action_ask_ward
 
 session_config:
   session_expiration_time: 60
