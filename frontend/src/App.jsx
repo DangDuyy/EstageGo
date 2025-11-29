@@ -31,20 +31,18 @@ import PropertiesMap from './pages/MapPage/index_v2'
 import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
 import MainLayout from './components/common/Layout/MainLayout'
+import DepositPage from './pages/DashboardPage/DepositPage'
+import PaymentResultPage from './pages/DashboardPage/PaymentResultPage' 
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
-  // Fetch current user on app load
   useAuth();
-
   return (
     <>
       <SocketManager />
       <Routes>
         {/* redirect route */}
-        <Route path="/" element={
-          <Navigate to="/home" replace={true} />
-        } />
+        <Route path="/" element={<Navigate to="/home" replace={true} />} />
 
         <Route path="/" element={<MainLayout />} >
           <Route index element={<HomePage />} />
@@ -88,7 +86,10 @@ function App() {
           </Route>
           <Route path="wishlist" element={<Wishlist />} />
           <Route path="plans" element={<PricingPlans />} />
+          <Route path="deposit" element={<DepositPage />} />
         </Route>
+
+        <Route path="/payment/result" element={<PaymentResultPage />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>

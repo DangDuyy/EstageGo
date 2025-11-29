@@ -62,6 +62,19 @@ export const createProperty = async (formData) => {
   return response.data
 }
 
+export const verifyPropertyDocumentsAPI = async (formData) => {
+  const response = await authorizeAxiosInstance.post(
+    `${API_ROOT}/v1/properties/verify-documents`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
+    }
+  )
+  return response.data
+}
+
 
 // ==================== GoogleMap ============================
 export const geocodeAddress = async (addr) => {
@@ -446,5 +459,42 @@ const getOrCreateSessionId = () => {
 // ========== CHATBOT APIs ==========
 export const sendMessageToChatBotAPI = async (sender, message) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/chatbot`, { sender, message })
+  return response.data
+}
+
+// ========== PAYMENT APIs ==========
+
+// Create payment URL for deposit
+export const createPaymentAPI = async (amount, bankCode = '') => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/payment/create`, {
+    amount,
+    bankCode
+  })
+  return response.data
+}
+
+// Get balance
+export const getBalanceAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/balance`)
+  return response.data
+}
+
+// Get transaction history
+export const getTransactionHistoryAPI = async (page = 1, limit = 10, filters = {}) => {
+  const params = new URLSearchParams()
+  params.set('page', page)
+  params.set('limit', limit)
+  
+  if (filters.status) params.set('status', filters.status)
+  if (filters.type) params.set('type', filters.type)
+  if (filters.transactionType) params.set('transactionType', filters.transactionType)
+  
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/transactions?${params.toString()}`)
+  return response.data
+}
+
+// Get transaction detail
+export const getTransactionDetailAPI = async (transactionId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/transactions/${transactionId}`)
   return response.data
 }

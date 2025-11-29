@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, getAllProvinces, getProvince } from "@/apis";
+import { createProperty, getAllProvinces, getProvince, verifyPropertyDocumentsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -141,7 +141,12 @@ export default function AddPropertyWizard() {
   // ----- Documents + Payment (Step 3) -----
   const [houseDocs, setHouseDocs] = useState([]);
   const [idDocs, setIdDocs] = useState([]);
-  const docsValid = houseDocs.length > 0 && idDocs.length > 0;
+  const [docsVerificationResult, setDocsVerificationResult] = useState(null);
+  const [isVerifyingDocs, setIsVerifyingDocs] = useState(false);
+  const docsUploaded = houseDocs.length > 0 && idDocs.length > 0;
+  const docsValid = Boolean(
+    docsVerificationResult?.cccdVerified && docsVerificationResult?.houseDocVerified
+  );
   const listingFee = useMemo(() => {
     return listingMode === "sale" ? 500000 : 300000;
   }, [listingMode]);
@@ -163,6 +168,17 @@ export default function AddPropertyWizard() {
     mode: 'onSubmit'
   })
 
+  const buildPropertyVerificationPayload = useCallback(() => {
+    const snapshot = form.getValues()
+    return {
+      title: snapshot.title,
+      area: snapshot.area,
+      purpose: snapshot.purpose,
+      price: snapshot.price,
+      address: snapshot.address || {}
+    }
+  }, [form])
+
   // Demo login cần phải xóa
   // useEffect(() => {
   //   const login = async () => {
@@ -177,6 +193,7 @@ export default function AddPropertyWizard() {
     const arr = Array.from(files);
     if (kind === "house") setHouseDocs(arr);
     else setIdDocs(arr);
+    setDocsVerificationResult(null);
   }
 
   const getAddressComponent = (components = [], type) =>
@@ -280,6 +297,54 @@ export default function AddPropertyWizard() {
     reverseGeocodeCoordinates(marker.lat, marker.lng);
   };
 
+  const handleVerifyDocuments = async () => {
+    if (!docsUploaded) {
+      toast.error("Please upload both ID and house documents before verifying.");
+      return;
+    }
+
+    try {
+      setIsVerifyingDocs(true);
+      setDocsVerificationResult(null);
+      const payload = new FormData();
+      idDocs.forEach(file => payload.append("idDocs", file));
+      houseDocs.forEach(file => payload.append("houseDocs", file));
+      payload.append("propertyData", JSON.stringify(buildPropertyVerificationPayload()));
+
+      const response = await verifyPropertyDocumentsAPI(payload);
+      const analysis = response?.data || {};
+      setDocsVerificationResult({
+        cccdVerified: Boolean(
+          analysis.cccd?.verificationResult?.isUserMatch &&
+          analysis.cccd?.verificationResult?.isFormatValid
+        ),
+        houseDocVerified: Boolean(
+          analysis.houseDoc?.verificationResult?.isAddressMatch &&
+          analysis.houseDoc?.verificationResult?.isAreaMatch &&
+          analysis.houseDoc?.verificationResult?.isFormatValid
+        ),
+        cccd: analysis.cccd,
+        houseDoc: analysis.houseDoc,
+      });
+      toast.success(response?.message || "Documents verified successfully.");
+    } catch (error) {
+      console.error("Document verification failed:", error);
+      const apiData = error?.response?.data?.data;
+      setDocsVerificationResult({
+        cccdVerified: Boolean(apiData?.cccd?.verificationResult?.isUserMatch),
+        houseDocVerified: Boolean(
+          apiData?.houseDoc?.verificationResult?.isAddressMatch &&
+          apiData?.houseDoc?.verificationResult?.isAreaMatch
+        ),
+        cccd: apiData?.cccd,
+        houseDoc: apiData?.houseDoc,
+      });
+      toast.error(error?.response?.data?.message || "Failed to verify documents.");
+    } finally {
+      setIsVerifyingDocs(false);
+    }
+  };
+
   const handleContinueFromStep1 = async () => {
     const isValid = await form.trigger([
       "title",
@@ -310,7 +375,7 @@ export default function AddPropertyWizard() {
 
   const handleContinueFromStep2 = () => {
     if (!docsValid) {
-      toast.error("Please upload ID card and house ownership documents.");
+      toast.error("Please complete AI verification for both ID and property documents.");
       return;
     }
     setStep(3);
@@ -353,6 +418,12 @@ export default function AddPropertyWizard() {
     'address.street'
   ]);
   const purposeValue = form.watch('purpose')
+  const areaValue = form.watch('area')
+  const addressFingerprint = useMemo(
+    () => [province, district, ward, street, areaValue].join('|'),
+    [province, district, ward, street, areaValue]
+  )
+  const addressFingerprintRef = useRef(addressFingerprint)
 
 useEffect(() => {
   if (!purposeValue) return
@@ -361,6 +432,13 @@ useEffect(() => {
     form.setValue('price.period', 'other')
   }
 }, [purposeValue, form])
+
+useEffect(() => {
+  if (addressFingerprintRef.current === addressFingerprint) return
+  addressFingerprintRef.current = addressFingerprint
+  if (!docsVerificationResult) return
+  setDocsVerificationResult(null)
+}, [addressFingerprint, docsVerificationResult])
 
   // Set fullAddress
   const handleSearch = () => {
@@ -410,7 +488,7 @@ useEffect(() => {
   // ========== function onSubmit ==========
   const onSubmit = async (data) => {
     if (!docsValid) {
-      toast.error("Please upload the required verification documents before publishing.");
+      toast.error("Please complete the document verification step before publishing.");
       setStep(2);
       return;
     }
@@ -1153,11 +1231,69 @@ useEffect(() => {
                     )}
                   </div>
                 </CardContent>
+                <CardContent className="space-y-4 border-t pt-6">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-medium">AI verification status</p>
+                      <p className="text-xs text-muted-foreground">
+                        Gemini Vision sẽ đối chiếu CCCD và giấy tờ nhà với dữ liệu bạn nhập ở bước trước.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleVerifyDocuments}
+                      disabled={!docsUploaded || isVerifyingDocs}
+                    >
+                      {isVerifyingDocs
+                        ? "Verifying..."
+                        : docsValid
+                          ? "Re-run verification"
+                          : "Verify documents"}
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">CCCD</p>
+                      <p className={cn(
+                        "text-sm font-semibold",
+                        docsVerificationResult?.cccdVerified ? "text-green-600" : "text-amber-600"
+                      )}>
+                        {docsVerificationResult?.cccdVerified ? "Verified" : "Pending verification"}
+                      </p>
+                      {docsVerificationResult?.cccd?.verificationResult?.mismatchDetails && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {docsVerificationResult.cccd.verificationResult.mismatchDetails}
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">House document</p>
+                      <p className={cn(
+                        "text-sm font-semibold",
+                        docsVerificationResult?.houseDocVerified ? "text-green-600" : "text-amber-600"
+                      )}>
+                        {docsVerificationResult?.houseDocVerified ? "Verified" : "Pending verification"}
+                      </p>
+                      {docsVerificationResult?.houseDoc?.verificationResult?.mismatchDetails && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {docsVerificationResult.houseDoc.verificationResult.mismatchDetails}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {!docsValid && (
+                    <p className="text-xs text-amber-600">
+                      Tải đủ giấy tờ và chạy xác thực AI để mở khóa bước tiếp theo.
+                    </p>
+                  )}
+                </CardContent>
               </Card>
 
               <div className="flex items-center justify-between">
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                <Button onClick={handleContinueFromStep2} disabled={!docsValid}>Continue</Button>
+                <Button onClick={handleContinueFromStep2} disabled={!docsValid || isVerifyingDocs}>
+                  Continue
+                </Button>
               </div>
             </div>
           )}
