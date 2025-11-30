@@ -175,15 +175,17 @@ const runStructuredVision = async (file, prompt, schema) => {
   const model = ensureModel(schema)
   const inlineData = bufferToInlineData(file)
 
-  const result = await model.generateContent([
-    {
-      role: "user",
-      parts: [
-        { text: prompt.trim() },
-        inlineData
+  const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt.trim() },
+            inlineData
+          ]
+        }
       ]
-    }
-  ])
+    })
 
   const text = result.response.text()
 
@@ -207,4 +209,5 @@ export const documentVerificationService = {
   verifyCCCD,
   verifyHouseDocument
 }
+
 
