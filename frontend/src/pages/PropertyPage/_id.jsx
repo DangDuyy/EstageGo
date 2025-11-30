@@ -6,9 +6,7 @@ import PropertyDetail from '@/components/common/Property/details'
 function PropertyPage() {
   return (
     <>
-      <MainLayout>
-        <PropertyDetail />
-      </MainLayout>
+      <PropertyDetail />
     </>
   )
 }
