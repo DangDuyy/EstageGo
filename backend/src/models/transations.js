@@ -11,7 +11,8 @@ const PAYMENT_METHOD = {
     VNPAY: 'vnpay',
     MOMO: 'momo',
     BANK_TRANSFER: 'bank_transfer',
-    CASH: 'cash'
+    CASH: 'cash',
+    WALLET: 'wallet'
 }
 
 const transactionSchema = new mongoose.Schema({

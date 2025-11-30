@@ -192,11 +192,18 @@ const propertySchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    listingFee: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     expireAt: {
         type: Date,
         default: null
     }
 }, { timestamps: true })
+
+propertySchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 }); // optional TTL if you want auto-remove; else keep and set private via a job
 
 const propertyModel = mongoose.model('Property', propertySchema)
 
