@@ -19,25 +19,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, getAllProvinces, getProvince, verifyPropertyDocumentsAPI } from "@/apis";
+import { createProperty, getAllProvinces, getBalanceAPI, getProvince, verifyPropertyDocumentsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"; // Assuming TabsContent is here
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import TourLinkModal from "@/components/common/Upload/tour-link-modal";
 import MapContainer from "@/components/common/GoogleMap/MapContainer";
 import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
+import { selectCurrentUser } from "@/redux/user/userSlice";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
-// const brokers = [ ... ]; // Not used, removed
 const currencies = ['VND', 'USD', 'EUR']
 const period = ['month', 'year', 'other']
 
-// 🚨 DỮ LIỆU MOCK THÊM VÀO ĐỂ SỬA LỖI STEP 3 
+// DỮ LIỆU MOCK CHO PLAN LISTING
 const planInfo = {
     basic: { label: 'Basic Listing', discount: 0, expirySale: 30, expiryRent: 15 },
     standard: { label: 'Standard Listing', discount: 10, expirySale: 60, expiryRent: 30 },
@@ -50,7 +50,15 @@ const planOrder = { basic: 1, standard: 2, premium: 3 };
 const currency = (n) =>
     Number(n || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 
-// Stepper component remains mostly the same
+// Helper to normalize strings for comparison (removes 'Thành phố', 'Tỉnh')
+const normalizeName = (name) => {
+    if (!name) return "";
+    return name
+        .toLowerCase()
+        .replace(/thành phố|tỉnh|quận|huyện|phường|xã/g, "")
+        .trim();
+};
+
 function Stepper({ step, setStep }) {
     const items = ["Listing Details", "Verify Documents", "Agent & Payment"];
     return (
@@ -90,7 +98,7 @@ function Stepper({ step, setStep }) {
 const propertyDefaultValue = {
     title: '',
     description: '',
-    area: 0, // Added default area for form.watch dependency
+    area: 0,
     type: '',
     address: {
         province: '',
@@ -120,8 +128,11 @@ const propertyDefaultValue = {
 
 export default function AddPropertyWizard() {
     const navigate = useNavigate();
-    const membershipLevel = useSelector(state => state.auth?.currentUser?.membershipLevel) || 'basic';
-    const { loaded } = useContext(MapsContext); // Added missing MapsContext import
+    const currentUser = useSelector(selectCurrentUser)
+    const membershipLevel = currentUser.membershipLevel
+    // 🚨 THÊM BALANCE CỦA NGƯỜI DÙNG TỪ REDUX
+    const currentBalance = getBalanceAPI()
+    const { loaded } = useContext(MapsContext);
 
     // ----- Step control -----
     const [step, setStep] = useState(1);
@@ -130,11 +141,9 @@ export default function AddPropertyWizard() {
     const [phoneModalOpen, setPhoneModalOpen] = useState(true);
     const [phone, setPhone] = useState("");
     const [isSending, setIsSending] = useState(false);
-    // Setting to true to skip modal for now as real SMS logic is missing
     const [isPhoneVerified, setIsPhoneVerified] = useState(true);
 
     // ----- Listing info (Step 1) -----
-    // const [listingMode, setListingMode] = useState("sale"); // Can be derived from form value
     const [visibility, setVisibility] = useState("public");
 
     const [fullAddress, setFullAddress] = useState("");
@@ -143,7 +152,7 @@ export default function AddPropertyWizard() {
     const [wards, setWards] = useState([]);
     const skipGeocodeRef = useRef(false);
 
-    // ----- Documents + Payment (Step 2) -----
+    // ----- Documents + Payment (Step 2 & 3) -----
     const [houseDocs, setHouseDocs] = useState([]);
     const [idDocs, setIdDocs] = useState([]);
     const [docsVerificationResult, setDocsVerificationResult] = useState(null);
@@ -152,9 +161,13 @@ export default function AddPropertyWizard() {
     const docsValid = Boolean(
         docsVerificationResult?.cccdVerified && docsVerificationResult?.houseDocVerified
     );
-
-    // 🚨 STATE MỚI ĐƯỢC THÊM VÀO ĐỂ SỬA LỖI STEP 3
     const [selectedPlan, setSelectedPlan] = useState(membershipLevel);
+    
+    // 🚨 STATE MỚI CHO DIALOG LỖI THANH TOÁN
+    const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+    const [requiredFee, setRequiredFee] = useState(0);
+    const [serverMsg, setServerMsg] = useState("");
+
 
     // ----- Map State (Step 1) -----
     const [center, setCenter] = useState({ lat: 10.762622, lng: 106.660172 });
@@ -165,7 +178,7 @@ export default function AddPropertyWizard() {
     const form = useForm({
         defaultValues: propertyDefaultValue,
         resolver: zodResolver(propertySchema),
-        mode: 'onBlur', // Changed to 'onBlur' for better UX
+        mode: 'onBlur',
     })
 
     // Watch values for fee calculation and address change
@@ -215,7 +228,7 @@ export default function AddPropertyWizard() {
 
     const discounts = { basic: 0, standard: 10, premium: 30 };
 
-    // 🚨 CẬP NHẬT LOGIC TÍNH PHÍ DỰA TRÊN selectedPlan
+    // CẬP NHẬT LOGIC TÍNH PHÍ DỰA TRÊN selectedPlan
     const listingFee = useMemo(() => {
         const plan = planInfo[selectedPlan] || planInfo[membershipLevel] || planInfo.basic;
         const v = Number(priceValue || 0);
@@ -260,14 +273,14 @@ export default function AddPropertyWizard() {
         setDocsVerificationResult(null);
     }
 
-    // Google Maps utility functions (Không thay đổi)
+    // Google Maps utility functions
     const getAddressComponent = (components = [], type) =>
         components.find((c) => c.types.includes(type))?.long_name || "";
 
-    const populateAddressFromComponents = (components = [], fallbackStreet = "") => {
-        const provinceName = getAddressComponent(components, "administrative_area_level_1");
-        const districtName = getAddressComponent(components, "administrative_area_level_2");
-        const wardName =
+    const populateAddressFromComponents = useCallback((components = [], fallbackStreet = "") => {
+        const mapsProvinceName = getAddressComponent(components, "administrative_area_level_1");
+        const mapsDistrictName = getAddressComponent(components, "administrative_area_level_2");
+        const mapsWardName =
             getAddressComponent(components, "administrative_area_level_3") ||
             getAddressComponent(components, "sublocality_level_1");
         const streetNumber = getAddressComponent(components, "street_number");
@@ -275,17 +288,30 @@ export default function AddPropertyWizard() {
         const streetValue = [streetNumber, routeName].filter(Boolean).join(" ") || fallbackStreet;
 
         const newValues = {};
-        if (provinceName) newValues['address.province'] = provinceName;
-        if (districtName) newValues['address.district'] = districtName;
-        if (wardName) newValues['address.ward'] = wardName;
+        
+        // 1. CHUẨN HÓA VÀ ĐỐI CHIẾU TỈNH/THÀNH PHỐ
+        if (mapsProvinceName) {
+            const normalizedMapsProvince = normalizeName(mapsProvinceName);
+            const matchingProvince = provinces.find(p => normalizeName(p.name) === normalizedMapsProvince || p.name === mapsProvinceName);
+            if (matchingProvince) {
+                newValues['address.province'] = matchingProvince.name;
+            } else {
+                 newValues['address.province'] = mapsProvinceName;
+            }
+        }
+
+        if (mapsDistrictName) newValues['address.district'] = mapsDistrictName;
+        if (mapsWardName) newValues['address.ward'] = mapsWardName;
         if (streetValue) newValues['address.street'] = streetValue;
 
+        // Apply changes
         Object.entries(newValues).forEach(([key, value]) => {
             if (form.getValues(key) !== value) {
                 form.setValue(key, value, { shouldDirty: true });
             }
         });
-    };
+    }, [form, provinces]);
+
 
     const handleGeocodeSuccess = useCallback(
         (results, { updateFullAddress = false } = {}) => {
@@ -307,6 +333,7 @@ export default function AddPropertyWizard() {
 
             setCenter({ lat, lng });
             form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
+            
             populateAddressFromComponents(primary.address_components, primary.formatted_address);
 
             if (updateFullAddress && primary.formatted_address) {
@@ -314,7 +341,7 @@ export default function AddPropertyWizard() {
                 setFullAddress(primary.formatted_address);
             }
         },
-        [form]
+        [form, populateAddressFromComponents]
     );
 
     const reverseGeocodeCoordinates = useCallback(
@@ -501,8 +528,7 @@ export default function AddPropertyWizard() {
             toast.error("Please complete AI verification.")
             return
         }
-        // 🚨 KHỞI TẠO selectedPlan KHI CHUYỂN SANG STEP 3
-        setSelectedPlan(membershipLevel); 
+        setSelectedPlan(membershipLevel);
         setStep(3)
     };
 
@@ -580,58 +606,68 @@ export default function AddPropertyWizard() {
         }, 900);
     }
 
-    // 🚨 HÀM XỬ LÝ CHỌN PLAN
+    // HÀM XỬ LÝ CHỌN PLAN
     const handleSelectPlan = (plan) => {
         if (planOrder[plan] > planOrder[membershipLevel]) {
             toast.warn(`Your current membership (${membershipLevel}) doesn't support the ${planInfo[plan].label} plan. Please upgrade first.`);
-            // Có thể thêm logic điều hướng đến trang nâng cấp ở đây
         }
         setSelectedPlan(plan);
     };
 
     // Final submission
     const onSubmit = async (data) => {
-      console.log('[onSubmit] data snapshot:', data);
-      if (!docsValid) {
-        toast.error("Please verify documents first.");
-        setStep(2);
-        return;
-      }
-      // Extra guard (address & coords)
-      const coords = data?.address?.location?.coordinates;
-      if (!coords || coords.length !== 2) {
-        toast.error("Missing map coordinates.");
-        setStep(1);
-        return;
-      }
-      const formData = new FormData();
-      for (const key in data) {
-        if (key !== "files") {
-          const value = data[key];
-            if (typeof value === "object") formData.append(key, JSON.stringify(value));
-            else formData.append(key, value);
+        console.log('[onSubmit] data snapshot:', data);
+        if (!docsValid) {
+            toast.error("Please verify documents first.");
+            setStep(2);
+            return;
         }
-      }
-      formData.append("selectedPlan", selectedPlan);
-      formData.append("listingFeeClient", String(listingFee));
+        // Extra guard (address & coords)
+        const coords = data?.address?.location?.coordinates;
+        if (!coords || coords.length !== 2) {
+            toast.error("Missing map coordinates.");
+            setStep(1);
+            return;
+        }
 
-      // ONLY listing images
-      if (Array.isArray(data.files)) data.files.forEach(f => formData.append("files", f));
+        const formData = new FormData();
+        for (const key in data) {
+            if (key !== "files") {
+                const value = data[key];
+                if (typeof value === "object" && value !== null) formData.append(key, JSON.stringify(value));
+                else formData.append(key, value);
+            }
+        }
+        formData.append("selectedPlan", selectedPlan);
+        formData.append("listingFeeClient", String(listingFee));
 
-      // REMOVE these (caused Multer unexpected field)
-      // houseDocs.forEach(f => formData.append("houseDocs", f));
-      // idDocs.forEach(f => formData.append("idDocs", f));
+        // ONLY listing images
+        if (Array.isArray(data.files)) data.files.forEach(f => formData.append("files", f));
 
-      try {
-        console.log('[onSubmit] Sending FormData to API');
-        await createProperty(formData);
-        console.log('[onSubmit] Success');
-        toast.success("Listing published.");
-        navigate("/dashboard/posts");
-      } catch (error) {
-        console.error('[onSubmit] API error:', error);
-        toast.error(error?.response?.data?.message || "Failed to publish listing.");
-      }
+        // Note: houseDocs and idDocs files are handled separately in verification and should be excluded from final post unless backend explicitly needs them here again.
+
+        try {
+            console.log('[onSubmit] Sending FormData to API');
+            await createProperty(formData);
+            console.log('[onSubmit] Success');
+            toast.success("Listing published.");
+            navigate("/dashboard/posts");
+        } catch (error) {
+            console.error('[onSubmit] API error:', error);
+            const status = error?.response?.status;
+            const payload = error?.response?.data;
+            
+            // 🚨 XỬ LÝ LỖI 402 PAYMENT REQUIRED
+            if (status === 402) {
+                const required = Number(payload?.required ?? listingFee);
+                setRequiredFee(required);
+                setServerMsg(payload?.message || "Insufficient balance to pay listing fee");
+                setDepositDialogOpen(true);
+                return;
+            }
+            
+            toast.error(payload?.message || "Failed to publish listing.");
+        }
     };
 
     // ----- Render -----
@@ -640,10 +676,9 @@ export default function AddPropertyWizard() {
             <Stepper step={step} setStep={setStep} />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    {/* STEP 1: Listing Details (KHÔNG THAY ĐỔI) */}
+                    {/* STEP 1: Listing Details */}
                     {step === 1 && (
                         <div className="min-h-screen">
-                            {/* ... Phần code của Step 1 không thay đổi ... */}
                             <Card className="mb-8">
                                 <CardHeader><CardTitle>Status</CardTitle></CardHeader>
                                 <CardContent className="flex flex-wrap items-center gap-3">
@@ -1220,10 +1255,9 @@ export default function AddPropertyWizard() {
                         </div>
                     )}
 
-                    {/* STEP 2: Verify Documents (KHÔNG THAY ĐỔI) */}
+                    {/* STEP 2: Verify Documents */}
                     {step === 2 && (
                         <div className="min-h-screen">
-                            {/* ... Phần code của Step 2 không thay đổi ... */}
                             <Card className="mb-8">
                                 <CardHeader><CardTitle>Verify documents</CardTitle></CardHeader>
                                 <CardContent className="grid gap-6 md:grid-cols-2">
@@ -1343,7 +1377,7 @@ export default function AddPropertyWizard() {
                         </div>
                     )}
 
-                    {/* 🚨 STEP 3: Agent & Payment (ĐÃ CHỈNH SỬA) */}
+                    {/* STEP 3: Agent & Payment */}
                     {step === 3 && (
                         <div className="min-h-screen">
                             <Card className="mb-6">
@@ -1433,6 +1467,45 @@ export default function AddPropertyWizard() {
                     )}
                 </form>
             </Form>
+            
+            {/* 🚨 DIALOG XỬ LÝ LỖI THANH TOÁN (HTTP 402) */}
+            <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Payment Required</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 text-sm">
+                        <p className="text-red-600 font-medium">{serverMsg}</p>
+                        <p>Required fee: <strong>{currency(requiredFee)}</strong></p>
+                        <p>Your current balance: <strong>{currency(currentBalance)}</strong></p>
+                        <p className="text-muted-foreground">
+                            You must top up your balance or select a lower listing plan to continue.
+                        </p>
+                    </div>
+                    <DialogFooter className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                // Tự động chọn plan thấp nhất có thể (chỉ chọn Basic)
+                                setSelectedPlan('basic');
+                                setDepositDialogOpen(false);
+                                toast.info("Switched to Basic plan. Review the new fee and try publishing again.");
+                            }}
+                        >
+                            Choose Basic plan
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setDepositDialogOpen(false);
+                                toast.warn(`Redirecting to Deposit...`);
+                                navigate("/dashboard/deposit"); // Giả định có route này
+                            }}
+                        >
+                            Deposit now
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </ContentLayout>
     );
 }

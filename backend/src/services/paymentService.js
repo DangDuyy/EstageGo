@@ -223,7 +223,7 @@ const deductBalance = async ({ userId, amount, description, referenceId }) => {
       type: 'fee',
       amount,
       status: 'completed',
-      paymentMethod: 'Wallet', // or 'cash' if internal
+      paymentMethod: 'wallet', // or 'cash' if internal
       description: description || 'Create post',
       referenceId: referenceId || null
     })
