@@ -146,12 +146,6 @@ const userSchema = new mongoose.Schema({
         enum: ['basic', 'standard', 'premium'],
         default: 'basic'
     },
-    wallet: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Wallet',
-        default: null, // Sẽ được tạo và liên kết ngay sau khi User đăng ký
-        sparse: true
-    },
     balance: {
         type: Number,
         default: 0,
@@ -184,28 +178,6 @@ userSchema.pre('findOneAndUpdate', function() {
   
   if (!update.$set) update.$set = {}
   update.$set.updatedAt = new Date()
-})
-
-userSchema.post('save', async function(doc, next) {
-    if (doc.role === USER_ROLE.USER || doc.role === USER_ROLE.AGENT) {
-        try {
-            // Khởi tạo ví mới với balance = 0
-            const newWallet = new walletModel({
-                user: doc._id,
-                balance: 0,
-                currency: 'VND' // Đơn vị tiền tệ mặc định
-            })
-            await newWallet.save()
-            
-            // Cập nhật lại user document với ID của ví (optional)
-            doc.wallet = newWallet._id
-            await doc.save() 
-
-        } catch (error) {
-            console.error("Failed to create wallet for user:", error)
-        }
-    }
-    next()
 })
 
 const userModel = mongoose.model('User', userSchema)

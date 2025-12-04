@@ -63,14 +63,6 @@ const MENU = [
         ],
       },
       {
-        heading: "Pricing & Analytics",
-        items: [
-          { label: "Automated Valuation (AVM)", to: "/ai/price-estimator", desc: "Estimate price from area, size, amenities" },
-          { label: "Price Trend Forecast", to: "/ai/price-forecast", desc: "Short-term predictions by location" },
-          { label: "Fraud Detection", to: "/ai/fraud-detection", desc: "Risk scoring for listings & sellers" },
-        ],
-      },
-      {
         heading: "Media & Assistant",
         items: [
           { label: "Image Tagging", to: "/ai/image-tagging", desc: "Auto-detect kitchen, living room, balcony…" },
@@ -248,7 +240,7 @@ function MegaItem({ item, pathname }) {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" side="bottom" className="p-4 mt-5">
-          <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+          <div className="grid gap-6 lg:grid-cols-2 md:grid-cols-2 grid-cols-1">
             {item.columns?.map((col, idx) => (
               <ul key={idx} className="space-y-2">
                 {col.heading && (

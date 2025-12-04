@@ -7,148 +7,205 @@ import { propertyKnowledgeService } from "~/services/propertyKnowledgeService"
 import { imageTaggingService } from "~/services/imageTaggingService"
 import { documentVerificationService } from "~/services/documentVerificationService"
 import { env } from "~/config/environment"
+import { StatusCodes } from "http-status-codes"
+import { propertyService } from "~/services/propertyService"
+import paymentService from "~/services/paymentService"
 
-const { StatusCodes } = require("http-status-codes")
-const { propertyService } = require("~/services/propertyService")
+const safeParse = (v) => {
+  if (typeof v === 'string') {
+    try { return JSON.parse(v) } catch { return v }
+  }
+  return v
+}
+
+const computeSaleBase = (v) => {
+  if (v < 500_000_000) return 300_000
+  if (v <= 2_000_000_000) return 600_000
+  return 1_000_000
+}
+const computeRentBase = (v) => {
+  if (v < 10_000_000) return 150_000
+  if (v <= 30_000_000) return 300_000
+  return 600_000
+}
 
 const createProperty = async (req, res, next) => {
-    try {
-        const objectFields = ["price", "address", "rooms"];
-        objectFields.forEach((key) => {
-            if (req.body[key]) req.body[key] = JSON.parse(req.body[key]);
-        });
+  try {
+    // Normalize complex fields from multipart
+    const body = { ...req.body }
+    body.price = safeParse(body.price)
+    body.address = safeParse(body.address)
+    body.rooms = safeParse(body.rooms)
 
-        const owner = req.jwtDecoded._id
-        
-        // Lấy thông tin user để xác định postType dựa trên membershipLevel
-        const user = await propertyService.getUserById(owner)
-        const postType = user?.membershipLevel === 'premium' ? 'vip' : 'normal'
-        
-        const propertyData = {
-            ...req.body,
-            owner,
-            postType
-        }
+    const owner = req.jwtDecoded?._id
+    if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
 
-        console.log(propertyData)
+    const user = await propertyService.getUserById(owner)
+    if (!user) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User not found" })
 
-        // 1. Tạo property
-        const newProperty = await propertyService.createProperty(propertyData)
+    const membership = user.membershipLevel || 'basic'
+    const purpose = body.purpose === 'rent' ? 'rent' : 'sale'
+    const propertyPriceValue = Number(body?.price?.value || 0)
 
-        // 2. Upload file
-        const files = req.files || []
-        const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
+    const baseFee = purpose === 'rent' ? computeRentBase(propertyPriceValue) : computeSaleBase(propertyPriceValue)
+    const discountPercent = membership === 'premium' ? 30 : membership === 'standard' ? 10 : 0
+    const feeAfterDiscount = Math.round(baseFee * (1 - discountPercent / 100))
 
-        // 3. Update property với media
-        const updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult)
-        res.status(StatusCodes.CREATED).json({
-            succes: true,
-            message: "Property created successfully",
-            data: updateProperty
-        })
+    let postType = 'normal'
+    let expireDays
+    if (membership === 'premium') { postType = 'vip'; expireDays = 15 }
+    else if (membership === 'standard') { expireDays = purpose === 'rent' ? 14 : 7 }
+    else { expireDays = purpose === 'rent' ? 7 : 3 }
+    const expireAt = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000)
+
+    if (user.balance < feeAfterDiscount) {
+      return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+        success: false,
+        message: "Insufficient balance to pay listing fee",
+        required: feeAfterDiscount,
+        currentBalance: user.balance
+      })
     }
-    catch (error) {
-        console.log("Error property controlelr", error)
-        next(error)
+
+    const propertyData = {
+      ...body,
+      owner,
+      postType,
+      listingFee: feeAfterDiscount,
+      expireAt,
+      visibility: 'public'
     }
+
+    const newProperty = await propertyService.createProperty(propertyData)
+
+    await paymentService.deductBalance({
+      userId: owner,
+      amount: feeAfterDiscount,
+      description: `Listing fee (${purpose}) - ${newProperty.title}`,
+      referenceId: newProperty._id.toString()
+    })
+
+    const files = req.files || []
+    let updateProperty = newProperty
+    if (files.length && mediaService?.uploadPropertyImage) {
+      const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
+      updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult.flat())
+    }
+
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: "Property created successfully",
+      data: updateProperty,
+      feeCharged: feeAfterDiscount,
+      discountPercent,
+      postType,
+      expireAt
+    })
+  } catch (error) {
+    console.error("Error createProperty:", error)
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error?.message || "Internal Server Error"
+    })
+  }
 }
 
 const verifyPropertyDocuments = async (req, res, next) => {
-    try {
-        const userId = req.jwtDecoded._id
-        const rawPropertyData = req.body?.propertyData
-        const idDocs = req.files?.idDocs || []
-        const houseDocs = req.files?.houseDocs || []
+  try {
+    const userId = req.jwtDecoded._id
+    const rawPropertyData = req.body?.propertyData
+    const idDocs = req.files?.idDocs || []
+    const houseDocs = req.files?.houseDocs || []
 
-        if (!rawPropertyData) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Property data is required for verification"
-            })
-        }
-
-        if (!idDocs.length || !houseDocs.length) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Both ID documents and house documents are required"
-            })
-        }
-
-        let propertyData
-        try {
-            propertyData = typeof rawPropertyData === "string"
-                ? JSON.parse(rawPropertyData)
-                : rawPropertyData
-        } catch (parseError) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: "Property data payload is invalid JSON"
-            })
-        }
-
-        const normalizedPropertyData = {
-            ...propertyData,
-            address: propertyData?.address || {}
-        }
-
-        const user = await propertyService.getUserById(userId)
-
-        if (!user) {
-            return res.status(StatusCodes.NOT_FOUND).json({
-                success: false,
-                message: "User not found"
-            })
-        }
-
-        const userInfo = {
-            fullName: user.fullName || user.userName,
-            dob: user.dob
-        }
-
-        const cccdAnalysis = await documentVerificationService.verifyCCCD({
-            file: idDocs[0],
-            userInfo
-        })
-
-        if (!cccdAnalysis?.verificationResult?.isUserMatch || !cccdAnalysis?.verificationResult?.isFormatValid) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: cccdAnalysis?.verificationResult?.mismatchDetails || "CCCD verification failed",
-                data: {
-                    cccd: cccdAnalysis
-                }
-            })
-        }
-
-        const houseDocAnalysis = await documentVerificationService.verifyHouseDocument({
-            file: houseDocs[0],
-            propertyData: normalizedPropertyData
-        })
-
-        const verification = houseDocAnalysis?.verificationResult || {}
-        if (!verification.isFormatValid || !verification.isAddressMatch || !verification.isAreaMatch) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                success: false,
-                message: verification.mismatchDetails || "House document does not match listing details",
-                data: {
-                    cccd: cccdAnalysis,
-                    houseDoc: houseDocAnalysis
-                }
-            })
-        }
-
-        return res.status(StatusCodes.OK).json({
-            success: true,
-            message: "Documents verified successfully",
-            data: {
-                cccd: cccdAnalysis,
-                houseDoc: houseDocAnalysis
-            }
-        })
-    } catch (error) {
-        console.error("Error verifying property documents:", error)
-        next(error)
+    if (!rawPropertyData) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Property data is required for verification"
+      })
     }
+
+    if (!idDocs.length || !houseDocs.length) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Both ID documents and house documents are required"
+      })
+    }
+
+    let propertyData
+    try {
+      propertyData = typeof rawPropertyData === "string"
+        ? JSON.parse(rawPropertyData)
+        : rawPropertyData
+    } catch (parseError) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Property data payload is invalid JSON"
+      })
+    }
+
+    const normalizedPropertyData = {
+      ...propertyData,
+      address: propertyData?.address || {}
+    }
+
+    const user = await propertyService.getUserById(userId)
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "User not found"
+      })
+    }
+
+    const userInfo = {
+      fullName: user.fullName || user.userName,
+      dob: user.dob
+    }
+
+    const cccdAnalysis = await documentVerificationService.verifyCCCD({
+      file: idDocs[0],
+      userInfo
+    })
+
+    if (!cccdAnalysis?.verificationResult?.isUserMatch || !cccdAnalysis?.verificationResult?.isFormatValid) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: cccdAnalysis?.verificationResult?.mismatchDetails || "CCCD verification failed",
+        data: {
+          cccd: cccdAnalysis
+        }
+      })
+    }
+
+    const houseDocAnalysis = await documentVerificationService.verifyHouseDocument({
+      file: houseDocs[0],
+      propertyData: normalizedPropertyData
+    })
+
+    const verification = houseDocAnalysis?.verificationResult || {}
+    if (!verification.isFormatValid || !verification.isAddressMatch || !verification.isAreaMatch) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: verification.mismatchDetails || "House document does not match listing details",
+        data: {
+          cccd: cccdAnalysis,
+          houseDoc: houseDocAnalysis
+        }
+      })
+    }
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Documents verified successfully",
+      data: {
+        cccd: cccdAnalysis,
+        houseDoc: houseDocAnalysis
+      }
+    })
+  } catch (error) {
+    console.error("Error verifying property documents:", error)
+    next(error)
+  }
 }
 
 const uploadPropertyMedia = async (req, res, next) => {

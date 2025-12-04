@@ -210,47 +210,25 @@ const getTransactionDetail = async ({ userId, transactionId }) => {
 // Deduct balance for fees (VIP posts, ads, etc.)
 const deductBalance = async ({ userId, amount, description, referenceId }) => {
   try {
-    const user = await userModel.findById(userId).select('balance userName')
+    const user = await userModel.findById(userId)
+    if (!user) throw new Error("User not found")
+    if (user.balance < amount) throw new Error("Insufficient balance")
 
-    if (!user) {
-      throw new Error('User not found')
-    }
+    user.balance = user.balance - amount
+    await user.save()
 
-    if (user.balance < amount) {
-      throw new Error('Insufficient balance')
-    }
-
-    // Generate unique order ID for fee transaction
-    const orderId = `FEE${Date.now()}${uuidv4().split('-')[0].toUpperCase()}`
-
-    // Create fee transaction
     const transaction = await transactionModel.create({
       user: userId,
-      orderId,
+      orderId: `FEE${Date.now()}${uuidv4().split('-')[0].toUpperCase()}`,
       type: 'fee',
       amount,
       status: 'completed',
-      paymentMethod: 'vnpay',
-      description: description || 'Fee deduction',
-      referenceId
+      paymentMethod: 'wallet', // or 'cash' if internal
+      description: description || 'Create post',
+      referenceId: referenceId || null
     })
 
-    // Deduct balance from user
-    await userModel.findByIdAndUpdate(
-      userId,
-      { $inc: { balance: -amount } }
-    )
-
-    console.log('💸 Balance deducted')
-    console.log('  - User:', user.userName)
-    console.log('  - Amount:', amount.toLocaleString('vi-VN'), 'VND')
-    console.log('  - New balance:', (user.balance - amount).toLocaleString('vi-VN'), 'VND')
-
-    return {
-      success: true,
-      transaction,
-      newBalance: user.balance - amount
-    }
+    return { success: true, transactionId: transaction._id }
   } catch (error) {
     console.error('❌ Deduct balance error:', error)
     throw error

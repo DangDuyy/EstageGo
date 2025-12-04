@@ -42,7 +42,7 @@ function App() {
       <SocketManager />
       <Routes>
         {/* redirect route */}
-        <Route path="/" element={<Navigate to="/home" replace={true} />} />
+        <Route path="/home" element={<Navigate to="/" replace={true} />} />
 
         <Route path="/" element={<MainLayout />} >
           <Route index element={<HomePage />} />
