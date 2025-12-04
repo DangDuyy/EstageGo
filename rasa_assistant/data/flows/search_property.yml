@@ -1,0 +1,99 @@
+flows:
+  real_estate_search:
+    description: |
+      Giúp người dùng tìm kiếm bất động sản tại Việt Nam.
+      Thu thập loại giao dịch (mua/thuê), tỉnh/thành phố bắt buộc.
+      Sau đó hỏi xem có muốn thêm bộ lọc chi tiết không.
+    
+    steps:
+      # Bước 1: Thu thập loại giao dịch (bắt buộc)
+      - collect: transaction_type
+        description: "Loại giao dịch: 'sale' (mua) hoặc 'rent' (thuê)."
+
+      - id: collect_property_type
+        collect: property_type
+        ask_before_filling: false
+        description: "Loại bất động sản: apartment, house, condo, land, commercial, office, villa, townhouse."
+      
+      - id: collect_min_area
+        collect: min_area
+        ask_before_filling: false
+        description: "Diện tích tối thiểu (m²)."
+      
+      - id: collect_max_area
+        collect: max_area
+        ask_before_filling: false
+        description: "Diện tích tối đa (m²)."
+      
+      - id: collect_bedrooms
+        collect: bedrooms
+        ask_before_filling: false
+        description: "Số phòng ngủ tối thiểu."
+      
+      - id: collect_bathrooms
+        collect: bathrooms
+        ask_before_filling: false
+        description: "Số phòng tắm tối thiểu."
+      
+      # - id: collect_amenities
+      #   collect: amenities
+      #   ask_before_filling: false
+      #   description: "Các tiện ích mong muốn (ví dụ: bể bơi, gym, parking)."
+      
+      - id: collect_post_type
+        collect: post_type
+        ask_before_filling: false
+        description: "Loại tin đăng: 'normal' hoặc 'vip'."
+      
+      - id: collect_year_built_min
+        collect: year_built_min
+        ask_before_filling: false
+        description: "Năm xây dựng sớm nhất."
+      
+      - id: collect_year_built_max
+        collect: year_built_max
+        ask_before_filling: false
+        description: "Năm xây dựng muộn nhất."
+
+      - collect: min_price
+        ask_before_filling: false
+        description: "Giá tối thiểu (VND)."
+
+      - collect: max_price
+        ask_before_filling: false
+        description: "Giá tối đa (VND)."
+      
+      # Bước 2: Thu thập tỉnh/thành phố (bắt buộc)
+      - collect: province
+        description: "Tên tỉnh/thành phố ở Việt Nam, ví dụ 'Hà Nội', 'TP.HCM'."
+      
+      # Bước 3: Thu thập quận/huyện (tùy chọn)
+      - collect: district
+        description: "Tên quận/huyện. Nếu user nói 'bỏ qua' hoặc 'skip', đặt giá trị là 'SKIP'."
+      
+      - noop: true
+        next:
+          - if: slots.district == "SKIP"
+            then:
+              - set_slots:
+                  - district: null
+                  - ward: null
+                next: search_step
+          - else: collect_ward
+      
+      # Bước 4: Thu thập phường/xã (tùy chọn)
+      - id: collect_ward
+        collect: ward
+        description: "Tên phường/xã. Nếu user nói 'bỏ qua' hoặc 'skip', đặt giá trị là 'SKIP'."
+      
+      - noop: true
+        next:
+          - if: slots.ward == "SKIP"
+            then:
+              - set_slots:
+                  - ward: null
+                next: search_step
+          - else: search_step
+      
+      - id: search_step
+        action: action_search_properties

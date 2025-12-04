@@ -1,0 +1,183 @@
+version: "3.1"
+
+slots:
+  # Các slot cơ bản - ảnh hưởng đến policy
+  transaction_type:
+    type: categorical
+    values:
+      - sale
+      - rent
+    mappings:
+      - type: from_llm
+  
+  province:
+    type: text
+    mappings:
+      - type: from_llm
+  
+  district:
+    type: text
+    mappings:
+      - type: from_llm
+  
+  ward:
+    type: text
+    mappings:
+      - type: from_llm
+  
+  # Các slot tìm kiếm nâng cao - KHÔNG ảnh hưởng policy
+  property_type:
+    type: categorical
+    values:
+      - apartment
+      - house
+      - condo
+      - land
+      - commercial
+      - office
+      - villa
+      - townhouse
+      - any
+    initial_value: "any"
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  min_area:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  max_area:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  bedrooms:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  bathrooms:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  # amenities:
+  #   type: text
+  #   initial_value: "none"
+  #   influence_conversation: false
+  #   mappings:
+  #     - type: from_llm
+  
+  post_type:
+    type: categorical
+    values:
+      - normal
+      - vip
+      - any
+    initial_value: "any"
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  year_built_min:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+  
+  year_built_max:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+
+  min_price:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+
+  max_price:
+    type: float
+    initial_value: 0
+    influence_conversation: false
+    mappings:
+      - type: from_llm
+
+responses:
+  utter_ask_transaction_type:
+    - text: "Bạn muốn mua hay thuê bất động sản?"
+  
+  utter_ask_province:
+    - text: "Bạn muốn tìm bất động sản ở tỉnh/thành phố nào?"
+  
+  utter_ask_district:
+    - text: "Bạn muốn tìm ở quận/huyện nào? (Nói 'bỏ qua' nếu không cần cụ thể)"
+  
+  utter_skip_district:
+    - text: "✓ Đã bỏ qua quận/huyện"
+  
+  utter_ask_ward:
+    - text: "Bạn muốn tìm ở phường/xã nào? (Nói 'bỏ qua' nếu không cần cụ thể)"
+  
+  utter_skip_ward:
+    - text: "✓ Đã bỏ qua phường/xã"
+  
+  utter_search_request_received:
+    - text: "Xác nhận lại yêu cầu của bạn: {transaction_type} tại {ward}, {district}, {province} với loại bất động sản '{property_type}', diện tích từ {min_area} đến {max_area} m², ít nhất {bedrooms} phòng ngủ, {bathrooms} phòng tắm, loại tin: {post_type}, năm xây dựng từ {year_built_min} đến {year_built_max}, với khoảng giá từ {min_price} đến {max_price}'."
+      # metadata:
+      #   rephrase: True
+        # rephrase_prompt: |
+        #   Cuộc trò chuyện sau đây là giữa người dùng và một trợ lý AI được xây dựng bằng Rasa.
+        #   Trợ lý hỗ trợ người dùng trong việc đăng tin, tìm kiếm, mua bán và cho thuê bất động sản.
+        #   Trợ lý thân thiện, thông minh, hữu ích và luôn sẵn sàng hỗ trợ.
+        #   Người dùng đang yêu cầu tìm kiếm bất động sản với các tiêu chí cụ thể, và trợ lý nên phản hồi một cách chính xác và chi tiết.
+        #   thanh phần nào chưa được set thì loại bỏ khỏi câu trả lời.
+        #   Context / previous conversation với người dùng:
+        #   {{history}}
+        #   {{current_input}}
+        #   Suggested AI Response:
+  
+  # New responses for optional filters
+  utter_ask_property_type:
+    - text: "Bạn muốn tìm loại bất động sản nào? (căn hộ, nhà, đất, văn phòng...)"
+  
+  utter_ask_min_area:
+    - text: "Diện tích tối thiểu bao nhiêu m²?"
+  
+  utter_ask_max_area:
+    - text: "Diện tích tối đa bao nhiêu m²?"
+  
+  utter_ask_bedrooms:
+    - text: "Cần ít nhất bao nhiêu phòng ngủ?"
+  
+  utter_ask_bathrooms:
+    - text: "Cần ít nhất bao nhiêu phòng tắm?"
+  
+  utter_ask_amenities:
+    - text: "Bạn cần những tiện ích gì? (bể bơi, gym, parking...)"
+  
+  utter_ask_post_type:
+    - text: "Bạn muốn xem tin thường hay tin VIP?"
+  
+  utter_ask_year_built_min:
+    - text: "Năm xây dựng sớm nhất?"
+  
+  utter_ask_year_built_max:
+    - text: "Năm xây dựng muộn nhất?"
+
+actions:
+  - action_search_properties
