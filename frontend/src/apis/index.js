@@ -245,6 +245,15 @@ export const changePasswordAPI = async (passwordData) => {
   return response.data
 }
 
+// Upgrade membership
+export const upgradeMembershipAPI = async (membershipLevel, billingCycle) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/upgrade-membership`, {
+    membershipLevel,
+    billingCycle
+  })
+  return response.data
+}
+
 // ========== AGENT APIs ==========
 
 // Get all agents with search and pagination

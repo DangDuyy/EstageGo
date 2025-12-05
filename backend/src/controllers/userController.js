@@ -4,6 +4,7 @@ import ApiError from "~/utils/ApiError"
 import ms from "ms"
 import { env } from "~/config/environment"
 import TwilioProvider from "~/providers/TwilioProvider"
+import paymentService from '~/services/paymentService'
 
 // Register - hỗ trợ email và phone
 const createNew = async (req, res, next) => {
@@ -330,6 +331,100 @@ const verifyPhoneCode = async (req, res, next) => {
   }
 }
 
+// Upgrade membership
+const upgradeMembership = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { membershipLevel, billingCycle } = req.body
+
+    if (!['standard', 'premium'].includes(membershipLevel)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid membership level'
+      })
+    }
+
+    if (!['monthly', 'yearly'].includes(billingCycle)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid billing cycle'
+      })
+    }
+
+    // Get user current membership
+    const user = await userService.getUserProfileById(userId)
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+
+    const currentLevel = user.membershipLevel || 'basic'
+
+    // Check if upgrade is valid
+    if (currentLevel === 'premium') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'You are already on the highest membership level'
+      })
+    }
+
+    if (currentLevel === 'standard' && membershipLevel === 'standard') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'You are already on this membership level'
+      })
+    }
+
+    // Calculate price
+    const prices = {
+      standard: {
+        monthly: 1000000,
+        yearly: 1000000 * 12 * 0.64
+      },
+      premium: {
+        monthly: 2000000,
+        yearly: 2000000 * 12 * 0.64
+      }
+    }
+
+    const amount = prices[membershipLevel][billingCycle]
+
+    // Check balance
+    if (user.balance < amount) {
+      return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+        success: false,
+        message: 'Insufficient balance',
+        required: amount,
+        currentBalance: user.balance
+      })
+    }
+
+    // Deduct balance
+    await paymentService.deductBalance({
+      userId,
+      amount,
+      description: `Membership upgrade to ${membershipLevel} (${billingCycle})`,
+      referenceId: `MEMBERSHIP_${membershipLevel.toUpperCase()}`
+    })
+
+    // Update membership
+    const updatedUser = await userService.updateMembership(userId, membershipLevel, billingCycle)
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Membership upgraded successfully',
+      user: updatedUser,
+      amountCharged: amount
+    })
+  } catch (error) {
+    console.error('❌ Upgrade membership error:', error)
+    next(error)
+  }
+}
+
+// Export
 export const userController = {
   createNew,
   verifyAccount,
@@ -346,5 +441,6 @@ export const userController = {
   getUserProfileById,
   getCurrentUser,
   sendPhoneVerification,
-  verifyPhoneCode
+  verifyPhoneCode,
+  upgradeMembership
 }

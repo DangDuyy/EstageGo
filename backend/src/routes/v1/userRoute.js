@@ -59,4 +59,7 @@ Router.route('/phone/send-code')
 Router.route('/phone/verify')
   .post(authMiddleware.isAuthorized, userController.verifyPhoneCode)
 
+Router.route('/upgrade-membership')
+  .post(authMiddleware.isAuthorized, userController.upgradeMembership)
+
 export const userRoutes = Router

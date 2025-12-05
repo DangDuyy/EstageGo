@@ -146,6 +146,15 @@ const userSchema = new mongoose.Schema({
         enum: ['basic', 'standard', 'premium'],
         default: 'basic'
     },
+    membershipExpireAt: {
+        type: Date,
+        default: null
+    },
+    membershipBillingCycle: {
+        type: String,
+        enum: ['monthly', 'yearly'],
+        default: null
+    },
     balance: {
         type: Number,
         default: 0,
