@@ -33,6 +33,7 @@ import PropertyPage from './pages/PropertyPage/_id'
 import MainLayout from './components/common/Layout/MainLayout'
 import DepositPage from './pages/DashboardPage/DepositPage'
 import PaymentResultPage from './pages/DashboardPage/PaymentResultPage' 
+import TransactionHistoryPage from './pages/DashboardPage/TransactionHistoryPage'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -87,6 +88,7 @@ function App() {
           <Route path="wishlist" element={<Wishlist />} />
           <Route path="plans" element={<PricingPlans />} />
           <Route path="deposit" element={<DepositPage />} />
+          <Route path="transactions" element={<TransactionHistoryPage />} />
         </Route>
 
         <Route path="/payment/result" element={<PaymentResultPage />} />

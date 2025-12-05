@@ -32,20 +32,20 @@ export default function DepositPage() {
   ];
 
   const banks = [
-    { code: 'ALL_BANKS', name: 'Tất cả ngân hàng' },
-    { code: 'VNBANK', name: 'Thẻ ATM/Internet Banking' },
-    { code: 'INTCARD', name: 'Thẻ quốc tế (Visa/Master/JCB)' },
-    { code: 'NCB', name: 'Ngân hàng NCB' },
-    { code: 'VCB', name: 'Ngân hàng Vietcombank' },
-    { code: 'TCB', name: 'Ngân hàng Techcombank' },
-    { code: 'MB', name: 'Ngân hàng MB' },
-    { code: 'VIB', name: 'Ngân hàng VIB' },
-    { code: 'ICB', name: 'Ngân hàng VietinBank' },
-    { code: 'ACB', name: 'Ngân hàng ACB' },
-    { code: 'VPB', name: 'Ngân hàng VPBank' },
-    { code: 'BIDV', name: 'Ngân hàng BIDV' },
-    { code: 'SHB', name: 'Ngân hàng SHB' },
-    { code: 'TPB', name: 'Ngân hàng TPBank' }
+    { code: 'ALL_BANKS', name: 'All Banks' },
+    { code: 'VNBANK', name: 'ATM/Internet Banking' },
+    { code: 'INTCARD', name: 'International Card (Visa/Master/JCB)' },
+    { code: 'NCB', name: 'NCB Bank' },
+    { code: 'VCB', name: 'Vietcombank' },
+    { code: 'TCB', name: 'Techcombank' },
+    { code: 'MB', name: 'MB Bank' },
+    { code: 'VIB', name: 'VIB Bank' },
+    { code: 'ICB', name: 'VietinBank' },
+    { code: 'ACB', name: 'ACB Bank' },
+    { code: 'VPB', name: 'VPBank' },
+    { code: 'BIDV', name: 'BIDV Bank' },
+    { code: 'SHB', name: 'SHB Bank' },
+    { code: 'TPB', name: 'TPBank' }
   ];
 
   // Fetch balance on mount
@@ -91,37 +91,37 @@ export default function DepositPage() {
     try {
       // Validation
       if (!depositAmount || parseInt(depositAmount) < 10000) {
-        toast.error('Số tiền nạp tối thiểu là 10.000 VND');
+        toast.error('Minimum deposit amount is 10,000đ');
         return;
       }
 
       if (parseInt(depositAmount) > 500000000) {
-        toast.error('Số tiền nạp tối đa là 500.000.000 VND');
+        toast.error('Maximum deposit amount is 500,000,000đ');
         return;
       }
 
-      // Nếu số tiền >= 2.000.000đ và chưa điền email thì yêu cầu
+      // Check email requirement for amounts >= 2,000,000đ
       if (parseInt(depositAmount) >= 2000000 && showInvoiceDetails && !userEmail) {
-        toast.error('Vui lòng nhập email để nhận hóa đơn');
+        toast.error('Please enter email to receive invoice');
         return;
       }
 
       setLoading(true);
       
-      // ✅ FIX: Convert ALL_BANKS về empty string
+      // Convert ALL_BANKS to empty string
       const finalBankCode = bankCode === 'ALL_BANKS' ? '' : bankCode;
       const response = await createPaymentAPI(parseInt(depositAmount), finalBankCode);
 
       if (response.success && response.paymentUrl) {
-        toast.success('Đang chuyển đến trang thanh toán VNPay...');
+        toast.success('Redirecting to VNPay payment page...');
         // Redirect to VNPay
         window.location.href = response.paymentUrl;
       } else {
-        toast.error('Không thể tạo URL thanh toán');
+        toast.error('Unable to create payment link');
       }
     } catch (error) {
       console.error('Failed to create payment:', error);
-      toast.error(error.response?.data?.message || 'Không thể tạo thanh toán');
+      toast.error(error.response?.data?.message || 'Unable to create payment');
     } finally {
       setLoading(false);
     }
@@ -138,10 +138,10 @@ export default function DepositPage() {
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Quay lại Dashboard
+            Back to Dashboard
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Nạp tiền vào tài khoản</h1>
-          <p className="text-gray-600 mt-2">Chọn số tiền và phương thức thanh toán</p>
+          <h1 className="text-3xl font-bold text-gray-900">Deposit to Account</h1>
+          <p className="text-gray-600 mt-2">Choose amount and payment method</p>
         </div>
 
         {/* Current Balance Card */}
@@ -149,7 +149,7 @@ export default function DepositPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-90 mb-1">Số dư hiện tại</p>
+                <p className="text-sm opacity-90 mb-1">Current Balance</p>
                 <p className="text-3xl font-bold">{formatCurrency(currentBalance)} đ</p>
               </div>
               <Wallet className="w-12 h-12 opacity-80" />
@@ -162,22 +162,22 @@ export default function DepositPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
-              Thông tin nạp tiền
+              Deposit Information
             </CardTitle>
             <CardDescription>
-              Nạp tối thiểu 10.000đ để được nhận khuyến mãi
+              Minimum deposit of 10,000đ to receive promotions
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Amount Input */}
             <div className="space-y-2">
               <Label htmlFor="amount" className="text-base font-medium">
-                Nhập số tiền bạn muốn nạp (đ) <span className="text-red-500">*</span>
+                Enter amount you want to deposit (đ) <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="amount"
                 type="number"
-                placeholder="Nạp từ 10.000 đ"
+                placeholder="Deposit from 10,000 đ"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
                 min={10000}
@@ -186,7 +186,7 @@ export default function DepositPage() {
               />
               {depositAmount && (
                 <p className="text-sm text-gray-600">
-                  Số tiền: <span className="font-semibold">{formatCurrency(parseInt(depositAmount))} VND</span>
+                  Amount: <span className="font-semibold">{formatCurrency(parseInt(depositAmount))} VND</span>
                 </p>
               )}
             </div>
@@ -194,7 +194,7 @@ export default function DepositPage() {
             {/* Predefined Amounts */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-base font-medium">Hoặc chọn nhanh</Label>
+                <Label className="text-base font-medium">Or choose quick amount</Label>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {predefinedAmounts.map((item) => (
@@ -220,11 +220,11 @@ export default function DepositPage() {
             {/* Payment Method */}
             <div className="space-y-2">
               <Label htmlFor="bank" className="text-base font-medium">
-                Chọn phương thức thanh toán
+                Select payment method
               </Label>
               <Select value={bankCode} onValueChange={setBankCode}>
                 <SelectTrigger id="bank" className="text-base py-6">
-                  <SelectValue placeholder="Chọn ngân hàng" />
+                  <SelectValue placeholder="Select bank" />
                 </SelectTrigger>
                 <SelectContent>
                   {banks.map((bank) => (
@@ -245,7 +245,7 @@ export default function DepositPage() {
                 className="w-full justify-between p-4 h-auto"
                 onClick={() => setShowInvoiceDetails(!showInvoiceDetails)}
               >
-                <span className="text-base font-medium">Xuất hóa đơn cho giao dịch</span>
+                <span className="text-base font-medium">Issue invoice for transaction</span>
                 {showInvoiceDetails ? (
                   <ChevronUp className="w-5 h-5" />
                 ) : (
@@ -257,16 +257,16 @@ export default function DepositPage() {
                 <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="buyerName">Họ tên người mua hàng</Label>
+                      <Label htmlFor="buyerName">Full name</Label>
                       <Input
                         id="buyerName"
                         value={userName}
                         onChange={(e) => setUserName(e.target.value)}
-                        placeholder="Nhập họ tên"
+                        placeholder="Enter full name"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email nhận hóa đơn</Label>
+                      <Label htmlFor="email">Email for invoice</Label>
                       <Input
                         id="email"
                         type="email"
@@ -277,12 +277,12 @@ export default function DepositPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="companyName">Tên đơn vị (Tên công ty)</Label>
+                    <Label htmlFor="companyName">Company name</Label>
                     <Input
                       id="companyName"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="Nhập tên công ty (nếu có)"
+                      placeholder="Enter company name (if any)"
                     />
                   </div>
                 </div>
@@ -295,18 +295,18 @@ export default function DepositPage() {
             {depositAmount && (
               <div className="bg-blue-50 p-4 rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Số tiền nạp:</span>
+                  <span className="text-gray-600">Deposit amount:</span>
                   <span className="font-semibold">{formatCurrency(parseInt(depositAmount))} đ</span>
                 </div>
                 {getSelectedAmountBonus() > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Khuyến mãi:</span>
+                    <span className="text-gray-600">Promotion:</span>
                     <span className="font-semibold text-green-600">+{formatCurrency(getSelectedAmountBonus())} đ</span>
                   </div>
                 )}
                 <Separator className="my-2" />
                 <div className="flex justify-between text-base">
-                  <span className="font-bold">Tổng tiền nhận được:</span>
+                  <span className="font-bold">Total amount received:</span>
                   <span className="font-bold text-blue-600 text-xl">{formatCurrency(getTotalAmount())} đ</span>
                 </div>
               </div>
@@ -315,7 +315,7 @@ export default function DepositPage() {
             {/* Footer */}
             <div className="flex items-center justify-between pt-4">
               <div className="text-sm">
-                <p className="text-gray-600">Hotline hỗ trợ:</p>
+                <p className="text-gray-600">Support Hotline:</p>
                 <p className="font-bold text-red-500 text-lg">1900 1881</p>
               </div>
               <Button
@@ -324,7 +324,7 @@ export default function DepositPage() {
                 size="lg"
                 className="px-8 py-6 text-base bg-red-500 hover:bg-red-600"
               >
-                {loading ? 'Đang xử lý...' : 'Tiếp tục'}
+                {loading ? 'Processing...' : 'Continue'}
               </Button>
             </div>
           </CardContent>
@@ -334,8 +334,8 @@ export default function DepositPage() {
         <Card className="mt-6 border-orange-200 bg-orange-50">
           <CardContent className="p-4">
             <p className="text-sm text-gray-700">
-              <strong>Lưu ý:</strong> Sau khi nhấn "Tiếp tục", bạn sẽ được chuyển đến trang thanh toán VNPay. 
-              Vui lòng hoàn tất thanh toán trong vòng 15 phút để đơn hàng không bị hủy.
+              <strong>Note:</strong> After clicking "Continue", you will be redirected to VNPay payment page. 
+              Please complete the payment within 15 minutes to prevent order cancellation.
             </p>
           </CardContent>
         </Card>

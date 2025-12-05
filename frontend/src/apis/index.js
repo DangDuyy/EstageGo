@@ -479,7 +479,7 @@ export const getBalanceAPI = async () => {
   return response.data
 }
 
-// Get transaction history
+// Get transaction history with enhanced filters
 export const getTransactionHistoryAPI = async (page = 1, limit = 10, filters = {}) => {
   const params = new URLSearchParams()
   params.set('page', page)
@@ -488,6 +488,8 @@ export const getTransactionHistoryAPI = async (page = 1, limit = 10, filters = {
   if (filters.status) params.set('status', filters.status)
   if (filters.type) params.set('type', filters.type)
   if (filters.transactionType) params.set('transactionType', filters.transactionType)
+  if (filters.startDate) params.set('startDate', filters.startDate)
+  if (filters.endDate) params.set('endDate', filters.endDate)
   
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/transactions?${params.toString()}`)
   return response.data

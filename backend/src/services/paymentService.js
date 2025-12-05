@@ -76,7 +76,6 @@ const handleVNPayReturn = async (vnpParams) => {
 
     // Check if already processed
     if (transaction.status !== 'pending') {
-      console.log('⚠️  Transaction already processed:', orderId)
       return {
         success: transaction.status === 'completed',
         message: 'Transaction already processed',
@@ -102,17 +101,9 @@ const handleVNPayReturn = async (vnpParams) => {
         transaction.user,
         { $inc: { balance: transaction.amount } }
       )
-
-      console.log('✅ Payment successful')
-      console.log('  - Order ID:', orderId)
-      console.log('  - Amount:', transaction.amount.toLocaleString('vi-VN'), 'VND')
-      console.log('  - Transaction No:', transaction.transactionNo)
     } else {
       // Payment failed
       transaction.status = 'failed'
-      console.log('❌ Payment failed')
-      console.log('  - Order ID:', orderId)
-      console.log('  - Reason:', verifyResult.message)
     }
 
     await transaction.save()
@@ -129,12 +120,31 @@ const handleVNPayReturn = async (vnpParams) => {
   }
 }
 
-const getTransactionHistory = async ({ userId, page, limit, status, type }) => {
+const getTransactionHistory = async ({ userId, page, limit, status, type, startDate, endDate, transactionType }) => {
   try {
-    const query = { user: userId }
+    const query = { user: userId, status: 'completed' } // Only get completed transactions
 
+    // Only override status if explicitly provided
     if (status) query.status = status
     if (type) query.type = type
+
+    // Filter by transaction type (credit/debit)
+    if (transactionType === 'credit') {
+      query.type = { $in: ['deposit', 'refund'] }
+    } else if (transactionType === 'debit') {
+      query.type = { $in: ['fee', 'withdraw'] }
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      query.createdAt = {}
+      if (startDate) query.createdAt.$gte = new Date(startDate)
+      if (endDate) {
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999) // Include the whole end date
+        query.createdAt.$lte = end
+      }
+    }
 
     const skip = (page - 1) * limit
 
@@ -166,16 +176,12 @@ const getTransactionHistory = async ({ userId, page, limit, status, type }) => {
 
 const getBalance = async (userId) => {
   try {
-    console.log('🔍 Getting balance for userId:', userId)
-    
     const user = await userModel.findById(userId).select('balance userName')
     
     if (!user) {
-      console.log('❌ User not found with ID:', userId)
       throw new Error('User not found')
     }
     
-    console.log('✅ User found:', user.userName, '- Balance:', user.balance)
     return user.balance || 0
   } catch (error) {
     console.error('❌ Get balance error:', error)

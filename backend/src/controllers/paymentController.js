@@ -54,14 +54,17 @@ const vnpayReturn = async (req, res, next) => {
 const getTransactionHistory = async (req, res, next) => {
   try {
     const userId = req.jwtDecoded._id
-    const { page = 1, limit = 10, status, type } = req.query
+    const { page = 1, limit = 10, status, type, startDate, endDate, transactionType } = req.query
 
     const result = await paymentService.getTransactionHistory({
       userId,
       page: parseInt(page),
       limit: parseInt(limit),
       status,
-      type
+      type,
+      startDate,
+      endDate,
+      transactionType
     })
 
     return res.status(StatusCodes.OK).json(result)

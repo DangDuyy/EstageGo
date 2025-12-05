@@ -7,7 +7,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 export default function PaymentResultPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('loading'); // loading, success, failed
+  const [status, setStatus] = useState('loading');
   
   const success = searchParams.get('success') === 'true';
   const message = searchParams.get('message') || '';
@@ -15,7 +15,6 @@ export default function PaymentResultPage() {
   const amount = searchParams.get('amount') || '0';
 
   useEffect(() => {
-    // Simulate processing
     const timer = setTimeout(() => {
       setStatus(success ? 'success' : 'failed');
     }, 1500);
@@ -33,7 +32,7 @@ export default function PaymentResultPage() {
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-16 h-16 animate-spin text-blue-500 mb-4" />
-            <p className="text-lg font-medium">Đang xử lý thanh toán...</p>
+            <p className="text-lg font-medium">Processing payment...</p>
           </CardContent>
         </Card>
       </div>
@@ -49,9 +48,9 @@ export default function PaymentResultPage() {
               <div className="flex justify-center mb-4">
                 <CheckCircle className="w-20 h-20 text-green-500" />
               </div>
-              <CardTitle className="text-2xl text-green-600">Thanh toán thành công!</CardTitle>
+              <CardTitle className="text-2xl text-green-600">Payment Successful!</CardTitle>
               <CardDescription>
-                Giao dịch của bạn đã được xử lý thành công
+                Your transaction has been processed successfully
               </CardDescription>
             </>
           ) : (
@@ -59,9 +58,9 @@ export default function PaymentResultPage() {
               <div className="flex justify-center mb-4">
                 <XCircle className="w-20 h-20 text-red-500" />
               </div>
-              <CardTitle className="text-2xl text-red-600">Thanh toán thất bại</CardTitle>
+              <CardTitle className="text-2xl text-red-600">Payment Failed</CardTitle>
               <CardDescription>
-                {message || 'Đã có lỗi xảy ra trong quá trình thanh toán'}
+                {message || 'An error occurred during payment processing'}
               </CardDescription>
             </>
           )}
@@ -70,12 +69,12 @@ export default function PaymentResultPage() {
           {orderId && (
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Mã đơn hàng:</span>
+                <span className="text-gray-600">Order ID:</span>
                 <span className="font-mono font-semibold">{orderId}</span>
               </div>
               {amount !== '0' && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Số tiền:</span>
+                  <span className="text-gray-600">Amount:</span>
                   <span className="font-semibold">{formatCurrency(amount)} đ</span>
                 </div>
               )}
@@ -88,13 +87,13 @@ export default function PaymentResultPage() {
               className="flex-1"
               onClick={() => navigate('/dashboard')}
             >
-              Về Dashboard
+              Back to Dashboard
             </Button>
             <Button
               className="flex-1"
               onClick={() => navigate('/dashboard/deposit')}
             >
-              {status === 'success' ? 'Nạp thêm' : 'Thử lại'}
+              {status === 'success' ? 'Deposit More' : 'Try Again'}
             </Button>
           </div>
         </CardContent>
