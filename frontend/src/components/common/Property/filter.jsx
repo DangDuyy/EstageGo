@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { fetchAllPropertiesAPI } from "@/apis"
 
 const TYPE_OPTIONS = ["apartment", "house", "villa", "studio", "townhouse", "land"]
 const PURPOSE_OPTIONS = ["sale", "rent"]
@@ -16,7 +17,7 @@ const BED_MAX = 10
 const PRICE_MIN = 0        // triệu VND
 const PRICE_MAX = 5000     // triệu VND
 
-export default function FiltersPanel() {
+export default function FiltersPanel({ onInstantResults }) {
   const navigate = useNavigate()
   const location = useLocation()
   const isFirstRender = useRef(true)
@@ -164,12 +165,28 @@ export default function FiltersPanel() {
     if (isFirstRender.current || isInitializing.current) {
       return
     }
-    
+
+    // If parent wants instant results, fetch without navigation
+    if (typeof onInstantResults === "function") {
+      const timer = setTimeout(async () => {
+        try {
+          const qs = buildQueryParams(false /* keep current page */)
+          const res = await fetchAllPropertiesAPI(`?${qs}`)
+          // Push data to parent (SidebarCard)
+          onInstantResults(res)
+        } catch (err) {
+          console.error("Instant keyword search failed:", err)
+        }
+      }, 500)
+
+      return () => clearTimeout(timer)
+    }
+
+    // Fallback: old behavior (navigate)
     const timer = setTimeout(() => {
       const qs = buildQueryParams()
       navigate(`${location.pathname}?${qs}`, { replace: false })
     }, 500)
-    
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q])

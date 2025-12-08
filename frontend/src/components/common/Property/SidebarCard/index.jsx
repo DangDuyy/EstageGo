@@ -1,4 +1,3 @@
- 
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -104,9 +103,9 @@ export default function SidebarCard() {
   } : null;
 
   const updateStateData = (res) => {
-    setProperties(Array.isArray(res?.properties) ? res.properties : []);
-    setTotalProperties(Number(res?.totalProperties || 0));
-  };
+    setProperties(Array.isArray(res?.properties) ? res.properties : [])
+    setTotalProperties(Number(res?.totalProperties || 0))
+  }
 
   // Fetch data theo query string hoặc sử dụng AI search results
   useEffect(() => {
@@ -197,6 +196,11 @@ export default function SidebarCard() {
     
     return pages;
   };
+
+  // Receive instant results from FiltersPanel (keyword typing)
+  const handleInstantResults = (res) => {
+    updateStateData(res)
+  }
 
   if (loading) {
     return (
@@ -302,7 +306,7 @@ export default function SidebarCard() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
       {/* Sidebar */}
       <aside className="lg:col-span-4">
-        <FiltersPanel />
+        <FiltersPanel onInstantResults={handleInstantResults} />
 
         <div className="mt-6">
           <Card>
