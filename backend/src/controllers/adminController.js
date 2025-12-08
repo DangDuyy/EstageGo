@@ -4,6 +4,7 @@ import userModel from '~/models/users';
 import agentRequestModel from '~/models/agentRequests';
 import ApiError from '~/utils/ApiError';
 import { createAndEmitNotification } from '~/services/notificationService';
+import { emitNotification } from '~/sockets';
 
 // ===== DASHBOARD STATISTICS =====
 const getDashboardStats = async (req, res, next) => {
@@ -112,7 +113,7 @@ const getAllProperties = async (req, res, next) => {
   }
 };
 
-const updatePropertyStatus = async (req, res, next) => {
+export const updatePropertyStatus = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
     const { status } = req.body;
@@ -132,8 +133,10 @@ const updatePropertyStatus = async (req, res, next) => {
     }
 
     // Notify the property owner
-    if (property?.owner) {
-      await createAndEmitNotification(property.owner, {
+    const ownerId = property?.owner?._id || property?.owner
+
+    if (ownerId) {
+      await createAndEmitNotification(String(ownerId), {
         type: 'PROPERTY',
         title: 'Property status updated',
         message: `Your property "${property.title}" status is now "${property.status}".`,
@@ -150,7 +153,7 @@ const updatePropertyStatus = async (req, res, next) => {
   }
 };
 
-const deleteProperty = async (req, res, next) => {
+export const deleteProperty = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
 
@@ -161,8 +164,10 @@ const deleteProperty = async (req, res, next) => {
     }
 
     // Notify the property owner
-    if (property?.owner) {
-      await createAndEmitNotification(property.owner, {
+    const ownerId = property?.owner?._id || property?.owner
+
+    if (ownerId) {
+      await createAndEmitNotification(String(ownerId), {
         type: 'PROPERTY',
         title: 'Property deleted',
         message: `Your property "${property.title}" has been deleted by admin.`,

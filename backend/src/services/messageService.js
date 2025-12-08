@@ -40,7 +40,7 @@ const sendMessage = async ({ conversationId, senderId, text, io }) => {
       })
     }
 
-    return message
+    return { message, conversation }
   } catch (error) {
     throw error
   }

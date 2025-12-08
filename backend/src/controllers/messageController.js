@@ -14,22 +14,30 @@ const sendMessage = async (req, res, next) => {
       })
     }
 
-    const message = await messageService.sendMessage({
+    const { message, conversation } = await messageService.sendMessage({
       conversationId,
       senderId,
       text,
       io
     })
 
-    const msg = message
-    const recipientId = /* target user id */
+    // Notify all other participants in the conversation
+    const recipients = (conversation?.participants || []).filter(
+      (id) => String(id) !== String(senderId)
+    )
 
-    await createAndEmitNotification(recipientId, {
-      type: 'MESSAGE',
-      title: 'New message',
-      message: `${req.user?.fullName || 'Someone'} sent you a message`,
-      meta: { conversationId: msg.conversationId, messageId: msg._id }
-    })
+    if (recipients.length > 0) {
+      await Promise.all(
+        recipients.map((recipientId) =>
+          createAndEmitNotification(String(recipientId), {
+            type: 'MESSAGE',
+            title: 'New message',
+            message: `${req.user?.fullName || 'Someone'} sent you a message`,
+            meta: { conversationId: message.conversationId, messageId: message._id }
+          })
+        )
+      )
+    }
 
     res.status(StatusCodes.CREATED).json(message)
   } catch (error) {

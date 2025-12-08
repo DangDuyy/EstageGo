@@ -8,7 +8,10 @@ let ioInstance = null
 // Emit a generic event to a specific user's personal room
 export const emitToUser = (userId, event, payload) => {
   if (!ioInstance || !userId) return
-  ioInstance.to(`user:${userId}`).emit(event, payload)
+  const uid = String(userId)
+  const room = `user:${uid}`
+  console.log(`[Socket] Emitting ${event} to ${room}`)
+  ioInstance.to(room).emit(event, payload)
 }
 
 // Emit a notification to a specific user (standardized event name)
@@ -42,11 +45,10 @@ const socketAuth = async (socket, next) => {
 const registerChatEvents = (io) => {
   io.on('connection', (socket) => {
     const userId = socket.user?.id
-    console.log(`[Socket] User connected: ${userId}`)
-
     if (userId) {
-      // Join user's personal room
-      socket.join(`user:${userId}`)
+      const room = `user:${String(userId)}`
+      socket.join(room)
+      console.log(`[Socket] Joined room: ${room}`)
     }
 
     // ===== Chat rooms & typing (existing) =====
