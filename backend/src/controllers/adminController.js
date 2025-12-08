@@ -3,6 +3,8 @@ import propertyModel from '~/models/properties';
 import userModel from '~/models/users';
 import agentRequestModel from '~/models/agentRequests';
 import ApiError from '~/utils/ApiError';
+import { createAndEmitNotification } from '~/services/notificationService';
+import { emitNotification } from '~/sockets';
 
 // ===== DASHBOARD STATISTICS =====
 const getDashboardStats = async (req, res, next) => {
@@ -111,7 +113,7 @@ const getAllProperties = async (req, res, next) => {
   }
 };
 
-const updatePropertyStatus = async (req, res, next) => {
+export const updatePropertyStatus = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
     const { status } = req.body;
@@ -130,6 +132,18 @@ const updatePropertyStatus = async (req, res, next) => {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Property not found');
     }
 
+    // Notify the property owner
+    const ownerId = property?.owner?._id || property?.owner
+
+    if (ownerId) {
+      await createAndEmitNotification(String(ownerId), {
+        type: 'PROPERTY',
+        title: 'Property status updated',
+        message: `Your property "${property.title}" status is now "${property.status}".`,
+        meta: { propertyId: property._id, status: property.status }
+      })
+    }
+
     res.status(StatusCodes.OK).json({
       message: 'Property status updated successfully',
       property
@@ -139,7 +153,7 @@ const updatePropertyStatus = async (req, res, next) => {
   }
 };
 
-const deleteProperty = async (req, res, next) => {
+export const deleteProperty = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
 
@@ -147,6 +161,18 @@ const deleteProperty = async (req, res, next) => {
 
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Property not found');
+    }
+
+    // Notify the property owner
+    const ownerId = property?.owner?._id || property?.owner
+
+    if (ownerId) {
+      await createAndEmitNotification(String(ownerId), {
+        type: 'PROPERTY',
+        title: 'Property deleted',
+        message: `Your property "${property.title}" has been deleted by admin.`,
+        meta: { propertyId: property._id }
+      })
     }
 
     res.status(StatusCodes.OK).json({
@@ -348,6 +374,14 @@ const updateUserRole = async (req, res, next) => {
       throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
     }
 
+    // Notify the user about role update
+    await createAndEmitNotification(userId, {
+      type: 'ADMIN_ACTION',
+      title: 'Role updated',
+      message: `Your role has been updated to "${role}".`,
+      meta: { role }
+    })
+
     res.status(StatusCodes.OK).json({
       message: 'User role updated successfully',
       user
@@ -368,6 +402,15 @@ const toggleUserStatus = async (req, res, next) => {
 
     user.isActive = !user.isActive;
     await user.save();
+
+    // Notify the user about status change
+    const newStatus = user.isActive ? 'active' : 'disabled';
+    await createAndEmitNotification(userId, {
+      type: 'ADMIN_ACTION',
+      title: 'Account status changed',
+      message: `Your account status is now "${newStatus}".`,
+      meta: { status: newStatus }
+    })
 
     res.status(StatusCodes.OK).json({
       message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`,

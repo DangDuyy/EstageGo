@@ -3,12 +3,11 @@ import { useWishlist } from '@/contexts/WishlistContext';
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { logoutUserAPI, selectCurrentUser } from "@/redux/user/userSlice";
+import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Bell, Folders, Heart, User } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import LoginModal from "../Modal/login";
 import RegisterModal from "../Modal/register";
 import { UserNav } from "../SidebarMenu/user-nav";
@@ -16,7 +15,7 @@ import { Logo } from "./logo";
 import { NavMenu } from "./menu";
 import { NavigationSheet } from "./navigation-sheet";
 import ToogleMode from "./toggle-mode";
-
+import NotificationBell from "@/components/common/Notifications/NotificationBell"
 
 const NavBar = ({ hideLogo = false }) => {
   // Lấy trạng thái sidebar nếu cần co giãn
@@ -71,7 +70,8 @@ const NavBar = ({ hideLogo = false }) => {
 
           <div className="flex items-center gap-8 shrink-0 lg:gap-4">
             <ToogleMode/>
-            <Bell className="lg:h-6 lg:w-6 hidden md:block"/>
+            {/* Replace plain Bell with realtime notifications */}
+            <NotificationBell />
             { currentUser 
               ? 
               <>

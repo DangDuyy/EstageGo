@@ -12,6 +12,7 @@ import { recommendationRoutes } from './recommendationRoute'
 import { vapiRoutes } from './vapiRoute'
 import { chatBotRoutes } from './chatBotRoute'
 import { paymentRoute } from './paymentRoute'
+import { notificationRoutes } from './notificationRoute'
 
 const Router = express.Router()
 
@@ -42,5 +43,7 @@ Router.use('/recommendations', recommendationRoutes)
 Router.use('/chatbot', chatBotRoutes)
 
 Router.use('/payment', paymentRoute)
+
+Router.use('/notifications', notificationRoutes)
 
 export const APIs_V1 = Router

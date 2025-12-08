@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes"
 import { messageService } from "~/services/messageService"
+import { createAndEmitNotification } from '~/services/notificationService'
 
 const sendMessage = async (req, res, next) => {
   try {
@@ -13,12 +14,30 @@ const sendMessage = async (req, res, next) => {
       })
     }
 
-    const message = await messageService.sendMessage({
+    const { message, conversation } = await messageService.sendMessage({
       conversationId,
       senderId,
       text,
       io
     })
+
+    // Notify all other participants in the conversation
+    const recipients = (conversation?.participants || []).filter(
+      (id) => String(id) !== String(senderId)
+    )
+
+    if (recipients.length > 0) {
+      await Promise.all(
+        recipients.map((recipientId) =>
+          createAndEmitNotification(String(recipientId), {
+            type: 'MESSAGE',
+            title: 'New message',
+            message: `${req.user?.fullName || 'Someone'} sent you a message`,
+            meta: { conversationId: message.conversationId, messageId: message._id }
+          })
+        )
+      )
+    }
 
     res.status(StatusCodes.CREATED).json(message)
   } catch (error) {

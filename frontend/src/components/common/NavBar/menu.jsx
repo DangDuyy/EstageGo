@@ -59,15 +59,13 @@ const MENU = [
         items: [
           { label: "Natural Language Search", to: "/ai/nl-search", desc: 'Type "3BR near schools, under 3B"' },
           { label: "Behavioral Recommendations", to: "/ai/semantic-recommend", desc: "Personalized results from your browsing" },
-          { label: "Fuzzy & Semantic Search", to: "/ai/fuzzy-search", desc: "Handle typos and near-meaning terms" },
+          { label: "Fuzzy & Semantic Search", to: "/ai/nl-search", desc: "Handle typos and near-meaning terms" },
         ],
       },
       {
         heading: "Media & Assistant",
         items: [
           { label: "Image Tagging", to: "/ai/image-tagging", desc: "Auto-detect kitchen, living room, balcony…" },
-          { label: "AI Listing Description", to: "/ai/auto-description", desc: "Generate compelling copy from raw data" },
-          { label: "Virtual Tour 360°/3D", to: "/ai/virtual-tour", desc: "View properties remotely from images/video" },
           { label: "Chatbot / Assistant", to: "/ai/chatbot", desc: "24/7 Q&A, mortgage calc, viewing schedule" },
         ],
       },

@@ -75,7 +75,6 @@ export const verifyPropertyDocumentsAPI = async (formData) => {
   return response.data
 }
 
-
 // ==================== GoogleMap ============================
 export const geocodeAddress = async (addr) => {
   // const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addr)}&key=${import.meta.env.VITE_GOOGLE_MAP_API_KEY}`
@@ -507,5 +506,24 @@ export const getTransactionHistoryAPI = async (page = 1, limit = 10, filters = {
 // Get transaction detail
 export const getTransactionDetailAPI = async (transactionId) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/transactions/${transactionId}`)
+  return response.data
+}
+
+// ========== NOTIFICATION APIs ==========
+
+export const getNotificationsAPI = async (page = 1, limit = 20) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/notifications`, {
+    params: { page, limit }
+  })
+  return response.data
+}
+
+export const markNotificationReadAPI = async (id) => {
+  const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/notifications/${id}/read`)
+  return response.data
+}
+
+export const markAllNotificationsReadAPI = async () => {
+  const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/notifications/read-all`)
   return response.data
 }

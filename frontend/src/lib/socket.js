@@ -2,69 +2,77 @@ import { io } from 'socket.io-client'
 import { API_ROOT } from '@/utils/constants'
 
 let socket = null
+let notificationHandlers = []
+let notificationDispatch = null
+
+// Subscribe notification events using existing socket (same as chat)
+export const onNotification = (handler) => {
+  // Register locally; socket listener (notificationDispatch) calls all handlers
+  notificationHandlers.push(handler)
+  return () => {
+    notificationHandlers = notificationHandlers.filter(h => h !== handler)
+  }
+}
 
 export const getSocket = () => socket
 
 export const updateSocketToken = (newAccessToken) => {
-  if (socket?.connected) {
-    console.log('[Socket] Updating token...')
-    socket.auth = { token: newAccessToken }
-    // Reconnect with new token
-    socket.disconnect()
-    socket.connect()
-  }
+  if (!socket) return
+  // Just update token; let next reconnect use it
+  socket.auth = { token: newAccessToken }
 }
 
 export const connectSocket = (accessToken) => {
-  if (socket?.connected) {
-    console.log('[Socket] Already connected')
+  // Reuse the singleton even if not connected yet
+  if (socket) {
+    if (!socket.connected) {
+      // ensure single listener
+      socket.off('notification:new')
+      if (!notificationDispatch) {
+        notificationDispatch = (payload) => {
+          notificationHandlers.forEach(fn => {
+            try { fn(payload) } catch (e) { console.error('[Socket] notification handler error', e) }
+          })
+        }
+      }
+      socket.on('notification:new', notificationDispatch)
+      // eslint-disable-next-line no-empty
+      try { socket.connect() } catch {}
+    }
     return socket
   }
 
   console.log('[Socket] Connecting to:', API_ROOT)
-
-  socket = io(API_ROOT, {
+  socket = io(API_ROOT.replace('/api', ''), {
     withCredentials: true,
-    auth: {
-      token: accessToken
-    },
+    auth: { token: accessToken },
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 500
   })
 
-  socket.on('connect', () => {
-    console.log('[Socket] Connected:', socket.id)
-  })
-
-  socket.on('connect_error', (err) => {
-    console.error('[Socket] Connection error:', err?.message || err)
-  })
-
-  socket.on('disconnect', (reason) => {
-    console.log('[Socket] Disconnected:', reason)
-    if (reason === 'io server disconnect') {
-      // Server disconnected, manually reconnect
-      socket.connect()
+  // One dispatcher only
+  if (!notificationDispatch) {
+    notificationDispatch = (payload) => {
+      notificationHandlers.forEach(fn => {
+        try { fn(payload) } catch (e) { console.error('[Socket] notification handler error', e) }
+      })
     }
-  })
+  }
+  socket.off('notification:new')
+  socket.on('notification:new', notificationDispatch)
 
-  socket.on('reconnect', (attemptNumber) => {
-    console.log('[Socket] Reconnected after', attemptNumber, 'attempts')
-  })
-
-  socket.on('reconnect_error', (error) => {
-    console.error('[Socket] Reconnection error:', error?.message || error)
-  })
+  socket.on('connect', () => console.log('[Socket] Connected:', socket.id))
+  socket.on('connect_error', (err) => console.error('[Socket] Connection error:', err?.message || err))
+  socket.on('disconnect', (reason) => console.log('[Socket] Disconnected:', reason))
 
   return socket
 }
 
 export const disconnectSocket = () => {
   if (socket) {
-    console.log('[Socket] Disconnecting...')
-    socket.removeAllListeners()
-    socket.disconnect()
+    if (notificationDispatch) socket.off('notification:new', notificationDispatch)
+    socket.close()
     socket = null
   }
 }
