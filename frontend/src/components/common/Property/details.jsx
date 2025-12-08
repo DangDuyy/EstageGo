@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { MapPin, Bed, Bath, Ruler, Star, Play, Phone, Mail, Share, Heart, GitCompare, Printer, House, SlidersHorizontal, Sofa, Hammer, MessageCircle } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, Star, Play, Phone, Mail, Share, Heart, GitCompare, Printer, House, SlidersHorizontal, Sofa, Hammer, MessageCircle, Calendar } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -33,6 +33,7 @@ import { Marker } from "@react-google-maps/api";
 import MapContainer from "../GoogleMap/MapContainer";
 import { MapsContext } from "../GoogleMap/MapProvider";
 import { PropertyDetailMap } from "../GoogleMap/PropertyDetailMap";
+import LoanCalculator from "./LoanCalculator";
 
 /* ============ Small utils ============ */
 function PriceTag({ value, currency, unit }) {
@@ -123,7 +124,7 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
         </Carousel>
       </div>
 
-      <div className="mt-3 grid grid-cols-5 gap-2">
+      <div className="mt-3 grid grid-cols-8 gap-2">
         {images.map((src, i) => {
           const isActive = current - 1 === i;
           return (
@@ -189,7 +190,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     try {
       setStartingChat(true)
       const conversation = await createOrGetConversationAPI(ownerId)
-      
+
       // Track CONTACT activity for Collaborative Filtering
       // CONTACT has weight 3 in the CF algorithm
       if (propertyId && currentUser._id) {
@@ -199,7 +200,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
           conversationId: conversation._id
         });
       }
-      
+
       navigate('/dashboard/messages', { state: { conversationId: conversation._id } })
     } catch (error) {
       console.error('Error starting chat:', error)
@@ -293,7 +294,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   if (!property) {
     // Skeleton
     return (
-      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-10">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 py-10">
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-2/3 rounded bg-muted" />
           <div className="h-64 rounded bg-muted" />
@@ -337,9 +338,9 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     : null;
 
   return (
-    <div className="w-full pt-20">
+    <div className="w-full pt-10 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12">
         <div className="flex flex-col gap-4 py-6 md:flex-col md:justify-between">
           <div className="flex justify-between">
             <h1 className="text-4xl font-bold tracking-tight">{property.title}</h1>
@@ -414,21 +415,26 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
       </div>
 
       {/* Gallery */}
-      <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-6">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 py-6">
         <ImagesCarousel images={mediaImages} />
       </div>
 
-      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 lg:px-8 xl:px-12 max-w-7xl pb-10 lg:grid-cols-12">
+      <div className="container mx-auto grid grid-cols-1 gap-6 px-4 lg:px-8 xl:px-12 pb-10 lg:grid-cols-12">
         {/* LEFT */}
         <div className="lg:col-span-8 space-y-6">
           {/* Description */}
           <section className="space-y-3 border-b pb-6">
             <h3 className="text-xl font-semibold">Description</h3>
+
             <div className="space-y-3">
-              {(showFullDesc ? descriptionParas : descriptionParas.slice(0, 1)).map((p, i) => (
-                <p key={i} className="text-muted-foreground">{p}</p>
-              ))}
-              {descriptionParas.length > 1 && (
+              <p
+                className={`text-muted-foreground transition-all ${!showFullDesc && property?.description.length > 250 ? "line-clamp-3" : ""
+                  }`}
+              >
+                {property?.description}
+              </p>
+
+              {property?.description.length > 250 && (
                 <button
                   type="button"
                   onClick={() => setShowFullDesc(v => !v)}
@@ -439,13 +445,14 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
               )}
             </div>
           </section>
+
           <section className="space-y-4 border-b pb-6">
             <h3 className="text-xl font-semibold">Overview</h3>
             {(() => {
               const items = [
                 { label: "ID", value: property?._id?.slice(-4) || "-", Icon: House },
                 { label: "Type", value: property?.type || "-", Icon: SlidersHorizontal },
-                { label: "Posted", value: formatPostDate(property?.createdAt, true) || "-", Icon: null },
+                { label: "Posted", value: formatPostDate(property?.createdAt, true) || "-", Icon: Calendar },
                 { label: "Bedrooms", value: property?.rooms?.bedrooms ?? "-", Icon: Bed },
                 { label: "Bathrooms", value: property?.rooms?.bathrooms ?? "-", Icon: Bath },
                 { label: "LivingRooms", value: property?.rooms?.livingrooms ?? "-", Icon: Sofa },
@@ -472,100 +479,35 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
             })()}
           </section>
 
+          {/* Amenities */}
+          <section className="space-y-3 border-b pb-6">
+            <h3 className="text-xl font-semibold">Amenities</h3>
+            <div className="space-y-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              {Array.isArray(property.amenities) && property.amenities.length ? (
+                property.amenities.map((feat) => {
+                  const capitalized = feat
+                    .split(" ")
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ");
+
+                  return <div key={feat} className="flex items-center gap-2 text-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
+                    {capitalized}
+                  </div>
+                })
+              ) : (
+                <div className="text-sm text-muted-foreground">No amenities listed.</div>
+              )}
+            </div>
+          </section>
+
           {/* Map (nếu có toạ độ) */}
           {gmapSrc && (
             <PropertyDetailMap property={property} />
           )}
 
-          {/* Amenities */}
-          <Card>
-            <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {Array.isArray(property.amenities) && property.amenities.length ? (
-                property.amenities.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2 text-sm">
-                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" />
-                    {feat}
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-muted-foreground">No amenities listed.</div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Video placeholder */}
-          <Card>
-            <CardHeader><CardTitle>Video</CardTitle></CardHeader>
-            <CardContent>
-              <div className="relative overflow-hidden rounded-lg border">
-                <div className="aspect-video w-full bg-muted" />
-                <Button variant="secondary" size="sm" className="absolute left-3 top-3 gap-2">
-                  <Play className="h-4 w-4" /> Watch
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Loan Calculator */}
-          <Card>
-            <CardHeader><CardTitle>Loan Calculator</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div className="space-y-2">
-                  <Label htmlFor="loan-total">Total Amount</Label>
-                  <Input
-                    id="loan-total"
-                    type="number"
-                    value={loan.total}
-                    onChange={(e) => setLoan((s) => ({ ...s, total: Number(e.target.value) }))}
-                    placeholder="10000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="loan-down">Down Payment</Label>
-                  <Input
-                    id="loan-down"
-                    type="number"
-                    value={loan.down}
-                    onChange={(e) => setLoan((s) => ({ ...s, down: Number(e.target.value) }))}
-                    placeholder="3000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="loan-months">Amortization (months)</Label>
-                  <Input
-                    id="loan-months"
-                    type="number"
-                    value={loan.months}
-                    onChange={(e) => setLoan((s) => ({ ...s, months: Number(e.target.value) }))}
-                    placeholder="12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="loan-rate">Interest rate (%)</Label>
-                  <Input
-                    id="loan-rate"
-                    type="number"
-                    value={loan.rate}
-                    onChange={(e) => setLoan((s) => ({ ...s, rate: Number(e.target.value) }))}
-                    placeholder="5"
-                  />
-                </div>
-              </div>
-              <Separator />
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <Button className="w-full sm:w-auto" onClick={() => null}>Calculate</Button>
-                <div className="text-sm">
-                  <span className="font-semibold">Monthly Payment: </span>
-                  <span className="font-bold text-primary">
-                    {new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(monthlyPayment)}{" "}
-                    {property.price?.currency === "VND" ? "VND" : property.price?.currency || ""}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {property.purpose && property.purpose === 'sale' && <LoanCalculator propertyPrice={property.price.value}/> }
         </div>
 
         {/* RIGHT */}
@@ -649,7 +591,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
       {/* Similar Properties Section */}
       {similarProperties.length > 0 && (
-        <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl py-10">
+        <div className="container mx-auto px-4 lg:px-8 xl:px-12 py-10">
           <div className="mb-6">
             <h2 className="text-2xl font-bold">Similar Properties</h2>
             <p className="text-muted-foreground">You might also be interested in these properties</p>

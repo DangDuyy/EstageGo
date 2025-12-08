@@ -151,22 +151,15 @@ export const PropertyDetailMap = ({ property }) => {
     };
 
     return (
-        <Card>
-            <CardHeader><CardTitle>Map location</CardTitle></CardHeader>
-            <CardContent>
-                <MapContainer onLoad={onMapLoad} center={position} style={{ height: "350px", width: "100%", cursor: "default" }} zoom={15}>
+        <section className="space-y-3 pb-6">
+            <h3 className="text-xl font-semibold">Map location</h3>
+
+            <div className="space-y-3 border border-accent rounded-md overflow-hidden">
+              <MapContainer onLoad={onMapLoad} center={position} style={{ height: "350px", width: "100%", cursor: "default" }} zoom={15}>
                     <Marker key={property._id} position={position} />
 
                     {/* Marker tiện ích */}
                     {places.map((p) => (
-                        // <Marker
-                        //     key={p.place_id}
-                        //     position={p.geometry.location}
-                        //     icon={{
-                        //         url: p.icon || ICONS[activeType],
-                        //         scaledSize: new google.maps.Size(30, 30),
-                        //     }}
-                        // />
                         <CustomOverlayMarker position={p.geometry.location} type={activeType} onClick={() => setSelected(p)} />
                     ))}
 
@@ -200,7 +193,7 @@ export const PropertyDetailMap = ({ property }) => {
                 </MapContainer>
 
                 {/* Tabs */}
-                <div className="flex justify-between overflow-x-auto pt-4">
+                <div className="flex justify-between overflow-x-auto p-4 pb-0">
                     {tabs.map((tab, index) => (
                         <div className="w-full">
                             <div
@@ -223,8 +216,8 @@ export const PropertyDetailMap = ({ property }) => {
                 </div>
 
                 {/* Danh sách tiện ích */}
-                <div className="mt-0 h-[300px] overflow-y-auto">
-                    <p className="text-muted-foreground mb-2">
+                <div className="mt-0 h-[300px] overflow-y-auto px-4">
+                    <p className="text-muted-foreground mb-2 px-2 text-sm">
                         Có {places.length} địa điểm trong vòng 2 km
                     </p>
 
@@ -294,7 +287,7 @@ export const PropertyDetailMap = ({ property }) => {
                         </div>
                     ))}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+          </section>
     )
 }
