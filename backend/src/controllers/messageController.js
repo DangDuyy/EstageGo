@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes"
 import { messageService } from "~/services/messageService"
+import { createAndEmitNotification } from '~/services/notificationService'
 
 const sendMessage = async (req, res, next) => {
   try {
@@ -18,6 +19,16 @@ const sendMessage = async (req, res, next) => {
       senderId,
       text,
       io
+    })
+
+    const msg = message
+    const recipientId = /* target user id */
+
+    await createAndEmitNotification(recipientId, {
+      type: 'MESSAGE',
+      title: 'New message',
+      message: `${req.user?.fullName || 'Someone'} sent you a message`,
+      meta: { conversationId: msg.conversationId, messageId: msg._id }
     })
 
     res.status(StatusCodes.CREATED).json(message)
