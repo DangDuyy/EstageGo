@@ -21,7 +21,7 @@ function VerifyAccountPage() {
 
       if (!token || !email) {
         setStatus('error')
-        setMessage('Link xác thực không hợp lệ. Vui lòng kiểm tra lại email của bạn.')
+        setMessage('Invalid verification link. Please check your email again.')
         return
       }
 
@@ -30,13 +30,13 @@ function VerifyAccountPage() {
         console.log('✅ Verify success')
         
         setStatus('success')
-        setMessage('Tài khoản của bạn đã được xác thực thành công!')
+        setMessage('Your account has been successfully verified!')
         
       } catch (error) {
         console.error('❌ Verify error:', error)
         
         setStatus('error')
-        const errorMsg = error?.message || 'Xác thực thất bại. Link có thể đã hết hạn hoặc không hợp lệ.'
+        const errorMsg = error?.message || 'Verification failed. Link may have expired or is invalid.'
         setMessage(errorMsg)
       }
     }
@@ -60,8 +60,8 @@ function VerifyAccountPage() {
               <Loader2 className="h-20 w-20 text-blue-500 animate-spin mx-auto relative" />
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-800">Đang xác thực...</h1>
-              <p className="text-gray-600">Vui lòng đợi trong giây lát</p>
+              <h1 className="text-3xl font-bold text-gray-800">Verifying...</h1>
+              <p className="text-gray-600">Please wait a moment</p>
             </div>
           </div>
         )}
@@ -78,7 +78,7 @@ function VerifyAccountPage() {
             
             <div className="space-y-3">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Xác thực thành công!
+                Verification Successful!
               </h1>
               <p className="text-gray-600 text-lg">
                 {message}
@@ -88,7 +88,7 @@ function VerifyAccountPage() {
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border border-green-200">
               <p className="text-gray-700 flex items-center justify-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
-                Bạn có thể đăng nhập ngay bây giờ
+                You can now login to your account
               </p>
             </div>
 
@@ -97,7 +97,7 @@ function VerifyAccountPage() {
                 onClick={handleGoToHome}
                 className="w-full h-12 rounded-full text-base font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all group"
               >
-                Đến trang chủ
+                Go to Homepage
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
@@ -116,7 +116,7 @@ function VerifyAccountPage() {
             
             <div className="space-y-3">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                Xác thực thất bại
+                Verification Failed
               </h1>
               <p className="text-gray-600 text-lg">
                 {message}
@@ -125,7 +125,7 @@ function VerifyAccountPage() {
 
             <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-2xl p-4 border border-red-200">
               <p className="text-sm text-gray-700">
-                Nếu bạn cần trợ giúp, vui lòng liên hệ với chúng tôi qua email: 
+                If you need assistance, please contact us via email: 
                 <span className="font-semibold text-red-600"> support@estagego.com</span>
               </p>
             </div>
@@ -135,11 +135,11 @@ function VerifyAccountPage() {
                 onClick={handleGoToHome}
                 className="w-full h-12 rounded-full text-base font-semibold"
               >
-                Về trang chủ
+                Back to Homepage
               </Button>
               
               <p className="text-sm text-gray-500">
-                Hoặc thử đăng ký lại với email khác
+                Or try registering again with a different email
               </p>
             </div>
           </div>
