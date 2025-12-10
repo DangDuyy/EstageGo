@@ -13,6 +13,7 @@ import { registerUserAPI } from '@/apis'
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE, FIELD_REQUIRED_MESSAGE, PASSWORD_RULE, PASSWORD_RULE_MESSAGE, PHONE_RULE, PHONE_RULE_MESSAGE } from "@/utils/validators"
 import { CircleUserRound, Lock, Mail, Phone } from "lucide-react"
 import FieldErrorAlert from "../Form/FieldErrorAlert"
+import { LoginWithGoogle } from '../LoginWithGoogle'
 
 function RegisterModal({ open, onOpenChange, onOpenLogin }) {
   const navigate = useNavigate()
@@ -261,13 +262,14 @@ function RegisterModal({ open, onOpenChange, onOpenLogin }) {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pb-4">
-                  <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
+                <div className="grid gap-3 pb-4">
+                  {/* <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
                     <img src="/icon/google.jpg" alt="Google" className="h-5 w-5" /> Google
-                  </Button>
-                  <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
+                  </Button> */}
+                  <LoginWithGoogle onOpenChange={onOpenChange}/>
+                  {/* <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
                     <img src="/icon/fb.jpg" alt="Facebook" className="h-5 w-5" /> Facebook
-                  </Button>
+                  </Button> */}
                 </div>
               </form>
             </div>

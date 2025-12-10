@@ -44,5 +44,7 @@ export const env = {
   VNPAY_RETURN_URL: process.env.VNPAY_RETURN_URL,
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID
 }

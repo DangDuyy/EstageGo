@@ -120,6 +120,35 @@ const login = async (req, res, next) => {
   }
 }
 
+const loginWithGoogle = async (req, res, next) => {
+  try {
+    const { googleToken } = req.body
+    const result = await userService.loginWithGoogle(googleToken)
+    // Set cookies
+    const isProd = env.BUILD_MODE === 'production'
+    const accessTokenLife = env.ACCESS_TOKEN_LIFE || '1h'
+    const refreshTokenLife = env.REFRESH_TOKEN_LIFE || '14 days'
+
+    const commonCookie = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax'
+    }
+    res.cookie('accessToken', result.accessToken, {
+      ...commonCookie,
+      maxAge: ms(accessTokenLife)
+    })
+    res.cookie('refreshToken', result.refreshToken, {
+      ...commonCookie,
+      maxAge: ms(refreshTokenLife)
+    })
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    console.error('❌ Google Login error:', error.message)
+    next(error)
+  }
+}
+
 // ✅ Logout
 const logout = async (req, res, next) => {
   try {
@@ -430,6 +459,7 @@ export const userController = {
   verifyAccount,
   verifyPhoneRegistration,
   login,
+  loginWithGoogle,
   logout,
   refreshToken,
   updateProfile,

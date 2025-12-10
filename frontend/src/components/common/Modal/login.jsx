@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import FieldErrorAlert from "../Form/FieldErrorAlert";
+import { LoginWithGoogle } from "../LoginWithGoogle";
 
 function LoginModal({ open, onOpenChange, onOpenRegister }) {
   const dispatch = useDispatch();
@@ -111,9 +112,9 @@ function LoginModal({ open, onOpenChange, onOpenRegister }) {
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        id="email" 
-                        placeholder="your.email@example.com" 
+                      <Input
+                        id="email"
+                        placeholder="your.email@example.com"
                         className="h-12 pl-11 rounded-full text-base"
                         {...register('email', {
                           required: FIELD_REQUIRED_MESSAGE,
@@ -133,8 +134,8 @@ function LoginModal({ open, onOpenChange, onOpenRegister }) {
                       </Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input 
-                          id="phone" 
+                        <Input
+                          id="phone"
                           placeholder="0912345678"
                           className="h-12 pl-11 rounded-full text-base"
                           {...register('phone', {
@@ -157,10 +158,10 @@ function LoginModal({ open, onOpenChange, onOpenRegister }) {
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      placeholder="••••••••" 
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
                       className="h-12 pl-11 rounded-full text-base"
                       {...register('password', {
                         required: FIELD_REQUIRED_MESSAGE,
@@ -197,13 +198,14 @@ function LoginModal({ open, onOpenChange, onOpenRegister }) {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pb-4">
-                  <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
+                <div className="grid gap-3 pb-4">
+                  {/* <Button type="button" variant="outline" className="h-11 rounded-full gap-3">
                     <img src="/icon/google.jpg" alt="Google" className="h-5 w-5" /> Google
-                  </Button>
-                  <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
+                  </Button> */}
+                  {/* <Button type="button" variant="outline" className="h-11 rounded-full justify-start gap-3">
                     <img src="/icon/fb.jpg" alt="Facebook" className="h-5 w-5" /> Facebook
-                  </Button>
+                  </Button> */}
+                  <LoginWithGoogle onOpenChange={onOpenChange} />
                 </div>
               </form>
             </div>

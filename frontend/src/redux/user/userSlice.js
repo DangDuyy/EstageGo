@@ -33,6 +33,15 @@ export const loginUserAPI = createAsyncThunk(
   }
 )
 
+export const loginWithGoogleAPI = createAsyncThunk(
+  'users/loginWithGoogleAPI',
+  async (googleToken) => {
+    const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/login/google`, { googleToken })
+    console.log('✅ Google Login response:', response.data)
+    return response.data
+  }
+)
+
 export const logoutUserAPI = createAsyncThunk(
   'users/logoutUserAPI',
   async () => {
@@ -80,6 +89,29 @@ export const userSlice = createSlice({
           accessToken = localStorage.getItem('accessToken')
         }
         
+        if (accessToken) {
+          connectSocket(accessToken)
+        }
+      })
+      .addCase(loginWithGoogleAPI.fulfilled, (state, action) => {
+        state.currentUser = action.payload
+        // Save tokens to localStorage as backup (cookies might not work in some browsers)
+        if (action.payload.accessToken) {
+          localStorage.setItem('accessToken', action.payload.accessToken)
+        }
+        if (action.payload.refreshToken) {
+          localStorage.setItem('refreshToken', action.payload.refreshToken)
+        }
+        // Try to get token from cookies first, fallback to localStorage
+        const getCookie = (name) => {
+          const value = `; ${document.cookie}`
+          const parts = value.split(`; ${name}=`)
+          if (parts.length === 2) return parts.pop().split(';').shift()
+        }
+        let accessToken = getCookie('accessToken')
+        if (!accessToken) {
+          accessToken = localStorage.getItem('accessToken')
+        }
         if (accessToken) {
           connectSocket(accessToken)
         }

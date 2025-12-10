@@ -11,6 +11,9 @@ Router.route('/register')
 Router.route('/login')
   .post(userValidation.login, userController.login)
 
+Router.route('/login/google')
+  .post(userController.loginWithGoogle)
+
 Router.route('/verify')
   .put(userValidation.verifyAccount, userController.verifyAccount)
 

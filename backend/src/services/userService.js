@@ -7,6 +7,7 @@ import userModel from "~/models/users"
 import { pickUser } from "~/utils/formatter"
 import { JwtProvider } from "~/providers/JwtProvider"
 import { env } from "~/config/environment"
+import { OAuth2Client } from 'google-auth-library'
 
 /**
  * Generate random fullName
@@ -267,6 +268,64 @@ const login = async (reqBody) => {
   }
 }
 
+const loginWithGoogle = async (googleToken) => {
+  try {
+    // Verify Google token and get user info (you can use Google API for this)
+    // For simplicity, let's assume we have verified and got email from Google token
+    const googleUserInfo = await verifyGoogleToken(googleToken) // Implement this function
+
+    let existUser = await userModel.findOne({ email: googleUserInfo.email })
+
+    // If user doesn't exist, create a new one
+    if (!existUser) {
+      const newUser = new userModel({
+        email: googleUserInfo.email,
+        fullName: googleUserInfo.fullName,
+        avatar: googleUserInfo.avatar,
+        isActive: true,
+        isEmailVerified: true,
+        userName: googleUserInfo.email.split('@')[0]
+      })
+      existUser = await newUser.save()
+    }
+    // Generate tokens
+    const userInfo = {
+      _id: existUser._id,
+      email: existUser.email
+    }
+    const accessToken = await JwtProvider.generateToken(
+      userInfo,
+      env.ACCESS_TOKEN_SECRET_SIGNATURE,
+      env.ACCESS_TOKEN_LIFE
+    )
+    const refreshToken = await JwtProvider.generateToken(
+      userInfo,
+      env.REFRESH_TOKEN_SECRET_SIGNATURE,
+      env.REFRESH_TOKEN_LIFE
+    )
+    return { accessToken, refreshToken, ...pickUser(existUser) }
+  } catch (error) {
+    throw error
+  }
+}
+
+const verifyGoogleToken = async (token) => {
+  // Implement Google token verification logic here
+  // You can use Google's OAuth2 client library to verify the token
+  const client = new OAuth2Client(env.GOOGLE_CLIENT_ID)
+  const ticket = await client.verifyIdToken({
+    idToken: token,
+    audience: env.GOOGLE_CLIENT_ID
+  })
+  const payload = ticket.getPayload()
+  console.log('✅ Google token verified:', payload)
+  return {
+    email: payload.email,
+    fullName: payload.name,
+    avatar: payload.picture
+  }
+}
+
 const refreshToken = async (clientRefreshToken) => {
   try {
     const refreshTokenDecoded = await JwtProvider.verifyToken(
@@ -509,6 +568,7 @@ export const userService = {
   verifyAccount,
   verifyPhoneRegistration, // ✅ Export function verify phone registration
   login,
+  loginWithGoogle,
   refreshToken,
   updateProfile,
   changePassword,
