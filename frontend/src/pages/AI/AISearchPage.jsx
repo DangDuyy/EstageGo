@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import NavBar from '@/components/common/NavBar';
 import { FooterBar } from '@/components/common/FooterBar';
 import { Search, Sparkles, Loader2 } from 'lucide-react';
-import { nlSearchPropertiesAPI } from '@/apis';
+import { nlSearchPropertiesAPI, searchPropertiesByTagAPI } from '@/apis';
 
 export default function AISearchPage() {
   const [query, setQuery] = useState('');
@@ -14,6 +14,48 @@ export default function AISearchPage() {
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if there's a tag search from ImageTaggingPage
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tag = searchParams.get('tag');
+    if (tag) {
+      handleTagSearch(tag);
+    }
+  }, [location.search]);
+  
+  const handleTagSearch = async (tagLabel) => {
+    if (!tagLabel.trim()) return;
+    
+    setQuery(tagLabel);
+    setError('');
+    setSuggestions(null);
+    setLoading(true);
+    
+    try {
+      const data = await searchPropertiesByTagAPI(tagLabel, 1, 50);
+      setLoading(false);
+      
+      if (data.success && data.data?.properties) {
+        navigate('/listing/grid', {
+          state: {
+            properties: data.data.properties,
+            query: tagLabel,
+            filters: { tag: tagLabel },
+            isAISearch: true,
+            isTagSearch: true
+          }
+        });
+      } else {
+        setError(`Không tìm thấy bất động sản với tag "${tagLabel}"`);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tìm kiếm theo tag:", err);
+      setLoading(false);
+      setError("Có lỗi kết nối đến server. Vui lòng thử lại sau.");
+    }
+  };
 
   const handleSearch = async (e, searchQuery = null) => {
     e?.preventDefault();

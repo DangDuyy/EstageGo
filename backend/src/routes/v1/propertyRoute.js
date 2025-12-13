@@ -22,9 +22,6 @@ router.route('/nl-search')
 router.route('/in')
   .post(propertyController.getPropertiesWithinPolygon)
 
-router.route('/:id')
-  .get(propertyController.getPropertyDetails)
-
 // Image Tagging Routes
 router.route('/user/properties-with-media')
   .get(authMiddleware.isAuthorized, propertyController.getUserPropertiesWithMedia)
@@ -34,6 +31,9 @@ router.route('/user/image-tags')
 
 router.route('/search-by-tag')
   .get(propertyController.searchPropertiesByTag)
+
+router.route('/:id')
+  .get(propertyController.getPropertyDetails)
 
 router.route('/analyze-temp-image')
   .post(authMiddleware.isAuthorized, uploadFiles, propertyController.analyzeTemporaryImage)

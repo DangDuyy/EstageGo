@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { selectCurrentUser } from '@/redux/user/userSlice'
 import {
   getUserPropertiesWithMediaAPI,
@@ -8,7 +9,8 @@ import {
   updateImageTagsAPI,
   bulkAnalyzeImagesAPI,
   analyzeTemporaryImageAPI,
-  clearImageTagsAPI
+  clearImageTagsAPI,
+  searchPropertiesByTagAPI
 } from '@/apis'
 import { toast } from 'react-toastify'
 import { Loader2, Sparkles, Tag, Image as ImageIcon, X, Plus, Upload, Trash2 } from 'lucide-react'
@@ -22,6 +24,7 @@ import { FooterBar } from '@/components/common/FooterBar'
 
 const ImageTaggingPage = () => {
   const currentUser = useSelector(selectCurrentUser)
+  const navigate = useNavigate()
   const [properties, setProperties] = useState([])
   const [allTags, setAllTags] = useState([])
   const [loading, setLoading] = useState(true)
@@ -392,7 +395,31 @@ const ImageTaggingPage = () => {
                 <Badge
                   key={index}
                   variant="secondary"
-                  className="text-sm cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                  className="text-sm cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={async () => {
+                    try {
+                      setLoading(true)
+                      const result = await searchPropertiesByTagAPI(tag.label, 1, 50)
+                      if (result.success && result.data?.properties) {
+                        navigate('/listing/grid', {
+                          state: {
+                            properties: result.data.properties,
+                            query: tag.label,
+                            filters: { tag: tag.label },
+                            isAISearch: true,
+                            isTagSearch: true
+                          }
+                        })
+                      } else {
+                        toast.error('Không tìm thấy bất động sản với tag này')
+                      }
+                    } catch (error) {
+                      console.error('Error searching by tag:', error)
+                      toast.error('Lỗi khi tìm kiếm theo tag')
+                    } finally {
+                      setLoading(false)
+                    }
+                  }}
                 >
                   {tag.label} ({tag.count})
                   <span className="ml-1 text-xs opacity-70">
@@ -555,13 +582,40 @@ const ImageTaggingPage = () => {
                     <Badge
                       key={index}
                       variant={tag.source === 'ai' ? 'default' : 'secondary'}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={async () => {
+                        try {
+                          setLoading(true)
+                          const result = await searchPropertiesByTagAPI(tag.label, 1, 50)
+                          if (result.success && result.data?.properties) {
+                            navigate('/listing/grid', {
+                              state: {
+                                properties: result.data.properties,
+                                query: tag.label,
+                                filters: { tag: tag.label },
+                                isAISearch: true,
+                                isTagSearch: true
+                              }
+                            })
+                          } else {
+                            toast.error('Không tìm thấy bất động sản với tag này')
+                          }
+                        } catch (error) {
+                          console.error('Error searching by tag:', error)
+                          toast.error('Lỗi khi tìm kiếm theo tag')
+                        } finally {
+                          setLoading(false)
+                        }
+                      }}
                     >
                       {tag.label}
                       {tag.source === 'ai' && <span className="text-xs">🤖</span>}
                       <X
                         className="h-3 w-3 cursor-pointer hover:text-destructive"
-                        onClick={() => handleRemoveTag(index)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveTag(index)
+                        }}
                       />
                     </Badge>
                   ))}
