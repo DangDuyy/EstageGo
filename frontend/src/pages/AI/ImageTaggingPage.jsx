@@ -56,10 +56,10 @@ const ImageTaggingPage = () => {
     }
   }
 
-  const handleAnalyzeImage = async (propertyId, imageId) => {
+  const handleAnalyzeImage = async (propertyId, imageId, imageUrl = null) => {
     try {
       setAnalyzing(true)
-      const result = await analyzePropertyImageAPI(propertyId, imageId)
+      const result = await analyzePropertyImageAPI(propertyId, imageId, imageUrl)
       
       toast.success('Image analyzed successfully!')
       
@@ -454,7 +454,7 @@ const ImageTaggingPage = () => {
                             variant="secondary"
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleAnalyzeImage(property._id, image._id)
+                              handleAnalyzeImage(property._id, image._id, image.url)
                             }}
                             disabled={analyzing}
                           >
@@ -522,7 +522,7 @@ const ImageTaggingPage = () => {
               
               <div className="flex gap-2">
                 <Button
-                  onClick={() => handleAnalyzeImage(selectedImage.propertyId, selectedImage._id)}
+                  onClick={() => handleAnalyzeImage(selectedImage.propertyId, selectedImage._id, selectedImage.url)}
                   disabled={analyzing}
                   size="sm"
                 >

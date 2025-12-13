@@ -348,8 +348,12 @@ export const searchPropertiesByTagAPI = async (tag, page = 1, limit = 12) => {
 }
 
 // Analyze single image
-export const analyzePropertyImageAPI = async (propertyId, imageId) => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/analyze`)
+export const analyzePropertyImageAPI = async (propertyId, imageId, imageUrl = null) => {
+  let url = `${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/analyze`
+  if (imageUrl) {
+    url += `?imageUrl=${encodeURIComponent(imageUrl)}`
+  }
+  const response = await authorizeAxiosInstance.post(url)
   return response.data
 }
 

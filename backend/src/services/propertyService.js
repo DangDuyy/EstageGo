@@ -61,6 +61,23 @@ const addMediaToProperty = async (propertyId, mediaItems) => {
 const getPropertyById = async (id) => {
   try {
     const property = await propertyModel.findById(id)
+    
+    // Ensure all media items have _id (for old documents without _id)
+    if (property && property.media && Array.isArray(property.media)) {
+      let needsSave = false
+      property.media.forEach((media) => {
+        if (!media._id) {
+          // Mongoose will auto-generate _id for subdocuments
+          media._id = new Types.ObjectId()
+          needsSave = true
+        }
+      })
+      // Save property if any media items were missing _id
+      if (needsSave) {
+        await property.save()
+      }
+    }
+    
     return property
   }
   catch (error) {
@@ -452,7 +469,7 @@ const getPropertiesByFilters = async (filters) => {
   }
 }
 
-const updateImageTags = async (propertyId, imageId, tagsData) => {
+const updateImageTags = async (propertyId, imageId, tagsData, imageUrl = null) => {
     try {
         const property = await propertyModel.findById(propertyId)
         
@@ -460,9 +477,31 @@ const updateImageTags = async (propertyId, imageId, tagsData) => {
             throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
         }
         
-        const mediaItem = property.media.id(imageId)
+        // Find media item by _id first
+        let mediaItem = null
+        if (property.media && typeof property.media.id === 'function') {
+            mediaItem = property.media.id(imageId)
+        }
+        
+        // If not found by _id, try .find()
+        if (!mediaItem && property.media) {
+            mediaItem = property.media.find(item => {
+                if (item._id) {
+                    return item._id.toString() === imageId
+                }
+                return false
+            })
+        }
+        
+        // If still not found and imageUrl is provided, find by URL (most reliable)
+        if (!mediaItem && imageUrl && property.media) {
+            mediaItem = property.media.find(item => item.url === imageUrl)
+        }
         
         if (!mediaItem) {
+            console.error('[UpdateImageTags] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
+            console.error('[UpdateImageTags] Available media _ids:', property.media?.map(m => m._id?.toString()))
+            console.error('[UpdateImageTags] Available media urls:', property.media?.map(m => m.url))
             throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
         }
         
@@ -524,7 +563,7 @@ const getUserPropertiesWithMedia = async (userId) => {
             owner: userId,
             'media.0': { $exists: true } // Only properties with at least one media
         })
-        .select('_id title slug media createdAt')
+        .select('_id title slug media createdAt owner')
         .sort({ createdAt: -1 })
         
         return properties

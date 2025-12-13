@@ -656,10 +656,13 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
 const analyzePropertyImage = async (req, res, next) => {
     try {
         const { propertyId, imageId } = req.params
+        const { imageUrl } = req.query // Get imageUrl from query params as fallback
         const userId = req.jwtDecoded._id
         
-        // Get property and verify ownership
-        const property = await propertyService.getPropertyById(propertyId)
+        // Get property using the same method as getUserPropertiesWithMedia
+        // to ensure _id consistency
+        const properties = await propertyService.getUserPropertiesWithMedia(userId)
+        const property = properties.find(p => p._id.toString() === propertyId)
         
         if (!property) {
             return res.status(StatusCodes.NOT_FOUND).json({
@@ -668,7 +671,8 @@ const analyzePropertyImage = async (req, res, next) => {
             })
         }
         
-        if (property.owner.toString() !== userId) {
+        // Verify ownership (property.owner should exist since we queried by userId)
+        if (!property.owner || property.owner.toString() !== userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: "You can only analyze images of your own properties"
@@ -676,9 +680,56 @@ const analyzePropertyImage = async (req, res, next) => {
         }
         
         // Find image in property media
-        const mediaItem = property.media.id(imageId)
+        // Since _id changes on each query, we use URL as fallback
+        let mediaItem = null
+        
+        // First, try to find by _id (in case it matches)
+        if (property.media && typeof property.media.id === 'function') {
+            mediaItem = property.media.id(imageId)
+        }
+        
+        // If not found by _id, try .find()
+        if (!mediaItem && property.media) {
+            mediaItem = property.media.find(item => {
+                if (item._id) {
+                    return item._id.toString() === imageId
+                }
+                return false
+            })
+        }
+        
+        // If still not found and imageUrl is provided, find by URL (most reliable)
+        if (!mediaItem && imageUrl && property.media) {
+            mediaItem = property.media.find(item => item.url === imageUrl)
+        }
+        
+        // If still not found, query property directly from database
+        if (!mediaItem) {
+            const dbProperty = await propertyService.getPropertyById(propertyId)
+            if (dbProperty && dbProperty.media) {
+                // Try to find by _id
+                if (typeof dbProperty.media.id === 'function') {
+                    mediaItem = dbProperty.media.id(imageId)
+                }
+                if (!mediaItem) {
+                    mediaItem = dbProperty.media.find(item => {
+                        if (item._id) {
+                            return item._id.toString() === imageId
+                        }
+                        return false
+                    })
+                }
+                // If still not found and imageUrl is provided, find by URL
+                if (!mediaItem && imageUrl) {
+                    mediaItem = dbProperty.media.find(item => item.url === imageUrl)
+                }
+            }
+        }
         
         if (!mediaItem) {
+            console.error('[Analyze] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
+            console.error('[Analyze] Available media _ids:', property.media?.map(m => m._id?.toString()))
+            console.error('[Analyze] Available media urls:', property.media?.map(m => m.url))
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Image not found"
@@ -688,8 +739,8 @@ const analyzePropertyImage = async (req, res, next) => {
         // Analyze image with AI
         const analysis = await imageTaggingService.analyzeImageWithGemini(mediaItem.url)
         
-        // Update property with analysis results
-        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis)
+        // Update property with analysis results (pass imageUrl as fallback)
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis, imageUrl || mediaItem.url)
         
         res.status(StatusCodes.OK).json({
             success: true,
