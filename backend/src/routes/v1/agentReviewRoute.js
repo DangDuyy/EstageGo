@@ -1,6 +1,7 @@
 import express from 'express'
 import { agentReviewController } from '~/controllers/agentReviewController'
 import { authMiddleware } from '~/middlewares/authMiddleware'
+import { uploadFiles } from '~/middlewares/uploadMiddleware'
 
 const Router = express.Router()
 
@@ -13,6 +14,9 @@ Router.get('/review/:reviewId', agentReviewController.getReviewById)
 
 // Protected routes (auth required)
 Router.use(authMiddleware.isAuthorized)
+
+// POST /api/v1/agent-reviews/upload-images - Upload review images
+Router.post('/upload-images', uploadFiles, agentReviewController.uploadReviewImages)
 
 // GET /api/v1/agent-reviews/user/:agentId - Get user's review for an agent
 Router.get('/user/:agentId', agentReviewController.getUserReviewForAgent)

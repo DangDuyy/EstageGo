@@ -20,16 +20,27 @@ const getAgentFollowers = async (agentId, page = 1, limit = 20) => {
 
     const follows = await agentFollowModel
       .find({ agent: agentId, _destroy: false })
-      .populate('follower', 'fullName userName avatar')
+      .populate({
+        path: 'follower',
+        select: 'fullName userName avatar role agentTitle companyName',
+        match: { _destroy: { $ne: true } } // Only get active users
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
 
     const total = await agentFollowModel.countDocuments({ agent: agentId, _destroy: false })
 
+    // Filter out null followers (in case user was deleted or doesn't match)
+    const followers = follows
+      .map(f => f.follower)
+      .filter(f => f !== null && f !== undefined)
+
+    console.log(`[Follow Service] Found ${follows.length} follows, ${followers.length} valid followers for agent ${agentId}`)
+
     return {
       success: true,
-      followers: follows.map(f => f.follower),
+      followers,
       pagination: {
         page,
         limit,

@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import { agentReviewService } from '~/services/agentReviewService'
+import { mediaService } from '~/services/mediaService'
 
 // Get all reviews for an agent
 const getAgentReviews = async (req, res, next) => {
@@ -132,12 +133,38 @@ const getUserReviewForAgent = async (req, res, next) => {
   }
 }
 
+// Upload review images
+const uploadReviewImages = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const files = req.files || []
+
+    if (!files || files.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'No files provided'
+      })
+    }
+
+    const uploadResult = await mediaService.uploadReviewImages(files, userId)
+    
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Images uploaded successfully',
+      media: uploadResult
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const agentReviewController = {
   getAgentReviews,
   getReviewById,
   createReview,
   updateReview,
   deleteReview,
-  getUserReviewForAgent
+  getUserReviewForAgent,
+  uploadReviewImages
 }
 

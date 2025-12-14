@@ -8,15 +8,17 @@ import { Separator } from '@/components/ui/separator'
 import { 
   MapPin, Building2, Phone, Mail, Globe, 
   Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User, MessageCircle,
-  Star, Heart, HeartOff, Edit, Trash2
+  Star, Heart, HeartOff, Edit, Trash2, Upload, X, Users, UserPlus
 } from 'lucide-react'
 import { 
   searchPropertiesAPI, createOrGetConversationAPI,
   getAgentReviewsAPI, getUserReviewForAgentAPI, createAgentReviewAPI, updateAgentReviewAPI, deleteAgentReviewAPI,
-  checkFollowingAPI, toggleFollowAgentAPI, getAgentFollowStatsAPI
+  checkFollowingAPI, toggleFollowAgentAPI, getAgentFollowStatsAPI, getAgentFollowersAPI, getUserFollowingAPI
 } from '@/apis'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import NavBar from '@/components/common/NavBar'
 import { FooterBar } from '@/components/common/FooterBar'
 import PropertyCard from '@/components/common/Property/FeatureCard/PropertyCard'
@@ -41,12 +43,19 @@ export default function AgentProfile() {
   const [userReview, setUserReview] = useState(null)
   const [loadingReviews, setLoadingReviews] = useState(false)
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', images: [] })
+  const [reviewImagePreviews, setReviewImagePreviews] = useState([])
   
   // Follow state
   const [isFollowing, setIsFollowing] = useState(false)
   const [followStats, setFollowStats] = useState({ totalFollowers: 0 })
   const [togglingFollow, setTogglingFollow] = useState(false)
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false)
+  const [followingDialogOpen, setFollowingDialogOpen] = useState(false)
+  const [followers, setFollowers] = useState([])
+  const [following, setFollowing] = useState([])
+  const [loadingFollowers, setLoadingFollowers] = useState(false)
+  const [loadingFollowing, setLoadingFollowing] = useState(false)
 
   useEffect(() => {
     fetchUserData()
@@ -97,22 +106,67 @@ export default function AgentProfile() {
             setUserReview(userReviewData.review)
             setReviewForm({
               rating: userReviewData.review.rating,
-              comment: userReviewData.review.comment || ''
+              comment: userReviewData.review.comment || '',
+              images: userReviewData.review.media || []
             })
+            // Set existing images as previews (for display only, not for re-upload)
+            if (userReviewData.review.media && userReviewData.review.media.length > 0) {
+              setReviewImagePreviews(
+                userReviewData.review.media
+                  .filter(m => m.type === 'image')
+                  .map((mediaItem, idx) => ({
+                    file: null, // No file object for existing images
+                    preview: mediaItem.url,
+                    isExisting: true,
+                    url: mediaItem.url
+                  }))
+              )
+            }
           } else {
             setUserReview(null)
-            setReviewForm({ rating: 5, comment: '' })
+            setReviewForm({ rating: 5, comment: '', images: [] })
+            setReviewImagePreviews([])
           }
         } catch (err) {
           // User hasn't reviewed yet
           setUserReview(null)
-          setReviewForm({ rating: 5, comment: '' })
+          setReviewForm({ rating: 5, comment: '', images: [] })
+          setReviewImagePreviews([])
         }
       }
     } catch (error) {
       console.error('Error fetching reviews:', error)
     } finally {
       setLoadingReviews(false)
+    }
+  }
+
+  const fetchFollowers = async () => {
+    if (!agentId) return
+    try {
+      setLoadingFollowers(true)
+      const data = await getAgentFollowersAPI(agentId, 1, 50)
+      console.log('Followers data:', data) // Debug log
+      const followersList = data.followers || data.data?.followers || []
+      setFollowers(followersList.filter(f => f !== null && f !== undefined))
+    } catch (error) {
+      console.error('Error fetching followers:', error)
+      toast.error('Failed to load followers')
+    } finally {
+      setLoadingFollowers(false)
+    }
+  }
+
+  const fetchFollowing = async () => {
+    if (!currentUser) return
+    try {
+      setLoadingFollowing(true)
+      const data = await getUserFollowingAPI(1, 50)
+      setFollowing(data.following || [])
+    } catch (error) {
+      console.error('Error fetching following:', error)
+    } finally {
+      setLoadingFollowing(false)
     }
   }
 
@@ -213,6 +267,70 @@ export default function AgentProfile() {
     }
   }
 
+  // Handle review image upload
+  const handleReviewImageSelect = (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    const newPreviews = files.map(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image file`)
+        return null
+      }
+      return {
+        file,
+        preview: URL.createObjectURL(file),
+        isExisting: false
+      }
+    }).filter(Boolean)
+
+    const currentCount = reviewImagePreviews.length
+    const remainingSlots = 5 - currentCount
+    const toAdd = newPreviews.slice(0, remainingSlots)
+    
+    setReviewImagePreviews(prev => [...prev, ...toAdd].slice(0, 5)) // Max 5 images
+    e.target.value = '' // Reset input
+  }
+
+  const handleRemoveReviewImage = (index) => {
+    setReviewImagePreviews(prev => {
+      const item = prev[index]
+      // Only revoke URL if it's a new upload (not existing image)
+      if (!item.isExisting && item.preview && item.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(item.preview)
+      }
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  // Upload images and get URLs
+  const uploadReviewImages = async (files) => {
+    if (files.length === 0) return []
+    
+    const formData = new FormData()
+    files.forEach(file => {
+      formData.append('files', file)
+    })
+
+    try {
+      const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-reviews/upload-images`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      // Return array of media objects with url and type
+      return (response.data.media || []).map(item => ({
+        url: item.url,
+        type: item.type || 'image'
+      }))
+    } catch (error) {
+      console.error('Error uploading images:', error)
+      toast.error('Failed to upload images')
+      return []
+    }
+  }
+
   // Handle review submit
   const handleSubmitReview = async () => {
     if (!currentUser) {
@@ -226,20 +344,39 @@ export default function AgentProfile() {
     }
 
     try {
+      // Upload only new images (not existing ones)
+      const newImageFiles = reviewImagePreviews
+        .filter(p => p.file && !p.isExisting)
+        .map(p => p.file)
+      
+      // Get existing image URLs
+      const existingImages = reviewImagePreviews
+        .filter(p => p.isExisting && p.url)
+        .map(p => ({ url: p.url, type: 'image' }))
+      
+      // Upload new images
+      const uploadedMedia = await uploadReviewImages(newImageFiles)
+      
+      // Combine existing and new images
+      const allMedia = [...existingImages, ...uploadedMedia]
+
       if (userReview) {
         // Update existing review
         await updateAgentReviewAPI(userReview._id, {
           rating: reviewForm.rating,
-          comment: reviewForm.comment
+          comment: reviewForm.comment,
+          media: allMedia
         })
       } else {
         // Create new review
         await createAgentReviewAPI(agentId, {
           rating: reviewForm.rating,
-          comment: reviewForm.comment
+          comment: reviewForm.comment,
+          media: allMedia
         })
       }
       setReviewDialogOpen(false)
+      setReviewImagePreviews([])
       await fetchReviews()
     } catch (error) {
       console.error('Error submitting review:', error)
@@ -258,7 +395,8 @@ export default function AgentProfile() {
     try {
       await deleteAgentReviewAPI(userReview._id)
       setUserReview(null)
-      setReviewForm({ rating: 5, comment: '' })
+      setReviewForm({ rating: 5, comment: '', images: [] })
+      setReviewImagePreviews([])
       await fetchReviews()
     } catch (error) {
       console.error('Error deleting review:', error)
@@ -282,7 +420,7 @@ export default function AgentProfile() {
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="flex-1">
+                <div className="flex-1 relative">
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h1 className="text-3xl font-bold">{user.fullName || user.userName}</h1>
                     <Badge variant={isAgent ? "default" : "secondary"} className="text-sm">
@@ -299,7 +437,7 @@ export default function AgentProfile() {
                       )}
                     </Badge>
                     {!isOwnProfile && currentUser && (
-                      <>
+                      <div className="flex gap-2 ml-auto">
                         <Button 
                           variant="default" 
                           size="sm"
@@ -330,7 +468,7 @@ export default function AgentProfile() {
                             {isFollowing ? 'Unfollow' : 'Follow'}
                           </Button>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                   {isAgent && user.agentTitle && (
@@ -477,7 +615,7 @@ export default function AgentProfile() {
                 <div className="flex items-center justify-between">
                   <CardTitle>Reviews</CardTitle>
                   {reviewStats && (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
                         <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
                         <span className="text-2xl font-bold">{reviewStats.averageRating.toFixed(1)}</span>
@@ -485,10 +623,35 @@ export default function AgentProfile() {
                       <span className="text-muted-foreground">
                         ({reviewStats.totalReviews} {reviewStats.totalReviews === 1 ? 'review' : 'reviews'})
                       </span>
-                      {followStats.totalFollowers > 0 && (
-                        <span className="text-muted-foreground">
-                          • {followStats.totalFollowers} {followStats.totalFollowers === 1 ? 'follower' : 'followers'}
-                        </span>
+                      {isAgent && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setFollowersDialogOpen(true)
+                              fetchFollowers()
+                            }}
+                            className="text-muted-foreground"
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            {followStats.totalFollowers || 0} {followStats.totalFollowers === 1 ? 'follower' : 'followers'}
+                          </Button>
+                          {currentUser && currentUser._id === user._id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFollowingDialogOpen(true)
+                                fetchFollowing()
+                              }}
+                              className="text-muted-foreground"
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Following
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -516,7 +679,22 @@ export default function AgentProfile() {
                             </span>
                           </div>
                           {userReview.comment && (
-                            <p className="text-sm">{userReview.comment}</p>
+                            <p className="text-sm mb-2">{userReview.comment}</p>
+                          )}
+                          {userReview.media && userReview.media.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {userReview.media.map((mediaItem, idx) => (
+                                mediaItem.type === 'image' && (
+                                  <img
+                                    key={idx}
+                                    src={mediaItem.url}
+                                    alt={`Review image ${idx + 1}`}
+                                    className="w-20 h-20 object-cover rounded border cursor-pointer hover:opacity-80"
+                                    onClick={() => window.open(mediaItem.url, '_blank')}
+                                  />
+                                )
+                              ))}
+                            </div>
                           )}
                         </div>
                         <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
@@ -560,6 +738,39 @@ export default function AgentProfile() {
                                   placeholder="Share your experience..."
                                   rows={4}
                                 />
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Images (optional, max 5)</label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {reviewImagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative">
+                                      <img
+                                        src={preview.preview}
+                                        alt={`Preview ${index + 1}`}
+                                        className="w-20 h-20 object-cover rounded border"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveReviewImage(index)}
+                                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  {reviewImagePreviews.length < 5 && (
+                                    <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:border-primary">
+                                      <Upload className="h-6 w-6 text-muted-foreground" />
+                                      <Input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleReviewImageSelect}
+                                        className="hidden"
+                                      />
+                                    </label>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button onClick={handleSubmitReview}>Update Review</Button>
@@ -615,6 +826,39 @@ export default function AgentProfile() {
                                 rows={4}
                               />
                             </div>
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Images (optional, max 5)</label>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {reviewImagePreviews.map((preview, index) => (
+                                  <div key={index} className="relative">
+                                    <img
+                                      src={preview.preview}
+                                      alt={`Preview ${index + 1}`}
+                                      className="w-20 h-20 object-cover rounded border"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveReviewImage(index)}
+                                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                ))}
+                                {reviewImagePreviews.length < 5 && (
+                                  <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:border-primary">
+                                    <Upload className="h-6 w-6 text-muted-foreground" />
+                                    <Input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      onChange={handleReviewImageSelect}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            </div>
                             <Button onClick={handleSubmitReview}>Submit Review</Button>
                           </div>
                         </DialogContent>
@@ -634,17 +878,25 @@ export default function AgentProfile() {
                     {reviews.map((review) => (
                       <div key={review._id} className="border-b pb-4 last:border-0">
                         <div className="flex items-start gap-4">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={review.reviewer?.avatar} />
-                            <AvatarFallback>
-                              {review.reviewer?.fullName?.charAt(0) || review.reviewer?.userName?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <button
+                            onClick={() => navigate(`/agents/${review.reviewer?._id}`)}
+                            className="hover:opacity-80 transition-opacity"
+                          >
+                            <Avatar className="h-10 w-10 cursor-pointer">
+                              <AvatarImage src={review.reviewer?.avatar} />
+                              <AvatarFallback>
+                                {review.reviewer?.fullName?.charAt(0) || review.reviewer?.userName?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </button>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold">
+                              <button
+                                onClick={() => navigate(`/agents/${review.reviewer?._id}`)}
+                                className="font-semibold hover:text-primary transition-colors"
+                              >
                                 {review.reviewer?.fullName || review.reviewer?.userName}
-                              </span>
+                              </button>
                               <div className="flex gap-1">
                                 {[...Array(5)].map((_, i) => (
                                   <Star
@@ -662,7 +914,22 @@ export default function AgentProfile() {
                               </span>
                             </div>
                             {review.comment && (
-                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                              <p className="text-sm text-muted-foreground mb-2">{review.comment}</p>
+                            )}
+                            {review.media && review.media.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {review.media.map((mediaItem, idx) => (
+                                  mediaItem.type === 'image' && (
+                                    <img
+                                      key={idx}
+                                      src={mediaItem.url}
+                                      alt={`Review image ${idx + 1}`}
+                                      className="w-24 h-24 object-cover rounded border cursor-pointer hover:opacity-80"
+                                      onClick={() => window.open(mediaItem.url, '_blank')}
+                                    />
+                                  )
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -673,6 +940,97 @@ export default function AgentProfile() {
               </CardContent>
             </Card>
           )}
+
+          {/* Followers Dialog */}
+          <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Followers</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[400px]">
+                {loadingFollowers ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : followers.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No followers yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {followers.map((follower) => (
+                      <button
+                        key={follower._id}
+                        onClick={() => {
+                          navigate(`/agents/${follower._id}`)
+                          setFollowersDialogOpen(false)
+                        }}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={follower.avatar} />
+                          <AvatarFallback>
+                            {follower.fullName?.charAt(0) || follower.userName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-semibold">{follower.fullName || follower.userName}</p>
+                          {follower.agentTitle && (
+                            <p className="text-sm text-muted-foreground">{follower.agentTitle}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+
+          {/* Following Dialog */}
+          <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Following</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[400px]">
+                {loadingFollowing ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : following.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">Not following anyone yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {following.map((agent) => (
+                      <button
+                        key={agent._id}
+                        onClick={() => {
+                          navigate(`/agents/${agent._id}`)
+                          setFollowingDialogOpen(false)
+                        }}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={agent.avatar} />
+                          <AvatarFallback>
+                            {agent.fullName?.charAt(0) || agent.userName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-semibold">{agent.fullName || agent.userName}</p>
+                          {agent.agentTitle && (
+                            <p className="text-sm text-muted-foreground">{agent.agentTitle}</p>
+                          )}
+                          {agent.companyName && (
+                            <p className="text-xs text-muted-foreground">{agent.companyName}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
 
           {/* Agent's Properties */}
           <Card>
