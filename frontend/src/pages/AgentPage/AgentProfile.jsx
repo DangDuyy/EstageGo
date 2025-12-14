@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { 
   MapPin, Building2, Phone, Mail, Globe, 
   Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User, MessageCircle,
-  Star, Heart, HeartOff, Edit, Trash2, Upload, X, Users, UserPlus
+  Star, Heart, HeartOff, Edit, Trash2, Upload, X, Users, UserPlus, Shield
 } from 'lucide-react'
 import { 
   searchPropertiesAPI, createOrGetConversationAPI,
@@ -216,6 +216,7 @@ export default function AgentProfile() {
   }
 
   const isAgent = user?.role === 'agent'
+  const isAdmin = user?.role === 'admin'
   const isOwnProfile = currentUser?._id === user?._id
 
   // Handle start chat
@@ -423,19 +424,24 @@ export default function AgentProfile() {
                 <div className="flex-1 relative">
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h1 className="text-3xl font-bold">{user.fullName || user.userName}</h1>
-                    <Badge variant={isAgent ? "default" : "secondary"} className="text-sm">
-                      {isAgent ? (
-                        <>
-                          <Briefcase className="h-3 w-3 mr-1" />
-                          Agent
-                        </>
-                      ) : (
-                        <>
-                          <User className="h-3 w-3 mr-1" />
-                          Personal
-                        </>
-                      )}
-                    </Badge>
+                    {isAdmin && (
+                      <Badge variant="destructive" className="text-sm">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                    {isAgent && (
+                      <Badge variant="default" className="text-sm">
+                        <Briefcase className="h-3 w-3 mr-1" />
+                        Agent
+                      </Badge>
+                    )}
+                    {!isAdmin && !isAgent && (
+                      <Badge variant="secondary" className="text-sm">
+                        <User className="h-3 w-3 mr-1" />
+                        Personal
+                      </Badge>
+                    )}
                     {!isOwnProfile && currentUser && (
                       <div className="flex gap-2 ml-auto">
                         <Button 
