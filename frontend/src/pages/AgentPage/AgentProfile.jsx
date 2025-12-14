@@ -7,9 +7,16 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { 
   MapPin, Building2, Phone, Mail, Globe, 
-  Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User, MessageCircle
+  Facebook, Linkedin, Twitter, Briefcase, Award, Loader2, User, MessageCircle,
+  Star, Heart, HeartOff, Edit, Trash2
 } from 'lucide-react'
-import { searchPropertiesAPI, createOrGetConversationAPI } from '@/apis'
+import { 
+  searchPropertiesAPI, createOrGetConversationAPI,
+  getAgentReviewsAPI, getUserReviewForAgentAPI, createAgentReviewAPI, updateAgentReviewAPI, deleteAgentReviewAPI,
+  checkFollowingAPI, toggleFollowAgentAPI, getAgentFollowStatsAPI
+} from '@/apis'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import NavBar from '@/components/common/NavBar'
 import { FooterBar } from '@/components/common/FooterBar'
 import PropertyCard from '@/components/common/Property/FeatureCard/PropertyCard'
@@ -27,10 +34,30 @@ export default function AgentProfile() {
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [startingChat, setStartingChat] = useState(false)
+  
+  // Reviews state
+  const [reviews, setReviews] = useState([])
+  const [reviewStats, setReviewStats] = useState(null)
+  const [userReview, setUserReview] = useState(null)
+  const [loadingReviews, setLoadingReviews] = useState(false)
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
+  
+  // Follow state
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followStats, setFollowStats] = useState({ totalFollowers: 0 })
+  const [togglingFollow, setTogglingFollow] = useState(false)
 
   useEffect(() => {
     fetchUserData()
   }, [agentId])
+
+  useEffect(() => {
+    if (user && user.role === 'agent') {
+      fetchReviews()
+      fetchFollowData()
+    }
+  }, [user, currentUser, agentId])
 
   const fetchUserData = async () => {
     try {
@@ -51,6 +78,62 @@ export default function AgentProfile() {
       console.error('Error fetching user data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchReviews = async () => {
+    if (!user || user.role !== 'agent') return
+    try {
+      setLoadingReviews(true)
+      const data = await getAgentReviewsAPI(agentId, 1, 10)
+      setReviews(data.reviews || [])
+      setReviewStats(data.stats || null)
+      
+      // Fetch user's review if logged in
+      if (currentUser && currentUser._id !== user._id) {
+        try {
+          const userReviewData = await getUserReviewForAgentAPI(agentId)
+          if (userReviewData.review) {
+            setUserReview(userReviewData.review)
+            setReviewForm({
+              rating: userReviewData.review.rating,
+              comment: userReviewData.review.comment || ''
+            })
+          } else {
+            setUserReview(null)
+            setReviewForm({ rating: 5, comment: '' })
+          }
+        } catch (err) {
+          // User hasn't reviewed yet
+          setUserReview(null)
+          setReviewForm({ rating: 5, comment: '' })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+    } finally {
+      setLoadingReviews(false)
+    }
+  }
+
+  const fetchFollowData = async () => {
+    if (!user || user.role !== 'agent') return
+    try {
+      // Get follow stats (public)
+      const statsData = await getAgentFollowStatsAPI(agentId)
+      setFollowStats(statsData)
+      
+      // Check if following (only if logged in and not own profile)
+      if (currentUser && currentUser._id !== user._id) {
+        try {
+          const followData = await checkFollowingAPI(agentId)
+          setIsFollowing(followData.isFollowing || false)
+        } catch (err) {
+          setIsFollowing(false)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching follow data:', error)
     }
   }
 
@@ -78,8 +161,8 @@ export default function AgentProfile() {
     )
   }
 
-  const isAgent = user.role === 'agent'
-  const isOwnProfile = currentUser?._id === user._id
+  const isAgent = user?.role === 'agent'
+  const isOwnProfile = currentUser?._id === user?._id
 
   // Handle start chat
   const handleStartChat = async () => {
@@ -102,6 +185,84 @@ export default function AgentProfile() {
       toast.error('Failed to start conversation')
     } finally {
       setStartingChat(false)
+    }
+  }
+
+  // Handle follow/unfollow
+  const handleToggleFollow = async () => {
+    if (!currentUser) {
+      toast.error('Please login to follow agents')
+      return
+    }
+
+    if (isOwnProfile) {
+      toast.info('You cannot follow yourself')
+      return
+    }
+
+    try {
+      setTogglingFollow(true)
+      const result = await toggleFollowAgentAPI(agentId)
+      setIsFollowing(result.action === 'added')
+      await fetchFollowData()
+    } catch (error) {
+      console.error('Error toggling follow:', error)
+      toast.error(error.response?.data?.message || 'Failed to update follow status')
+    } finally {
+      setTogglingFollow(false)
+    }
+  }
+
+  // Handle review submit
+  const handleSubmitReview = async () => {
+    if (!currentUser) {
+      toast.error('Please login to submit a review')
+      return
+    }
+
+    if (!reviewForm.rating) {
+      toast.error('Please select a rating')
+      return
+    }
+
+    try {
+      if (userReview) {
+        // Update existing review
+        await updateAgentReviewAPI(userReview._id, {
+          rating: reviewForm.rating,
+          comment: reviewForm.comment
+        })
+      } else {
+        // Create new review
+        await createAgentReviewAPI(agentId, {
+          rating: reviewForm.rating,
+          comment: reviewForm.comment
+        })
+      }
+      setReviewDialogOpen(false)
+      await fetchReviews()
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      toast.error(error.response?.data?.message || 'Failed to submit review')
+    }
+  }
+
+  // Handle delete review
+  const handleDeleteReview = async () => {
+    if (!userReview) return
+    
+    if (!window.confirm('Are you sure you want to delete your review?')) {
+      return
+    }
+
+    try {
+      await deleteAgentReviewAPI(userReview._id)
+      setUserReview(null)
+      setReviewForm({ rating: 5, comment: '' })
+      await fetchReviews()
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      toast.error('Failed to delete review')
     }
   }
 
@@ -138,19 +299,38 @@ export default function AgentProfile() {
                       )}
                     </Badge>
                     {!isOwnProfile && currentUser && (
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={handleStartChat}
-                        disabled={startingChat}
-                      >
-                        {startingChat ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : (
-                          <MessageCircle className="h-4 w-4 mr-2" />
+                      <>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={handleStartChat}
+                          disabled={startingChat}
+                        >
+                          {startingChat ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                          )}
+                          Message
+                        </Button>
+                        {isAgent && (
+                          <Button 
+                            variant={isFollowing ? "outline" : "default"} 
+                            size="sm"
+                            onClick={handleToggleFollow}
+                            disabled={togglingFollow}
+                          >
+                            {togglingFollow ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : isFollowing ? (
+                              <HeartOff className="h-4 w-4 mr-2" />
+                            ) : (
+                              <Heart className="h-4 w-4 mr-2" />
+                            )}
+                            {isFollowing ? 'Unfollow' : 'Follow'}
+                          </Button>
                         )}
-                        Message
-                      </Button>
+                      </>
                     )}
                   </div>
                   {isAgent && user.agentTitle && (
@@ -286,6 +466,210 @@ export default function AgentProfile() {
                     </Badge>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Reviews Section */}
+          {isAgent && (
+            <Card className="mb-8">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Reviews</CardTitle>
+                  {reviewStats && (
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
+                        <span className="text-2xl font-bold">{reviewStats.averageRating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-muted-foreground">
+                        ({reviewStats.totalReviews} {reviewStats.totalReviews === 1 ? 'review' : 'reviews'})
+                      </span>
+                      {followStats.totalFollowers > 0 && (
+                        <span className="text-muted-foreground">
+                          • {followStats.totalFollowers} {followStats.totalFollowers === 1 ? 'follower' : 'followers'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {!isOwnProfile && currentUser && (
+                  <div className="mb-6">
+                    {userReview ? (
+                      <div className="flex items-center gap-4 p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-5 w-5 ${
+                                  i < userReview.rating
+                                    ? 'fill-yellow-500 text-yellow-500'
+                                    : 'text-muted-foreground'
+                                }`}
+                              />
+                            ))}
+                            <span className="text-sm text-muted-foreground ml-2">
+                              Your review
+                            </span>
+                          </div>
+                          {userReview.comment && (
+                            <p className="text-sm">{userReview.comment}</p>
+                          )}
+                        </div>
+                        <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Your Review</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-4">
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Rating</label>
+                                <div className="flex gap-2">
+                                  {[1, 2, 3, 4, 5].map((rating) => (
+                                    <button
+                                      key={rating}
+                                      type="button"
+                                      onClick={() => setReviewForm({ ...reviewForm, rating })}
+                                      className="focus:outline-none"
+                                    >
+                                      <Star
+                                        className={`h-8 w-8 ${
+                                          rating <= reviewForm.rating
+                                            ? 'fill-yellow-500 text-yellow-500'
+                                            : 'text-muted-foreground'
+                                        }`}
+                                      />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Comment</label>
+                                <Textarea
+                                  value={reviewForm.comment}
+                                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                  placeholder="Share your experience..."
+                                  rows={4}
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button onClick={handleSubmitReview}>Update Review</Button>
+                                <Button variant="destructive" onClick={handleDeleteReview}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    ) : (
+                      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline">
+                            <Star className="h-4 w-4 mr-2" />
+                            Write a Review
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Write a Review</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 mt-4">
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Rating</label>
+                              <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((rating) => (
+                                  <button
+                                    key={rating}
+                                    type="button"
+                                    onClick={() => setReviewForm({ ...reviewForm, rating })}
+                                    className="focus:outline-none"
+                                  >
+                                    <Star
+                                      className={`h-8 w-8 ${
+                                        rating <= reviewForm.rating
+                                          ? 'fill-yellow-500 text-yellow-500'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium mb-2 block">Comment</label>
+                              <Textarea
+                                value={reviewForm.comment}
+                                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                                placeholder="Share your experience..."
+                                rows={4}
+                              />
+                            </div>
+                            <Button onClick={handleSubmitReview}>Submit Review</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                )}
+
+                {loadingReviews ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No reviews yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review._id} className="border-b pb-4 last:border-0">
+                        <div className="flex items-start gap-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={review.reviewer?.avatar} />
+                            <AvatarFallback>
+                              {review.reviewer?.fullName?.charAt(0) || review.reviewer?.userName?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold">
+                                {review.reviewer?.fullName || review.reviewer?.userName}
+                              </span>
+                              <div className="flex gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < review.rating
+                                        ? 'fill-yellow-500 text-yellow-500'
+                                        : 'text-muted-foreground'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(review.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
