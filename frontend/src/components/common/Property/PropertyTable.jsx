@@ -16,7 +16,8 @@ import {
     Eye,
     Pencil,
     Trash2,
-    ImageOff
+    ImageOff,
+    Zap
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -47,11 +48,29 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom"
+import { boostPropertyAPI } from "@/apis"
+import { toast } from "react-toastify"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useSelector } from "react-redux"
+import { selectCurrentUser } from "@/redux/user/userSlice"
 
 export default function PropertyTable({ data, onPageChange, onPageSizeChange }) {
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState({})
+    const [boostDialogOpen, setBoostDialogOpen] = useState(false)
+    const [selectedProperty, setSelectedProperty] = useState(null)
+    const [boosting, setBoosting] = useState(false)
     const navigate = useNavigate()
+    const currentUser = useSelector(selectCurrentUser)
 
     const formatPrice = (value, currency) => {
         if (!value) return "N/A"
@@ -61,6 +80,64 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             maximumFractionDigits: 0
         }).format(value)
     }
+
+    const getBoostPrice = () => {
+        const membership = currentUser?.membershipLevel || 'basic'
+        if (membership === 'premium') return 50000
+        if (membership === 'standard') return 75000
+        return 100000
+    }
+
+    const handleBoostClick = (property) => {
+        setSelectedProperty(property)
+        setBoostDialogOpen(true)
+    }
+
+    const handleConfirmBoost = async () => {
+        if (!selectedProperty) return
+
+        try {
+            setBoosting(true)
+            const useCredits = currentUser?.boostCredits > 0
+            await boostPropertyAPI(selectedProperty._id, useCredits)
+            
+            setBoostDialogOpen(false)
+            setSelectedProperty(null)
+            
+            // Reload data after boost
+            setTimeout(() => {
+                window.location.reload()
+            }, 1000)
+        } catch (error) {
+            console.error('Boost error:', error)
+            if (error.response?.status === 402) {
+                toast.error('Insufficient balance. Please deposit funds or buy boost credits.')
+            }
+        } finally {
+            setBoosting(false)
+        }
+    }
+
+    const getTimeSinceBoost = (bumpedAt) => {
+        if (!bumpedAt) return null
+        const now = new Date()
+        const boosted = new Date(bumpedAt)
+        const diffMs = now - boosted
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+        const diffDays = Math.floor(diffHours / 24)
+        
+        if (diffDays > 0) return `${diffDays}d ago`
+        if (diffHours > 0) return `${diffHours}h ago`
+        return 'Just now'
+    }
+
+    // Dashboard (non-admin area): always show only current user's posts
+    const allProperties = data?.properties || []
+    const filteredProperties = allProperties.filter((p) => (
+        p?.owner === currentUser?._id || p?.owner?._id === currentUser?._id
+    ))
+
+    const effectiveTotal = filteredProperties.length
 
     const columns = [
         {
@@ -211,17 +288,17 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             cell: ({ row }) => (
                 <div className="flex items-center gap-2 min-w-[180px]">
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src={row.original.ownerInfo.avatar} />
+                        <AvatarImage src={row.original.ownerInfo?.avatar} />
                         <AvatarFallback>
-                            {row.original.ownerInfo.fullName?.charAt(0)}
+                            {row.original.ownerInfo?.fullName?.charAt(0) || "?"}
                         </AvatarFallback>
                     </Avatar>
                     <div className="text-xs overflow-hidden">
                         <div className="font-medium truncate">
-                            {row.original.ownerInfo.fullName}
+                            {row.original.ownerInfo?.fullName || "Unknown"}
                         </div>
                         <div className="text-muted-foreground truncate">
-                            @{row.original.ownerInfo.userName}
+                            {row.original.ownerInfo?.userName ? `@${row.original.ownerInfo.userName}` : "N/A"}
                         </div>
                     </div>
                 </div>
@@ -255,44 +332,65 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         {
             id: "actions",
             header: "Actions",
-            cell: ({ row }) => (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
+            cell: ({ row }) => {
+                const isOwner = row.original.owner === currentUser?._id || row.original.owner?._id === currentUser?._id;
+                return (
+                <div className="flex items-center gap-2">
+                    {/* Boost Button - Only for owner */}
+                    {isOwner && row.original.status === 'active' && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/dashboard/posts/${row.original._id}`)}
+                            className="gap-1 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200"
+                        >
+                            <Zap className="h-3 w-3" />
+                            Đẩy tin
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { navigate(`/properties/${row.id}`) }}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            ),
-            size: 70,
+                    )}
+                    
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/${row.original._id}`) }}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Xem chi tiết
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { navigate(`/properties/${row.original._id}`) }}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Xem trang công khai
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Chỉnh sửa
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Xóa
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )},
+            size: 150,
         },
     ]
 
     const table = useReactTable({
-        data: data?.properties || [],
+        data: filteredProperties,
         columns,
         state: {
             rowSelection,
             columnVisibility,
         },
         manualPagination: true,
-        pageCount: Math.ceil((data?.totalProperties || 0) / (data?.itemsPerPage || 10)),
+        pageCount: Math.ceil((effectiveTotal || 0) / (data?.itemsPerPage || 10)),
         enableRowSelection: true,
         onRowSelectionChange: setRowSelection,
         onColumnVisibilityChange: setColumnVisibility,
@@ -302,7 +400,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
 
     const currentPage = data?.page || 1
     const pageSize = data?.itemsPerPage || 10
-    const totalPages = Math.ceil((data?.totalProperties || 0) / pageSize)
+    const totalPages = Math.ceil((effectiveTotal || 0) / pageSize)
 
     const handlePageSizeChange = (newSize) => {
         if (onPageSizeChange) {
@@ -317,13 +415,14 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     }
 
     return (
+        <>
         <Card className="w-full">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
                         <CardTitle>Properties Management</CardTitle>
                         <CardDescription className="mt-1">
-                            Total: {data?.totalProperties || 0} properties
+                            Total: {effectiveTotal || 0} properties
                         </CardDescription>
                     </div>
                     <DropdownMenu>
@@ -409,7 +508,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                     {/* Pagination Controls */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="text-sm text-muted-foreground">
-                            {Object.keys(rowSelection).length} of {data?.properties?.length || 0} row(s) selected
+                            {Object.keys(rowSelection).length} of {filteredProperties.length || 0} row(s) selected
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -479,5 +578,89 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                 </div>
             </CardContent>
         </Card>
+
+        {/* Boost Confirmation Dialog */}
+        <AlertDialog open={boostDialogOpen} onOpenChange={setBoostDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-orange-500" />
+                        Boost Property
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {!selectedProperty ? null : (
+                            <div className="space-y-4 mt-4">
+                                <div className="p-3 bg-muted rounded-lg">
+                                    <div className="font-semibold text-foreground mb-2">
+                                        {selectedProperty.title}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {selectedProperty.address?.fullAddress}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 text-sm">
+                                    <p className="text-foreground">
+                                        Boosting will push this property to the top of search results for maximum visibility.
+                                    </p>
+                                    
+                                    {selectedProperty.bumpedAt ? (
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <span>Last boosted:</span>
+                                            <span className="font-medium">
+                                                {getTimeSinceBoost(selectedProperty.bumpedAt)}
+                                            </span>
+                                        </div>
+                                    ) : null}
+
+                                    <div className="pt-2 border-t space-y-1">
+                                        {currentUser?.boostCredits > 0 ? (
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-foreground">
+                                                    <span className="font-medium">Using Boost Credit:</span>
+                                                    <span className="font-semibold">1 credit</span>
+                                                </div>
+                                                <div className="flex justify-between text-xs">
+                                                    <span>Remaining credits:</span>
+                                                    <span>{currentUser.boostCredits - 1}</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex justify-between text-foreground">
+                                                <span className="font-medium">Boost Fee:</span>
+                                                <span className="font-semibold">
+                                                    {formatPrice(getBoostPrice(), 'VND')}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={boosting}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleConfirmBoost}
+                        disabled={boosting}
+                        className="bg-orange-500 hover:bg-orange-600"
+                    >
+                        {boosting ? (
+                            <>
+                                <Zap className="mr-2 h-4 w-4 animate-pulse" />
+                                Boosting...
+                            </>
+                        ) : (
+                            <>
+                                <Zap className="mr-2 h-4 w-4" />
+                                Confirm Boost
+                            </>
+                        )}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }

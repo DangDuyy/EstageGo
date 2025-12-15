@@ -200,10 +200,48 @@ const propertySchema = new mongoose.Schema({
     expireAt: {
         type: Date,
         default: null
+    },
+    // Boost/Bump features
+    bumpedAt: {
+        type: Date,
+        default: null,
+        index: true
+    },
+    bumpCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    lastBumpedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    autoBoost: {
+        enabled: {
+            type: Boolean,
+            default: false
+        },
+        frequency: {
+            type: String,
+            enum: ['daily', 'every2days', 'every3days', 'weekly'],
+            default: 'daily'
+        },
+        lastAutoBoostAt: {
+            type: Date,
+            default: null
+        }
+    },
+    featuredType: {
+        type: String,
+        enum: ['standard', 'premium', 'gallery'],
+        default: 'standard'
     }
 }, { timestamps: true })
 
 propertySchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 }); // optional TTL if you want auto-remove; else keep and set private via a job
+propertySchema.index({ bumpedAt: -1 }); // Index for boost sorting
+propertySchema.index({ postType: -1, bumpedAt: -1, createdAt: -1 }); // Compound index for featured sorting
 
 const propertyModel = mongoose.model('Property', propertySchema)
 

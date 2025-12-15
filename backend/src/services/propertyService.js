@@ -201,7 +201,8 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
     else if (sortBy === "featured") {
-      // Ưu tiên VIP posts trước, sau đó sort theo createdAt
+      // Ưu tiên: 1) Boosted posts (bumpedAt), 2) VIP posts, 3) createdAt
+      sort["bumpedAt"] = -1 // Tin đã đẩy lên trước
       sort["postType"] = -1 // vip trước normal
       sort["createdAt"] = -1
     }
@@ -609,6 +610,32 @@ const getAllImageTags = async (userId) => {
     }
 }
 
+const updateProperty = async (propertyId, updateData) => {
+    try {
+        const property = await propertyModel.findByIdAndUpdate(
+            propertyId, 
+            { $set: updateData }, 
+            { new: true, runValidators: true }
+        )
+        return property
+    } catch (error) {
+        throw error
+    }
+}
+
+const updateUser = async (userId, updateData) => {
+    try {
+        const user = await userModel.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        )
+        return user
+    } catch (error) {
+        throw error
+    }
+}
+
 export const propertyService = {
     createProperty,
     addMediaToProperty,
@@ -622,5 +649,7 @@ export const propertyService = {
     searchPropertiesByImageTag,
     getUserPropertiesWithMedia,
     getAllImageTags,
-    getPropertiesWithMap
+    getPropertiesWithMap,
+    updateProperty,
+    updateUser
 }

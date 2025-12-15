@@ -35,6 +35,16 @@ router.route('/search-by-tag')
 router.route('/:id')
   .get(propertyController.getPropertyDetails)
 
+// Boost routes
+router.route('/:id/boost')
+  .post(authMiddleware.isAuthorized, propertyController.boostProperty)
+
+router.route('/boost/batch')
+  .post(authMiddleware.isAuthorized, propertyController.boostMultipleProperties)
+
+router.route('/boost/purchase-package')
+  .post(authMiddleware.isAuthorized, propertyController.purchaseBoostPackage)
+
 router.route('/analyze-temp-image')
   .post(authMiddleware.isAuthorized, uploadFiles, propertyController.analyzeTemporaryImage)
 

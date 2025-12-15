@@ -632,3 +632,32 @@ export const getAgentFollowStatsAPI = async (agentId) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/stats/${agentId}`)
   return response.data
 }
+
+// ========== BOOST/BUMP APIs ==========
+
+// Boost a single property
+export const boostPropertyAPI = async (propertyId, useCredits = false) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/boost`, {
+    useCredits
+  })
+  toast.success('Property boosted successfully!')
+  return response.data
+}
+
+// Boost multiple properties
+export const boostMultiplePropertiesAPI = async (propertyIds) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/batch`, {
+    propertyIds
+  })
+  toast.success(`${propertyIds.length} properties boosted successfully!`)
+  return response.data
+}
+
+// Purchase boost package
+export const purchaseBoostPackageAPI = async (packageType) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/purchase-package`, {
+    packageType
+  })
+  toast.success('Boost package purchased successfully!')
+  return response.data
+}
