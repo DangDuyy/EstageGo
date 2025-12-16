@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Zap, Package, TrendingUp, Loader2, Sparkles } from "lucide-react";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "@/redux/user/userSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, updateUser } from "@/redux/user/userSlice";
 import { cn } from "@/lib/utils";
 import { purchaseBoostPackageAPI, getBalanceAPI } from "@/apis";
 import { toast } from "react-toastify";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function BoostPackages() {
+  const dispatch = useDispatch();
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -28,6 +29,12 @@ export default function BoostPackages() {
   
   const currentUser = useSelector(selectCurrentUser);
   const boostCredits = currentUser?.boostCredits || 0;
+
+  const membership = currentUser?.membershipLevel || 'basic';
+  const basePerBoostMap = { basic: 100000, standard: 75000, premium: 50000 };
+  const discountMap = { basic: 0, standard: 0.1, premium: 0.2 };
+  const basePerBoost = basePerBoostMap[membership];
+  const discountRate = discountMap[membership] || 0;
 
   const packages = [
     {
@@ -37,8 +44,6 @@ export default function BoostPackages() {
       description: "Perfect for trying out boost features",
       credits: 5,
       price: 400000,
-      pricePerBoost: 80000,
-      savings: 0,
       popular: false
     },
     {
@@ -48,8 +53,6 @@ export default function BoostPackages() {
       description: "Best value for regular users",
       credits: 10,
       price: 700000,
-      pricePerBoost: 70000,
-      savings: 300000,
       popular: true
     },
     {
@@ -59,8 +62,6 @@ export default function BoostPackages() {
       description: "For serious property sellers",
       credits: 20,
       price: 1200000,
-      pricePerBoost: 60000,
-      savings: 800000,
       popular: false
     }
   ];
@@ -98,15 +99,20 @@ export default function BoostPackages() {
       setPurchasing(true);
       const response = await purchaseBoostPackageAPI(selectedPackage.id);
 
-      if (response.success) {
-        setShowConfirm(false);
-        setSelectedPackage(null);
-        
-        // Reload page after a short delay to show success message
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      }
+      // Compute credits/balance from response or locally as fallback
+      const creditsFromResponse = response?.totalCredits;
+      const newBalanceFromResponse = response?.newBalance;
+      const computedCredits = creditsFromResponse ?? ((currentUser?.boostCredits || 0) + (selectedPackage?.credits || 0));
+      const computedBalance = newBalanceFromResponse ?? (currentBalance - (selectedPackage?.price || 0));
+
+      // Update local user state so UI reflects immediately
+      dispatch(updateUser({
+        boostCredits: computedCredits,
+        balance: computedBalance
+      }));
+
+      setShowConfirm(false);
+      setSelectedPackage(null);
     } catch (error) {
       console.error('Purchase error:', error);
       const errorMessage = error.response?.data?.message || 'Failed to purchase package';
@@ -153,7 +159,11 @@ export default function BoostPackages() {
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {packages.map((pkg) => {
             const Icon = pkg.icon;
-            const savingsPercent = pkg.savings > 0 ? Math.round((pkg.savings / (pkg.credits * 100000)) * 100) : 0;
+            const discountedPrice = Math.round(pkg.price * (1 - discountRate));
+            const effectivePerBoost = Math.round(discountedPrice / pkg.credits);
+            const baselineTotal = basePerBoost * pkg.credits;
+            const savings = Math.max(0, baselineTotal - discountedPrice);
+            const savingsPercent = savings > 0 ? Math.round((savings / baselineTotal) * 100) : 0;
 
             return (
               <Card 
@@ -184,12 +194,12 @@ export default function BoostPackages() {
                   <div className="text-center space-y-2">
                     <div className="flex items-baseline justify-center gap-2">
                       <span className="text-4xl font-bold">
-                        {formatPrice(pkg.price)}
+                        {formatPrice(discountedPrice)}
                       </span>
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>{pkg.credits} Boost Credits</p>
-                      <p className="text-xs">≈ {formatPrice(pkg.pricePerBoost)} per boost</p>
+                      <p className="text-xs">≈ {formatPrice(effectivePerBoost)} per boost</p>
                     </div>
                     {savingsPercent > 0 && (
                       <Badge variant="secondary" className="bg-green-100 text-green-700">
@@ -213,7 +223,7 @@ export default function BoostPackages() {
                       {pkg.savings > 0 && (
                         <li className="flex items-center gap-2">
                           <Package className="h-4 w-4 text-orange-500" />
-                          <span>Save {formatPrice(pkg.savings)}</span>
+                          <span>Save {formatPrice(savings)}</span>
                         </li>
                       )}
                     </ul>
@@ -226,7 +236,7 @@ export default function BoostPackages() {
                     size="lg"
                     variant={pkg.popular ? "default" : "outline"}
                     disabled={purchasing}
-                    onClick={() => handlePurchaseClick(pkg)}
+                    onClick={() => handlePurchaseClick({ ...pkg, effectivePrice: Math.round(pkg.price * (1 - discountRate)) })}
                   >
                     {purchasing ? (
                       <>
@@ -234,7 +244,7 @@ export default function BoostPackages() {
                         Processing...
                       </>
                     ) : (
-                      `Purchase for ${formatPrice(pkg.price)}`
+                      `Purchase for ${formatPrice(discountedPrice)}`
                     )}
                   </Button>
                 </CardFooter>

@@ -636,10 +636,10 @@ export const getAgentFollowStatsAPI = async (agentId) => {
 // ========== BOOST/BUMP APIs ==========
 
 // Boost a single property
-export const boostPropertyAPI = async (propertyId, useCredits = false) => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/boost`, {
-    useCredits
-  })
+export const boostPropertyAPI = async (propertyId, useCredits = false, durationHours) => {
+  const payload = { useCredits }
+  if (durationHours) payload.durationHours = durationHours
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/boost`, payload)
   toast.success('Property boosted successfully!')
   return response.data
 }

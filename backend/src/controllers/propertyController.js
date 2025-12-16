@@ -1048,19 +1048,37 @@ const boostProperty = async (req, res, next) => {
             })
         }
 
-        // Calculate boost fee based on membership
+        // Calculate boost fee based on membership and duration
         const membership = user.membershipLevel || 'basic'
-        let boostFee = 100000 // Base: 100k VND
-        if (membership === 'premium') boostFee = 50000 // 50% discount
-        else if (membership === 'standard') boostFee = 75000 // 25% discount
+        // Base fee is for 24h boost
+        let base24hFee = 100000 // basic
+        if (membership === 'premium') base24hFee = 50000
+        else if (membership === 'standard') base24hFee = 75000
+
+        const creditsNeeded = Math.max(1, Math.ceil(boostDuration / 24))
+        // Duration multiplier: 24h=1.0, 48h=1.5, 72h=2.0
+        let durationMultiplier = 1
+        if (boostDuration <= 24) durationMultiplier = 1
+        else if (boostDuration <= 48) durationMultiplier = 1.5
+        else durationMultiplier = 2
+        const boostFee = Math.round(base24hFee * durationMultiplier)
 
         // Check if user prefers to use credits or balance
-        const { useCredits } = req.body
+        const { useCredits, durationHours } = req.body
+        // Default boost duration: 48 hours
+        const boostDuration = Number(durationHours) && Number(durationHours) > 0 ? Number(durationHours) : 48
         
-        if (useCredits && user.boostCredits > 0) {
-            // Use boost credits
+        if (useCredits) {
+            if ((user.boostCredits || 0) < creditsNeeded) {
+                return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+                    success: false,
+                    message: `Insufficient boost credits: need ${creditsNeeded}`,
+                    requiredCredits: creditsNeeded,
+                    currentCredits: user.boostCredits || 0
+                })
+            }
             await propertyService.updateUser(userId, {
-                boostCredits: user.boostCredits - 1
+                boostCredits: (user.boostCredits || 0) - creditsNeeded
             })
         } else {
             // Use balance
@@ -1083,8 +1101,11 @@ const boostProperty = async (req, res, next) => {
         }
 
         // Update property with boost info
+        const now = new Date()
+        const expiresAt = new Date(now.getTime() + boostDuration * 60 * 60 * 1000)
         const updatedProperty = await propertyService.updateProperty(propertyId, {
-            bumpedAt: new Date(),
+            bumpedAt: now,
+            boostExpiresAt: expiresAt,
             bumpCount: (property.bumpCount || 0) + 1,
             lastBumpedBy: userId
         })
@@ -1093,8 +1114,9 @@ const boostProperty = async (req, res, next) => {
             success: true,
             message: "Property boosted successfully",
             data: updatedProperty,
-            feeCharged: useCredits && user.boostCredits > 0 ? 0 : boostFee,
-            creditsUsed: useCredits && user.boostCredits > 0 ? 1 : 0
+            feeCharged: useCredits ? 0 : boostFee,
+            creditsUsed: useCredits ? creditsNeeded : 0,
+            durationHours: boostDuration
         })
     } catch (error) {
         console.error("Error boosting property:", error)
@@ -1238,12 +1260,18 @@ const purchaseBoostPackage = async (req, res, next) => {
             })
         }
 
+        // Membership-based discount: basic 0%, standard 10%, premium 20%
+        const level = user.membershipLevel || 'basic'
+        const discountMap = { basic: 0, standard: 0.1, premium: 0.2 }
+        const discountRate = discountMap[level] ?? 0
+        const discountedPrice = Math.round(selectedPackage.price * (1 - discountRate))
+
         // Check balance
-        if (user.balance < selectedPackage.price) {
+        if (user.balance < discountedPrice) {
             return res.status(StatusCodes.PAYMENT_REQUIRED).json({
                 success: false,
                 message: "Insufficient balance to purchase boost package",
-                required: selectedPackage.price,
+                required: discountedPrice,
                 currentBalance: user.balance
             })
         }
@@ -1251,8 +1279,8 @@ const purchaseBoostPackage = async (req, res, next) => {
         // Deduct balance and add credits
         await paymentService.deductBalance({
             userId: userId,
-            amount: selectedPackage.price,
-            description: `Purchase boost package (${selectedPackage.credits} credits)`,
+            amount: discountedPrice,
+            description: `Purchase boost package (${selectedPackage.credits} credits) - ${level} discount ${Math.round(discountRate*100)}%`,
             referenceId: userId
         })
 
@@ -1264,8 +1292,8 @@ const purchaseBoostPackage = async (req, res, next) => {
             success: true,
             message: `Boost package purchased successfully`,
             credits: selectedPackage.credits,
-            price: selectedPackage.price,
-            newBalance: user.balance - selectedPackage.price,
+            price: discountedPrice,
+            newBalance: user.balance - discountedPrice,
             totalCredits: (user.boostCredits || 0) + selectedPackage.credits
         })
     } catch (error) {

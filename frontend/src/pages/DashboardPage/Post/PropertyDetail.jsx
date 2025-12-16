@@ -49,13 +49,15 @@ export default function PropertyDetail() {
   const [loading, setLoading] = useState(true);
   const [boostDialogOpen, setBoostDialogOpen] = useState(false);
   const [boosting, setBoosting] = useState(false);
+  const [boostHours, setBoostHours] = useState(48);
 
   useEffect(() => {
     // Fetch property details
     const fetchProperty = async () => {
       try {
         const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}`);
-        setProperty(response.data.data);
+        // API returns the property object at root (not wrapped in data)
+        setProperty(response.data?.data || response.data || null);
       } catch (error) {
         console.error('Failed to fetch property:', error);
         toast.error('Failed to load property details');
@@ -95,6 +97,21 @@ export default function PropertyDetail() {
     return 'Vừa xong';
   };
 
+  const getTimeRemaining = (expiresAt) => {
+    if (!expiresAt) return null;
+    const now = new Date();
+    const end = new Date(expiresAt);
+    const diffMs = end - now;
+    if (diffMs <= 0) return 'Đã hết hiệu lực';
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+    if (days > 0) return `${days} ngày ${hours} giờ`;
+    if (hours > 0) return `${hours} giờ ${minutes} phút`;
+    return `${minutes} phút`;
+  };
+
   const handleBoostClick = () => {
     setBoostDialogOpen(true);
   };
@@ -102,8 +119,9 @@ export default function PropertyDetail() {
   const handleConfirmBoost = async () => {
     try {
       setBoosting(true);
-      const useCredits = currentUser?.boostCredits > 0;
-      await boostPropertyAPI(propertyId, useCredits);
+      const creditsNeeded = Math.max(1, Math.ceil((boostHours || 24) / 24));
+      const useCredits = (currentUser?.boostCredits || 0) >= creditsNeeded;
+      await boostPropertyAPI(propertyId, useCredits, boostHours);
       
       setBoostDialogOpen(false);
       
@@ -305,6 +323,12 @@ export default function PropertyDetail() {
                         <span className="font-medium">{getTimeSinceBoost(property.bumpedAt)}</span>
                       </div>
                     )}
+                    {property.boostExpiresAt && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Hiệu lực boost còn:</span>
+                        <span className="font-medium">{getTimeRemaining(property.boostExpiresAt)}</span>
+                      </div>
+                    )}
                     
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Số lần đã đẩy:</span>
@@ -317,10 +341,10 @@ export default function PropertyDetail() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">Chi phí đẩy tin:</span>
                         <span className="text-lg font-bold text-orange-600">
-                          {currentUser?.boostCredits > 0 ? (
+                          {(currentUser?.boostCredits || 0) >= Math.max(1, Math.ceil((boostHours || 24)/24)) ? (
                             <span className="flex items-center gap-1">
                               <Zap className="h-4 w-4" />
-                              1 credit
+                              {Math.max(1, Math.ceil((boostHours || 24)/24))} credits
                             </span>
                           ) : (
                             formatPrice(getBoostPrice(), 'VND')
@@ -328,7 +352,7 @@ export default function PropertyDetail() {
                         </span>
                       </div>
                       
-                      {currentUser?.boostCredits > 0 && (
+                      {(currentUser?.boostCredits || 0) > 0 && (
                         <div className="text-xs text-muted-foreground">
                           Bạn còn {currentUser.boostCredits} credits
                         </div>
@@ -466,25 +490,47 @@ export default function PropertyDetail() {
                       <span className="font-medium">{getTimeSinceBoost(property.bumpedAt)}</span>
                     </div>
                   )}
+                  {property.boostExpiresAt && (
+                    <div className="flex justify-between text-sm">
+                      <span>Hiệu lực còn:</span>
+                      <span className="font-medium">{getTimeRemaining(property.boostExpiresAt)}</span>
+                    </div>
+                  )}
 
                   <Separator />
 
-                  {currentUser?.boostCredits > 0 ? (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Chọn thời lượng boost</div>
+                    <div className="flex gap-2">
+                      {[24, 48, 72].map(h => (
+                        <Button key={h} variant={boostHours === h ? 'default' : 'outline'} size="sm" onClick={() => setBoostHours(h)}>
+                          {h} giờ
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {(currentUser?.boostCredits || 0) >= Math.max(1, Math.ceil((boostHours || 24)/24)) ? (
                     <>
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">Sử dụng:</span>
-                        <span className="font-semibold text-orange-600">1 Boost Credit</span>
+                        <span className="font-semibold text-orange-600">{Math.max(1, Math.ceil((boostHours || 24)/24))} Boost Credits</span>
                       </div>
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Credits còn lại:</span>
-                        <span>{currentUser.boostCredits - 1}</span>
+                        <span>{currentUser.boostCredits - Math.max(1, Math.ceil((boostHours || 24)/24))}</span>
                       </div>
                     </>
                   ) : (
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">Chi phí:</span>
                       <span className="font-semibold text-orange-600">
-                        {formatPrice(getBoostPrice(), 'VND')}
+                        {(() => {
+                          const base = getBoostPrice();
+                          const h = boostHours || 24;
+                          const mult = h <= 24 ? 1 : (h <= 48 ? 1.5 : 2);
+                          return formatPrice(Math.round(base * mult), 'VND');
+                        })()}
                       </span>
                     </div>
                   )}
@@ -496,6 +542,7 @@ export default function PropertyDetail() {
                     <li>Xuất hiện ở vị trí đầu tiên</li>
                     <li>Được ưu tiên hiển thị</li>
                     <li>Tăng cơ hội được người mua xem</li>
+                    <li>Hiệu lực trong {boostHours} giờ</li>
                   </ul>
                 </div>
               </div>

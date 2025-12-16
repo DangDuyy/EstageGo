@@ -207,6 +207,11 @@ const propertySchema = new mongoose.Schema({
         default: null,
         index: true
     },
+    boostExpiresAt: {
+        type: Date,
+        default: null,
+        index: true
+    },
     bumpCount: {
         type: Number,
         default: 0,
@@ -236,11 +241,17 @@ const propertySchema = new mongoose.Schema({
         type: String,
         enum: ['standard', 'premium', 'gallery'],
         default: 'standard'
+    },
+    // Optional expiry for featured/vip post type
+    postTypeExpiresAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true })
 
 propertySchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 }); // optional TTL if you want auto-remove; else keep and set private via a job
 propertySchema.index({ bumpedAt: -1 }); // Index for boost sorting
+propertySchema.index({ boostExpiresAt: -1 });
 propertySchema.index({ postType: -1, bumpedAt: -1, createdAt: -1 }); // Compound index for featured sorting
 
 const propertyModel = mongoose.model('Property', propertySchema)
