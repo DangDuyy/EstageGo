@@ -65,6 +65,7 @@ export default function EditPost() {
     const [property, setProperty] = useState(null)
     const [visibility, setVisibility] = useState("public")
     const [status, setStatus] = useState("active") // active, draft, archived
+    const [existingMedia, setExistingMedia] = useState([]) // Lưu ảnh đã có
     
     const [fullAddress, setFullAddress] = useState("")
     const [provinces, setProvinces] = useState([])
@@ -181,6 +182,7 @@ export default function EditPost() {
                 setProperty(data)
                 setVisibility(data.visibility || 'public')
                 setStatus(data.status || 'active')
+                setExistingMedia(data.media || []) // Lưu media URLs
                 
                 // Populate form
                 form.reset({
@@ -607,17 +609,44 @@ export default function EditPost() {
                             <TabsTrigger value='3D'>3D Tour</TabsTrigger>
                         </TabsList>
                         <TabsContent value="photos">
-                            <Controller
-                                name="files"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <ImageUploadComponent
-                                        form={form}
-                                        files={field.value}
-                                        onChange={field.onChange}
-                                    />
-                                )}
-                            />
+                            {/* Hiển thị ảnh đã có */}
+                            {existingMedia.length > 0 && (
+                                <div className="mb-6">
+                                    <Label className="mb-3 block">Existing Photos</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                        {existingMedia.filter(m => m.type === 'image').map((media, index) => (
+                                            <div key={index} className="relative group">
+                                                <div className="relative h-32 bg-muted rounded-lg overflow-hidden border-2 border-border">
+                                                    <img
+                                                        src={media.url}
+                                                        alt={`Property ${index + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <span className="text-white text-xs">Existing</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Upload ảnh mới */}
+                            <div>
+                                <Label className="mb-3 block">Upload New Photos</Label>
+                                <Controller
+                                    name="files"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <ImageUploadComponent
+                                            form={form}
+                                            files={field.value}
+                                            onChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                            </div>
                         </TabsContent>
                         <TabsContent value="3D">
                             <TourLinkModal form={form} />
@@ -785,7 +814,7 @@ export default function EditPost() {
                                         </FormItem>
                                     )}
                                 />
-                                <div></div>
+                                <div></div> {/* Spacer */}
 
                                 <FormField
                                     control={form.control}
@@ -795,7 +824,10 @@ export default function EditPost() {
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Currency</FormLabel>
                                             <FormControl>
                                                 <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className={cn(
+                                                        "w-full",
+                                                        form.formState.errors.price?.currency ? "border-red-500 focus:ring-red-500" : ''
+                                                    )}>
                                                         <SelectValue placeholder="Select currency" />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -819,7 +851,10 @@ export default function EditPost() {
                                                 <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Period</FormLabel>
                                                 <FormControl>
                                                     <Select value={field.value} onValueChange={field.onChange}>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className={cn(
+                                                            "w-full",
+                                                            form.formState.errors.price?.period ? "border-red-500 focus:ring-red-500" : ''
+                                                        )}>
                                                             <SelectValue placeholder="Select period" />
                                                         </SelectTrigger>
                                                         <SelectContent>
@@ -965,7 +1000,10 @@ export default function EditPost() {
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Property Type</FormLabel>
                                             <FormControl>
                                                 <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className={cn(
+                                                        "w-full",
+                                                        form.formState.errors.type ? "border-red-500 focus:ring-red-500" : ''
+                                                    )}>
                                                         <SelectValue placeholder="Select type" />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -987,12 +1025,15 @@ export default function EditPost() {
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
                                             <FormControl>
                                                 <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger className={cn(
+                                                        "w-full",
+                                                        form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : ''
+                                                    )}>
                                                         <SelectValue placeholder="Select purpose" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value='sale'>Sale</SelectItem>
-                                                        <SelectItem value='rent'>Rent</SelectItem>
+                                                        <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
+                                                        <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </FormControl>
