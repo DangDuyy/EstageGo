@@ -34,6 +34,7 @@ import MainLayout from './components/common/Layout/MainLayout'
 import DepositPage from './pages/DashboardPage/DepositPage'
 import PaymentResultPage from './pages/DashboardPage/PaymentResultPage' 
 import TransactionHistoryPage from './pages/DashboardPage/TransactionHistoryPage'
+import EditPost from './pages/DashboardPage/Post/EditPost'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -82,6 +83,11 @@ function App() {
             <Route path="new" element={
               <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
                 <NewPost />
+              </MapProvider>
+            } />
+            <Route path="edit/:propertyId" element={
+              <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
+                <EditPost />
               </MapProvider>
             } />
           </Route>

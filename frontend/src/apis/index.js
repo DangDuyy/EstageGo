@@ -632,3 +632,31 @@ export const getAgentFollowStatsAPI = async (agentId) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/stats/${agentId}`)
   return response.data
 }
+
+// ========== PROPERTY UPDATE APIs ==========
+
+// Update property
+export const updatePropertyAPI = async (propertyId, propertyData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/properties/${propertyId}`, propertyData)
+  toast.success('Property updated successfully!')
+  return response.data
+}
+
+// Update property status (active/draft/archived)
+export const updatePropertyStatusAPI = async (propertyId, status) => {
+  const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/properties/${propertyId}/status`, { status })
+  return response.data
+}
+
+// Update property visibility (public/private)
+export const updatePropertyVisibilityAPI = async (propertyId, visibility) => {
+  const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/properties/${propertyId}/visibility`, { visibility })
+  return response.data
+}
+
+// Delete property
+export const deletePropertyAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}`)
+  toast.success('Property deleted successfully!')
+  return response.data
+}

@@ -1002,21 +1002,94 @@ const clearImageTags = async (req, res, next) => {
     }
 }
 
+const updateProperty = async (req, res, next) => {
+  try {
+    const { id: propertyId } = req.params
+    const userId = req.jwtDecoded._id
+    const updateData = req.body
+
+    const updatedProperty = await propertyService.updateProperty(propertyId, userId, updateData)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Property updated successfully",
+      data: updatedProperty
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const updatePropertyStatus = async (req, res, next) => {
+  try {
+    const { propertyId } = req.params
+    const userId = req.jwtDecoded._id
+    const { status } = req.body
+
+    const updatedProperty = await propertyService.updatePropertyStatus(propertyId, userId, status)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: updatedProperty
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const updatePropertyVisibility = async (req, res, next) => {
+  try {
+    const { propertyId } = req.params
+    const userId = req.jwtDecoded._id
+    const { visibility } = req.body
+
+    const updatedProperty = await propertyService.updatePropertyVisibility(propertyId, userId, visibility)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: updatedProperty
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const deleteProperty = async (req, res, next) => {
+  try {
+    const { id: propertyId } = req.params
+    const userId = req.jwtDecoded._id
+
+    await propertyService.deleteProperty(propertyId, userId)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Property deleted successfully"
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// Export
 export const propertyController = {
-    createProperty,
-    uploadPropertyMedia,
-    verifyPropertyDocuments,
-    getProperties,
-    getPropertyDetails,
-    getPropertiesWithinPolygon,
-    getPropertiesWithMap,
-    naturalLanguageSearch,
-    analyzePropertyImage,
-    updatePropertyImageTags,
-    searchPropertiesByTag,
-    getUserPropertiesWithMedia,
-    getAllUserImageTags,
-    bulkAnalyzeImages,
-    analyzeTemporaryImage,
-    clearImageTags
+  createProperty,
+  uploadPropertyMedia,
+  verifyPropertyDocuments,
+  getProperties,
+  getPropertyDetails,
+  getPropertiesWithinPolygon,
+  getPropertiesWithMap,
+  naturalLanguageSearch,
+  analyzePropertyImage,
+  updatePropertyImageTags,
+  searchPropertiesByTag,
+  getUserPropertiesWithMedia,
+  getAllUserImageTags,
+  bulkAnalyzeImages,
+  analyzeTemporaryImage,
+  clearImageTags,
+  updateProperty,
+  updatePropertyStatus,
+  updatePropertyVisibility,
+  deleteProperty
 }

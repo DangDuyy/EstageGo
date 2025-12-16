@@ -609,18 +609,111 @@ const getAllImageTags = async (userId) => {
     }
 }
 
+const updateProperty = async (propertyId, userId, updateData) => {
+  try {
+    const property = await propertyModel.findOne({ _id: propertyId, owner: userId })
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+
+    // Update fields
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        property[key] = updateData[key]
+      }
+    })
+
+    // Update slug if title changed
+    if (updateData.title && updateData.title !== property.title) {
+      const baseSlug = slugify(updateData.title, { lower: true, strict: true, locale: "vi" })
+      let slug = baseSlug
+      let counter = 1
+      while (await propertyModel.findOne({ slug, _id: { $ne: propertyId } })) {
+        slug = `${baseSlug}-${counter}`
+        counter++
+      }
+      property.slug = slug
+    }
+
+    await property.save()
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const updatePropertyStatus = async (propertyId, userId, status) => {
+  try {
+    const property = await propertyModel.findOneAndUpdate(
+      { _id: propertyId, owner: userId },
+      { status },
+      { new: true }
+    )
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+    
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const updatePropertyVisibility = async (propertyId, userId, visibility) => {
+  try {
+    const property = await propertyModel.findOneAndUpdate(
+      { _id: propertyId, owner: userId },
+      { visibility },
+      { new: true }
+    )
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+    
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const deleteProperty = async (propertyId, userId) => {
+  try {
+    const property = await propertyModel.findOneAndUpdate(
+      { _id: propertyId, owner: userId },
+      { _destroy: true },
+      { new: true }
+    )
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+    
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+// Export
 export const propertyService = {
-    createProperty,
-    addMediaToProperty,
-    getPropertyById,
-    getProperties,
-    getPropertyDetails,
-    getPropertiesWithinPolygon,
-    getUserById,
-    getPropertiesByFilters,
-    updateImageTags,
-    searchPropertiesByImageTag,
-    getUserPropertiesWithMedia,
-    getAllImageTags,
-    getPropertiesWithMap
+  createProperty,
+  addMediaToProperty,
+  getPropertyById,
+  getProperties,
+  getPropertyDetails,
+  getPropertiesWithinPolygon,
+  getUserById,
+  getPropertiesByFilters,
+  updateImageTags,
+  searchPropertiesByImageTag,
+  getUserPropertiesWithMedia,
+  getAllImageTags,
+  getPropertiesWithMap,
+  updateProperty,
+  updatePropertyStatus,
+  updatePropertyVisibility,
+  deleteProperty
 }

@@ -24,7 +24,7 @@ export function Menu({ isOpen, isAdminPanel = false }) {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUserAPI()).unwrap()
-      navigate('/login')
+      navigate('/')
     } catch (error) {
       console.error('Logout error:', error)
     }

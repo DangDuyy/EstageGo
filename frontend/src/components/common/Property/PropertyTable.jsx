@@ -208,24 +208,40 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         {
             accessorKey: "ownerInfo",
             header: "Owner",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2 min-w-[180px]">
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={row.original.ownerInfo.avatar} />
-                        <AvatarFallback>
-                            {row.original.ownerInfo.fullName?.charAt(0)}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="text-xs overflow-hidden">
-                        <div className="font-medium truncate">
-                            {row.original.ownerInfo.fullName}
+            cell: ({ row }) => {
+                const ownerInfo = row.original.ownerInfo || row.original.owner;
+                
+                if (!ownerInfo) {
+                    return (
+                        <div className="text-xs text-muted-foreground">
+                            No owner info
                         </div>
-                        <div className="text-muted-foreground truncate">
-                            @{row.original.ownerInfo.userName}
+                    );
+                }
+                
+                return (
+                    <div className="flex items-center gap-2 min-w-[180px]">
+                        <Avatar className="h-8 w-8">
+                            {ownerInfo.avatar && (
+                                <AvatarImage src={ownerInfo.avatar} />
+                            )}
+                            <AvatarFallback>
+                                {ownerInfo.fullName?.charAt(0) || ownerInfo.userName?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="text-xs overflow-hidden">
+                            <div className="font-medium truncate">
+                                {ownerInfo.fullName || ownerInfo.userName || 'Unknown'}
+                            </div>
+                            {ownerInfo.userName && (
+                                <div className="text-muted-foreground truncate">
+                                    @{ownerInfo.userName}
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
-            ),
+                );
+            },
         },
         {
             accessorKey: "status",
@@ -268,7 +284,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/edit/${row.original._id}`) }}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                         </DropdownMenuItem>
