@@ -317,7 +317,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const bathrooms = property.rooms?.bathrooms;
   const area = property.area;
   const addressText =
-    property.address?.fullAddress ||
+    // property.address?.fullAddress ||
     [
       property.address?.street,
       property.address?.ward,

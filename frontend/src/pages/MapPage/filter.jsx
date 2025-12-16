@@ -20,7 +20,7 @@ const BED_MAX = 10
 const PRICE_MIN = 0        // triệu VND
 const PRICE_MAX = 5000     // triệu VND
 
-function Filter({ handlePlaceSelected }) {
+function Filter({ searchValue, setSearchValue, handlePlaceSelected }) {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -32,7 +32,7 @@ function Filter({ handlePlaceSelected }) {
     const [searchLocation, setSearchLocation] = useState(params.get("province") || "");
 
     const handleSearch = () => {
-        const params = new URLSearchParams();
+        const params = new URLSearchParams(location.search);
         params.set("page", "1");
 
         if (searchKeyword.trim()) params.set("q", searchKeyword.trim());
@@ -128,8 +128,8 @@ function Filter({ handlePlaceSelected }) {
         }
         
         // ✅ Ensure itemsPerPage is always in URL (preserve or use default)
-        if (!qs.has("itemsPerPage")) {
-          qs.set("itemsPerPage", "8") // DEFAULT_ITEMS_PER_PAGE from constants
+        if (!qs.has("limit")) {
+          qs.set("limit", "8") // DEFAULT_ITEMS_PER_PAGE from constants
         }
     
         // Clear old filter params (but keep page and itemsPerPage)
@@ -247,7 +247,7 @@ function Filter({ handlePlaceSelected }) {
                                 className="h-12 pl-12 pt-3 pb-3 rounded-full"
                             />
                         </div> */}
-                        <CustomSearchBox onPlaceSelected={handlePlaceSelected} />
+                        <CustomSearchBox searchValue={searchValue} setSearchValue={setSearchValue} onPlaceSelected={handlePlaceSelected} />
                     </div>
 
                     {/* Divider */}
@@ -270,17 +270,6 @@ function Filter({ handlePlaceSelected }) {
                         <DropdownMenuContent asChild>
                             <Card className="sticky top-24">
                                 <CardContent className="p-6 space-y-6">
-                                    {/* Keyword */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="kw">Search keyword</Label>
-                                        <Input
-                                            id="kw"
-                                            value={q}
-                                            onChange={(e) => setQ(e.target.value)}
-                                            placeholder="VD: chung cư, quận 1, 'làng hoa'..."
-                                        />
-                                    </div>
-
                                     {/* Type (checkbox) */}
                                     <div className="space-y-2">
                                         <Label>Types</Label>
@@ -378,7 +367,7 @@ function Filter({ handlePlaceSelected }) {
 
                                     {/* Actions */}
                                     <div className="flex gap-2 pt-2">
-                                        <Button className="flex-1" onClick={applyFilters}>Apply filters</Button>
+                                        {/* <Button className="flex-1" onClick={applyFilters}>Apply filters</Button> */}
                                         <Button className="flex-1" variant="outline" onClick={resetAll}>Reset</Button>
                                     </div>
                                 </CardContent>

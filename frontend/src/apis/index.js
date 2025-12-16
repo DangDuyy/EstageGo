@@ -55,9 +55,11 @@ export const fetchAllPropertiesAPI = async (searchPath) => {
 // ==================== Property ============================
 export const createProperty = async (formData) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties`, formData,
-    {headers: {
-      "Content-Type": "multipart/form-data",
-    }}
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    }
   )
   return response.data
 }
@@ -82,14 +84,19 @@ export const geocodeAddress = async (addr) => {
   // return response.data
   return new Promise((resolve, reject) => {
     const geocoder = new window.google.maps.Geocoder()
-    geocoder.geocode({address: addr}, (results, status) => {
-      if(status === 'OK') resolve(results)
-        else reject(status)
+    geocoder.geocode({ address: addr }, (results, status) => {
+      if (status === 'OK') resolve(results)
+      else reject(status)
     })
   })
 }
 
 // ==================== Province API ============================
+export const fetchPropertyDetail = async (propertyId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}`)
+  return response.data
+}
+
 export const getAllProvinces = async () => {
   const response = await axios.get('https://provinces.open-api.vn/api/v1/p/')
   return response.data
@@ -107,19 +114,19 @@ export const getProvince = async (provinceCode) => {
 
 export const searchPropertiesAPI = async (filters) => {
   const params = new URLSearchParams()
-  
+
   // Pagination
   if (filters.page) params.set('page', filters.page)
   if (filters.itemsPerPage) params.set('itemsPerPage', filters.itemsPerPage)
-  
+
   // Search keyword
   if (filters.q) params.set('q', filters.q)
-  
+
   // Types (array)
   if (filters.types && filters.types.length > 0) {
     filters.types.forEach(t => params.append('types', t))
   }
-  
+
   // Location
   if (filters.province) params.set('province', filters.province)
   if (filters.provinces && filters.provinces.length > 0) {
@@ -127,31 +134,31 @@ export const searchPropertiesAPI = async (filters) => {
   }
   if (filters.district) params.set('district', filters.district)
   if (filters.ward) params.set('ward', filters.ward)
-  
+
   // Purpose & status
   if (filters.purpose) params.set('purpose', filters.purpose)
   if (filters.status) params.set('status', filters.status)
-  
+
   // Bedrooms
   if (filters.bedrooms !== undefined) params.set('bedrooms', filters.bedrooms)
   if (filters.bedroomsMin !== undefined) params.set('bedroomsMin', filters.bedroomsMin)
   if (filters.bedroomsMax !== undefined) params.set('bedroomsMax', filters.bedroomsMax)
-  
+
   // Bathrooms
   if (filters.bathrooms !== undefined) params.set('bathrooms', filters.bathrooms)
   if (filters.bathroomsMin !== undefined) params.set('bathroomsMin', filters.bathroomsMin)
   if (filters.bathroomsMax !== undefined) params.set('bathroomsMax', filters.bathroomsMax)
-  
+
   // Area
   if (filters.area !== undefined) params.set('area', filters.area)
   if (filters.areaMin !== undefined) params.set('areaMin', filters.areaMin)
   if (filters.areaMax !== undefined) params.set('areaMax', filters.areaMax)
-  
+
   // Price
   if (filters.price !== undefined) params.set('price', filters.price)
   if (filters.priceMin !== undefined) params.set('priceMin', filters.priceMin)
   if (filters.priceMax !== undefined) params.set('priceMax', filters.priceMax)
-  
+
   // Amenities
   if (filters.amenitiesAll && filters.amenitiesAll.length > 0) {
     filters.amenitiesAll.forEach(a => params.append('amenitiesAll', a))
@@ -159,14 +166,14 @@ export const searchPropertiesAPI = async (filters) => {
   if (filters.amenitiesAny && filters.amenitiesAny.length > 0) {
     filters.amenitiesAny.forEach(a => params.append('amenitiesAny', a))
   }
-  
+
   // Owner
   if (filters.owner) params.set('owner', filters.owner)
-  
+
   // Sort
   if (filters.sortBy) params.set('sortBy', filters.sortBy)
   if (filters.sortDir) params.set('sortDir', filters.sortDir)
-  
+
   const queryString = params.toString()
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties${queryString ? '?' + queryString : ''}`)
   return response.data
@@ -261,7 +268,7 @@ export const getAllAgentsAPI = async (searchQuery = '', page = 1, limit = 12) =>
   if (searchQuery) params.set('search', searchQuery)
   params.set('page', page)
   params.set('limit', limit)
-  
+
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/agents?${params.toString()}`)
   return response.data
 }
@@ -373,7 +380,7 @@ export const bulkAnalyzeImagesAPI = async (propertyId) => {
 export const analyzeTemporaryImageAPI = async (file) => {
   const formData = new FormData()
   formData.append('files', file)
-  
+
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/analyze-temp-image`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
@@ -492,13 +499,13 @@ export const getTransactionHistoryAPI = async (page = 1, limit = 10, filters = {
   const params = new URLSearchParams()
   params.set('page', page)
   params.set('limit', limit)
-  
+
   if (filters.status) params.set('status', filters.status)
   if (filters.type) params.set('type', filters.type)
   if (filters.transactionType) params.set('transactionType', filters.transactionType)
   if (filters.startDate) params.set('startDate', filters.startDate)
   if (filters.endDate) params.set('endDate', filters.endDate)
-  
+
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/transactions?${params.toString()}`)
   return response.data
 }

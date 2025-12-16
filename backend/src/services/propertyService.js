@@ -102,7 +102,7 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       sortDir         // 'asc' | 'desc'
     } = queryFilter || {}
 
-    const match = { 
+    const match = {
       _destroy: { $ne: true },
       $or: [
         { expireAt: null },
@@ -244,11 +244,11 @@ const getPropertyDetails = async (propertyId) => {
       throw new Error('Invalid propertyId')
 
     const pineline = [
-      { 
-        $match : {
-        _id: new Types.ObjectId(propertyId),
-        _destroy: { $ne: true }
-        } 
+      {
+        $match: {
+          _id: new Types.ObjectId(propertyId),
+          _destroy: { $ne: true }
+        }
       },
       {
         $lookup: {
@@ -303,7 +303,7 @@ function vnToRegex(str) {
     .join("\\s*"); // IMPORTANT: cho phép KHÔNG có khoảng trắng
 }
 
-const getPropertiesWithMap = async (query) => {
+const getPropertiesWithMapv1 = async (query) => {
   const { regionSelection, address } = query
   let filter = {}
 
@@ -317,21 +317,21 @@ const getPropertiesWithMap = async (query) => {
 
   if (address) {
     if (address.province) {
-      filter.province = {
+      filter["address.province"] = {
         $regex: address.province,
         $options: "i"
       }
     }
 
     if (address.district) {
-      filter.district = {
+      filter["address.district"] = {
         $regex: address.district,
         $options: "i"
       }
     }
 
     if (address.ward) {
-      filter.ward = {
+      filter["address.ward"] = {
         $regex: address.ward,
         $options: "i"
       }
@@ -351,6 +351,198 @@ const getPropertiesWithMap = async (query) => {
 
   return properties
 }
+
+const MAP_MARKER_LIMIT = 300
+
+const getPropertiesWithMap = async (query) => {
+  const {
+    regionSelection,
+    address,
+
+    page = 1,
+    limit = 20,
+
+    map, // { north, south, east, west }
+
+    type,
+    types,
+    purpose,
+    status,
+
+    bedrooms, bedroomsMin, bedroomsMax,
+    bathrooms, bathroomsMin, bathroomsMax,
+
+    area, areaMin, areaMax,
+    price, priceMin, priceMax,
+
+    amenitiesAll,
+    amenitiesAny,
+
+    sortBy = "createdAt",
+    sortDir = "desc"
+  } = query
+
+  /* =======================
+      1️⃣ BASE FILTER
+  ======================== */
+  const baseFilter = {}
+
+  if (regionSelection) {
+    baseFilter["address.province"] = {
+      $regex: vnToRegex(regionSelection),
+      $options: "i"
+    }
+  }
+
+  if (address) {
+    if (address.province)
+      baseFilter["address.province"] = { $regex: address.province, $options: "i" }
+    if (address.district)
+      baseFilter["address.district"] = { $regex: address.district, $options: "i" }
+    if (address.ward)
+      baseFilter["address.ward"] = { $regex: address.ward, $options: "i" }
+    if (address.street)
+      baseFilter["address.street"] = { $regex: address.street, $options: "i" }
+  }
+
+  if (Array.isArray(types) && types.length) baseFilter.type = { $in: types }
+  else if (type) baseFilter.type = type
+
+  if (purpose) baseFilter.purpose = purpose
+  if (status) baseFilter.status = status
+
+  // bedrooms
+  if (bedrooms != null) baseFilter["rooms.bedrooms"] = bedrooms
+  else if (bedroomsMin != null || bedroomsMax != null) {
+    baseFilter["rooms.bedrooms"] = {}
+    if (bedroomsMin != null) baseFilter["rooms.bedrooms"].$gte = bedroomsMin
+    if (bedroomsMax != null) baseFilter["rooms.bedrooms"].$lte = bedroomsMax
+  }
+
+  // bathrooms
+  if (bathrooms != null) baseFilter["rooms.bathrooms"] = bathrooms
+  else if (bathroomsMin != null || bathroomsMax != null) {
+    baseFilter["rooms.bathrooms"] = {}
+    if (bathroomsMin != null) baseFilter["rooms.bathrooms"].$gte = bathroomsMin
+    if (bathroomsMax != null) baseFilter["rooms.bathrooms"].$lte = bathroomsMax
+  }
+
+  // area
+  if (area != null) baseFilter.area = area
+  else if (areaMin != null || areaMax != null) {
+    baseFilter.area = {}
+    if (areaMin != null) baseFilter.area.$gte = areaMin
+    if (areaMax != null) baseFilter.area.$lte = areaMax
+  }
+
+  // price
+  if (price != null) baseFilter["price.value"] = price
+  else if (priceMin != null || priceMax != null) {
+    baseFilter["price.value"] = {}
+    if (priceMin != null) baseFilter["price.value"].$gte = priceMin
+    if (priceMax != null) baseFilter["price.value"].$lte = priceMax
+  }
+
+  // amenities
+  if (Array.isArray(amenitiesAll) && amenitiesAll.length)
+    baseFilter.amenities = { $all: amenitiesAll }
+
+  if (Array.isArray(amenitiesAny) && amenitiesAny.length)
+    baseFilter.amenities = { ...(baseFilter.amenities || {}), $in: amenitiesAny }
+
+  /* =======================
+      2️⃣ SORT
+  ======================== */
+  const sort = { [sortBy]: sortDir === "asc" ? 1 : -1 }
+
+  /* =======================
+      3️⃣ LIST
+  ======================== */
+  const skip = (page - 1) * limit
+
+  const listPromise = Promise.all([
+    propertyModel
+      .find(baseFilter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
+
+    propertyModel.countDocuments(baseFilter)
+  ])
+
+  /* =======================
+      4️⃣ MAP (NO ZOOM)
+  ======================== */
+  let mapResult = { markers: [], summary: null }
+
+  // if (map) {
+  //   const { north, south, east, west } = map
+
+  //   const mapFilter = {
+  //     ...baseFilter,
+  //     location: {
+  //       $geoWithin: {
+  //         $box: [
+  //           [west, south],
+  //           [east, north]
+  //         ]
+  //       }
+  //     }
+  //   }
+
+  //   // 🔑 COUNT FIRST
+  //   const mapCount = await propertyModel.countDocuments(mapFilter)
+
+  //   // 👉 Ít dữ liệu → marker
+  //   if (mapCount <= MAP_MARKER_LIMIT) {
+  //     mapResult.markers = await propertyModel
+  //       .find(mapFilter)
+  //       .select("_id location price address")
+  //   }
+
+  //   // 👉 Nhiều dữ liệu → summary
+  //   else {
+  //     mapResult.summary = await propertyModel.aggregate([
+  //       { $match: mapFilter },
+  //       {
+  //         $group: {
+  //           _id: {
+  //             lat: { $round: [{ $divide: ["$location.coordinates.1", 0.05] }, 0] },
+  //             lng: { $round: [{ $divide: ["$location.coordinates.0", 0.05] }, 0] }
+  //           },
+  //           count: { $sum: 1 },
+  //           minPrice: { $min: "$price.value" }
+  //         }
+  //       },
+  //       { $limit: 300 }
+  //     ])
+  //   }
+  // }
+
+  mapResult.markers = await propertyModel
+    .find(baseFilter)
+    .select("_id price address")
+    .limit(300) // HARD LIMIT chống lag
+
+  /* =======================
+      5️⃣ RESPONSE
+  ======================== */
+  const [items, total] = await listPromise
+
+  return {
+    list: {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    },
+    map: mapResult
+  }
+}
+
 
 const getPropertiesWithinPolygon = async (polygonGeoJSON) => {
   if (!polygonGeoJSON || polygonGeoJSON.type !== "Polygon") {
@@ -389,7 +581,7 @@ const getPropertiesByFilters = async (filters) => {
     const baseConditions = {
       _destroy: { $ne: true }
     }
-    
+
     const expireCondition = {
       $or: [
         { expireAt: null },
@@ -399,10 +591,10 @@ const getPropertiesByFilters = async (filters) => {
 
     // Separate $or from other filters
     const { $or: filterOr, ...otherFilters } = filters
-    
+
     // Build final match
     let finalMatch
-    
+
     if (filterOr && filterOr.length > 0) {
       // Nếu có $or từ AI filters, combine với expire check bằng $and
       finalMatch = {
@@ -453,135 +645,135 @@ const getPropertiesByFilters = async (filters) => {
 }
 
 const updateImageTags = async (propertyId, imageId, tagsData) => {
-    try {
-        const property = await propertyModel.findById(propertyId)
-        
-        if (!property) {
-            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
-        }
-        
-        const mediaItem = property.media.id(imageId)
-        
-        if (!mediaItem) {
-            throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
-        }
-        
-        // Update tags
-        if (tagsData.tags) {
-            mediaItem.tags = tagsData.tags
-        }
-        
-        // Update detected objects
-        if (tagsData.detectedObjects) {
-            mediaItem.detectedObjects = tagsData.detectedObjects
-        }
-        
-        // Mark as analyzed
-        mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
-        mediaItem.analyzedAt = new Date()
-        
-        await property.save()
-        
-        return property
-    } catch (error) {
-        throw error
+  try {
+    const property = await propertyModel.findById(propertyId)
+
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
     }
+
+    const mediaItem = property.media.id(imageId)
+
+    if (!mediaItem) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
+    }
+
+    // Update tags
+    if (tagsData.tags) {
+      mediaItem.tags = tagsData.tags
+    }
+
+    // Update detected objects
+    if (tagsData.detectedObjects) {
+      mediaItem.detectedObjects = tagsData.detectedObjects
+    }
+
+    // Mark as analyzed
+    mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
+    mediaItem.analyzedAt = new Date()
+
+    await property.save()
+
+    return property
+  } catch (error) {
+    throw error
+  }
 }
 
 const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
-    try {
-        const skip = (page - 1) * limit
-        
-        const properties = await propertyModel.find({
-            'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
-        })
-        .populate('owner', 'firstName lastName email avatar')
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 })
-        
-        const total = await propertyModel.countDocuments({
-            'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
-        })
-        
-        return {
-            properties,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit)
-            }
-        }
-    } catch (error) {
-        throw error
+  try {
+    const skip = (page - 1) * limit
+
+    const properties = await propertyModel.find({
+      'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
+    })
+      .populate('owner', 'firstName lastName email avatar')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+
+    const total = await propertyModel.countDocuments({
+      'media.tags.label': { $regex: new RegExp(tagLabel, 'i') }
+    })
+
+    return {
+      properties,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     }
+  } catch (error) {
+    throw error
+  }
 }
 
 const getUserPropertiesWithMedia = async (userId) => {
-    try {
-        const properties = await propertyModel.find({
-            owner: userId,
-            'media.0': { $exists: true } // Only properties with at least one media
-        })
-        .select('_id title slug media createdAt')
-        .sort({ createdAt: -1 })
-        
-        return properties
-    } catch (error) {
-        throw error
-    }
+  try {
+    const properties = await propertyModel.find({
+      owner: userId,
+      'media.0': { $exists: true } // Only properties with at least one media
+    })
+      .select('_id title slug media createdAt')
+      .sort({ createdAt: -1 })
+
+    return properties
+  } catch (error) {
+    throw error
+  }
 }
 
 const getAllImageTags = async (userId) => {
-    try {
-        const properties = await propertyModel.find({
-            owner: userId
-        }).select('media.tags')
-        
-        const allTags = []
-        properties.forEach(property => {
-            property.media.forEach(media => {
-                if (media.tags && media.tags.length > 0) {
-                    allTags.push(...media.tags)
-                }
-            })
+  try {
+    const properties = await propertyModel.find({
+      owner: userId
+    }).select('media.tags')
+
+    const allTags = []
+    properties.forEach(property => {
+      property.media.forEach(media => {
+        if (media.tags && media.tags.length > 0) {
+          allTags.push(...media.tags)
+        }
+      })
+    })
+
+    // Count and aggregate tags
+    const tagMap = new Map()
+    allTags.forEach(tag => {
+      const label = tag.label.toLowerCase()
+      if (!tagMap.has(label)) {
+        tagMap.set(label, {
+          label,
+          count: 0,
+          sources: { ai: 0, manual: 0 }
         })
-        
-        // Count and aggregate tags
-        const tagMap = new Map()
-        allTags.forEach(tag => {
-            const label = tag.label.toLowerCase()
-            if (!tagMap.has(label)) {
-                tagMap.set(label, {
-                    label,
-                    count: 0,
-                    sources: { ai: 0, manual: 0 }
-                })
-            }
-            const existing = tagMap.get(label)
-            existing.count++
-            existing.sources[tag.source]++
-        })
-        
-        return Array.from(tagMap.values()).sort((a, b) => b.count - a.count)
-    } catch (error) {
-        throw error
-    }
+      }
+      const existing = tagMap.get(label)
+      existing.count++
+      existing.sources[tag.source]++
+    })
+
+    return Array.from(tagMap.values()).sort((a, b) => b.count - a.count)
+  } catch (error) {
+    throw error
+  }
 }
 
 export const propertyService = {
-    createProperty,
-    addMediaToProperty,
-    getPropertyById,
-    getProperties,
-    getPropertyDetails,
-    getPropertiesWithinPolygon,
-    getUserById,
-    getPropertiesByFilters,
-    updateImageTags,
-    searchPropertiesByImageTag,
-    getUserPropertiesWithMedia,
-    getAllImageTags,
-    getPropertiesWithMap
+  createProperty,
+  addMediaToProperty,
+  getPropertyById,
+  getProperties,
+  getPropertyDetails,
+  getPropertiesWithinPolygon,
+  getUserById,
+  getPropertiesByFilters,
+  updateImageTags,
+  searchPropertiesByImageTag,
+  getUserPropertiesWithMedia,
+  getAllImageTags,
+  getPropertiesWithMap
 }

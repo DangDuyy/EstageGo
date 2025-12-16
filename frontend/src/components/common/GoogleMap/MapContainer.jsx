@@ -5,15 +5,44 @@ import { MapsContext } from "./MapProvider";
 
 const centerVN = { lat: 16.0, lng: 108.2 };
 
-const mapOptions = {
+const DEFAULT_MAP_OPTIONS = {
+  // ❌ Tắt toàn bộ UI mặc định
+  disableDefaultUI: true,
+
+  // ✅ Chỉ bật zoom
+  zoomControl: true,
+  zoomControlOptions: {
+    position: window.google?.maps.ControlPosition.RIGHT_BOTTOM
+  },
+
+  mapTypeControl: true,
+  // mapTypeControlOptions: {
+  //   // style: window.google?.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+  //   position: window.google?.maps.ControlPosition.TOP_RIGHT,
+  //   mapTypeIds: ["roadmap", "hybrid"]
+  // },
+
+  // ❌ Tắt các control không cần
+  // mapTypeControl: false,
+  fullscreenControl: false,
+  streetViewControl: false,
+  rotateControl: false,
+  scaleControl: false,
+
+  // ❌ Không click POI
+  clickableIcons: false,
+
+  // UX mượt
+  gestureHandling: "greedy",
+
+  // 🎨 Style map
   styles: [
     {
-      featureType: "poi",      // tất cả điểm quan tâm
+      featureType: "poi",
       elementType: "all",
-      stylers: [{ visibility: "off" }] // tắt hiển thị
+      stylers: [{ visibility: "off" }]
     }
-  ],
-  disableDefaultUI: false, // giữ UI mặc định nếu muốn
+  ]
 };
 
 export default function MapContainer({
@@ -33,7 +62,7 @@ export default function MapContainer({
       mapContainerStyle={style}
       center={center}
       zoom={zoom}
-      options={mapOptions}
+      options={DEFAULT_MAP_OPTIONS}
       onLoad={onLoad}
       {...rest}
     >

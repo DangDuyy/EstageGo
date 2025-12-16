@@ -3,9 +3,8 @@ import { MapsContext } from "./MapProvider";
 import { Input } from "@/components/ui/input";
 import { Search, MapPin } from "lucide-react"; // Thêm MapPin
 
-export default function CustomSearchBox({ onPlaceSelected }) {
+export default function CustomSearchBox({ searchValue, setSearchValue, onPlaceSelected }) {
     const { loaded, google } = useContext(MapsContext);
-    const [inputValue, setInputValue] = useState("");
     const [predictions, setPredictions] = useState([]);
     const debounceTimer = useRef(null);
     const autocompleteService = useRef(null);
@@ -41,14 +40,14 @@ export default function CustomSearchBox({ onPlaceSelected }) {
     };
 
     const handleValueChange = (value) => {
-        setInputValue(value);
+        setSearchValue(value);
 
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(() => fetchPredictions(value), 300);
     };
 
     const handleSelect = (prediction) => {
-        setInputValue(prediction.description);
+        setSearchValue(prediction.description);
         setPredictions([]);
 
         if (!google) return;
@@ -83,7 +82,7 @@ export default function CustomSearchBox({ onPlaceSelected }) {
                 <Input
                     type="text"
                     placeholder="Search places..."
-                    value={inputValue}
+                    value={searchValue}
                     onChange={(e) => handleValueChange(e.target.value)}
                     className="h-12 pl-12 rounded-full"
                 />
