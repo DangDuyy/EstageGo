@@ -1,4 +1,4 @@
-import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid, MessageCircleMore, HeartPlus, House, ShieldCheck, UserCheck, Home } from "lucide-react";
+import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid, MessageCircleMore, HeartPlus, House, ShieldCheck, UserCheck, Home, Zap, Crown } from "lucide-react";
 
 export function getMenuList(pathname, isAdminPanel = false) {
   // Admin Panel Menu
@@ -81,6 +81,16 @@ export function getMenuList(pathname, isAdminPanel = false) {
     {
       groupLabel: "Settings",
       menus: [
+        {
+          href: "/dashboard/plans",
+          label: "Membership Plans",
+          icon: Crown
+        },
+        {
+          href: "/dashboard/boost-packages",
+          label: "Boost Packages",
+          icon: Zap
+        },
         {
           href: "/dashboard/users",
           label: "Users",

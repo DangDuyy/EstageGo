@@ -216,12 +216,14 @@ const getTransactionDetail = async ({ userId, transactionId }) => {
 // Deduct balance for fees (VIP posts, ads, etc.)
 const deductBalance = async ({ userId, amount, description, referenceId }) => {
   try {
-    const user = await userModel.findById(userId)
+    const user = await userModel.findById(userId).select('balance')
     if (!user) throw new Error("User not found")
-    if (user.balance < amount) throw new Error("Insufficient balance")
 
-    user.balance = user.balance - amount
-    await user.save()
+    const currentBalance = user.balance ?? 0
+    if (currentBalance < amount) throw new Error("Insufficient balance")
+
+    // Update balance without re-validating full document (handles legacy users missing required fields)
+    await userModel.updateOne({ _id: userId }, { $inc: { balance: -amount } })
 
     const transaction = await transactionModel.create({
       user: userId,

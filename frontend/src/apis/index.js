@@ -660,3 +660,31 @@ export const deletePropertyAPI = async (propertyId) => {
   toast.success('Property deleted successfully!')
   return response.data
 }
+// ========== BOOST/BUMP APIs ==========
+
+// Boost a single property
+export const boostPropertyAPI = async (propertyId, useCredits = false, durationHours) => {
+  const payload = { useCredits }
+  if (durationHours) payload.durationHours = durationHours
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/boost`, payload)
+  toast.success('Property boosted successfully!')
+  return response.data
+}
+
+// Boost multiple properties
+export const boostMultiplePropertiesAPI = async (propertyIds) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/batch`, {
+    propertyIds
+  })
+  toast.success(`${propertyIds.length} properties boosted successfully!`)
+  return response.data
+}
+
+// Purchase boost package
+export const purchaseBoostPackageAPI = async (packageType) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/purchase-package`, {
+    packageType
+  })
+  toast.success('Boost package purchased successfully!')
+  return response.data
+}

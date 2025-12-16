@@ -19,6 +19,7 @@ import DashboardPage from './pages/DashboardPage/DashBoard'
 import Message from './pages/DashboardPage/Message'
 import NewPost from './pages/DashboardPage/Post/NewPost'
 import Post from './pages/DashboardPage/Post/Post'
+import PropertyDetail from './pages/DashboardPage/Post/PropertyDetail'
 import PricingPlans from './pages/DashboardPage/PricingPlans'
 import Profile from './pages/DashboardPage/Profile'
 import UserProfileRedirect from './pages/DashboardPage/UserProfileRedirect'
@@ -35,6 +36,7 @@ import DepositPage from './pages/DashboardPage/DepositPage'
 import PaymentResultPage from './pages/DashboardPage/PaymentResultPage' 
 import TransactionHistoryPage from './pages/DashboardPage/TransactionHistoryPage'
 import EditPost from './pages/DashboardPage/Post/EditPost'
+import BoostPackages from './pages/DashboardPage/BoostPackages'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -90,9 +92,11 @@ function App() {
                 <EditPost />
               </MapProvider>
             } />
+            <Route path=":propertyId" element={<PropertyDetail />} />
           </Route>
           <Route path="wishlist" element={<Wishlist />} />
           <Route path="plans" element={<PricingPlans />} />
+          <Route path="boost-packages" element={<BoostPackages />} />
           <Route path="deposit" element={<DepositPage />} />
           <Route path="transactions" element={<TransactionHistoryPage />} />
         </Route>
