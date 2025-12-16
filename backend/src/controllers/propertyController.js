@@ -1116,6 +1116,12 @@ const boostProperty = async (req, res, next) => {
             })
         }
 
+        // Check if user prefers to use credits or balance
+        const { useCredits, durationHours } = req.body
+        // Default boost duration: 48 hours; validate to avoid NaN
+        const parsedHours = Number(durationHours)
+        const boostDuration = !isNaN(parsedHours) && parsedHours > 0 ? parsedHours : 48
+
         // Calculate boost fee based on membership and duration
         const membership = user.membershipLevel || 'basic'
         // Base fee is for 24h boost
@@ -1130,11 +1136,6 @@ const boostProperty = async (req, res, next) => {
         else if (boostDuration <= 48) durationMultiplier = 1.5
         else durationMultiplier = 2
         const boostFee = Math.round(base24hFee * durationMultiplier)
-
-        // Check if user prefers to use credits or balance
-        const { useCredits, durationHours } = req.body
-        // Default boost duration: 48 hours
-        const boostDuration = Number(durationHours) && Number(durationHours) > 0 ? Number(durationHours) : 48
         
         if (useCredits) {
             if ((user.boostCredits || 0) < creditsNeeded) {

@@ -201,9 +201,12 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
     else if (sortBy === "featured") {
-      // Ưu tiên: 1) Boosted posts (bumpedAt), 2) VIP posts, 3) createdAt
-      sort["bumpedAt"] = -1 // Tin đã đẩy lên trước
-      sort["postType"] = -1 // vip trước normal
+      // Ưu tiên: 1) VIP + Boosted (còn hiệu lực), 2) Boosted, 3) VIP, 4) Normal
+      // Tạo trường tính toán để xếp hạng: vip=2, boost active=1, cộng lại
+      // Sẽ dùng $addFields trong pipeline thay vì sort trực tiếp
+      // Tạm giữ sort cũ, sẽ thay bằng computed field trong pipeline
+      sort["_sortPriority"] = -1
+      sort["bumpedAt"] = -1
       sort["createdAt"] = -1
     }
     else sort["createdAt"] = dir // mặc định mới nhất
@@ -214,6 +217,41 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       pipeline.push({ $match: { $and: [match, { $or: fuzzyOr }] } })
     } else {
       pipeline.push({ $match: match })
+    }
+
+    // Add computed sort priority for featured sorting
+    if (sortBy === "featured") {
+      pipeline.push({
+        $addFields: {
+          _sortPriority: {
+            $let: {
+              vars: {
+                isVip: { $eq: ["$postType", "vip"] },
+                isBoostActive: { $and: [
+                  { $ne: ["$boostExpiresAt", null] },
+                  { $gt: ["$boostExpiresAt", new Date()] }
+                ]}
+              },
+              in: {
+                $cond: [
+                  // VIP + Active Boost = 4 points
+                  { $and: ["$$isVip", "$$isBoostActive"] }, 4,
+                  { $cond: [
+                    // Boost only (not VIP) = 2 points
+                    { $and: ["$$isBoostActive", { $not: "$$isVip" }] }, 2,
+                    { $cond: [
+                      // VIP only (no active boost) = 1 point
+                      { $and: ["$$isVip", { $not: "$$isBoostActive" }] }, 1,
+                      // Normal = 0 points
+                      0
+                    ]}
+                  ]}
+                ]
+              }
+            }
+          }
+        }
+      })
     }
 
     pipeline.push(

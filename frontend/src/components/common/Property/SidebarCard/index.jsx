@@ -48,6 +48,17 @@ function getPriceValue(p) {
   return 0;
 }
 
+function getPropertyPriority(p) {
+  const now = new Date();
+  const isVip = p?.postType === "vip";
+  const isBoostActive = p?.boostExpiresAt && new Date(p.boostExpiresAt) > now;
+
+  if (isVip && isBoostActive) return 4; // VIP + Active Boost
+  if (isBoostActive) return 2; // Boost only
+  if (isVip) return 1; // VIP only
+  return 0; // Normal
+}
+
 function LatestItem({ p }) {
   return (
     <li className="flex gap-3">
@@ -149,7 +160,30 @@ export default function SidebarCard() {
       list.sort((a, b) => getPriceValue(a) - getPriceValue(b));
     } else if (sort === "desc") {
       list.sort((a, b) => getPriceValue(b) - getPriceValue(a));
+    } else {
+      // Default sort: priority (VIP+Boost > Boost > VIP > Normal), then by bumpedAt, then by createdAt
+      list.sort((a, b) => {
+        const priorityA = getPropertyPriority(a);
+        const priorityB = getPropertyPriority(b);
+        
+        if (priorityA !== priorityB) {
+          return priorityB - priorityA; // Higher priority first
+        }
+        
+        // If same priority, sort by bumpedAt (newest boost first)
+        const bumpedAtA = a?.bumpedAt ? new Date(a.bumpedAt).getTime() : 0;
+        const bumpedAtB = b?.bumpedAt ? new Date(b.bumpedAt).getTime() : 0;
+        if (bumpedAtA !== bumpedAtB) {
+          return bumpedAtB - bumpedAtA;
+        }
+        
+        // Then by createdAt (newest first)
+        const createdAtA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const createdAtB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return createdAtB - createdAtA;
+      });
     }
+    
     // Backend handles pagination
     return list;
   }, [properties, sort]);

@@ -1,55 +1,4 @@
-import React, { useState } from "react"
-import {
-    flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    useReactTable,
-} from "@tanstack/react-table"
-import {
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
-    MoreVertical,
-    Columns3,
-    Eye,
-    Pencil,
-    Trash2,
-    ImageOff,
-    Zap
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuCheckboxItem,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useNavigate } from "react-router-dom"
 import { boostPropertyAPI } from "@/apis"
-import { toast } from "react-toastify"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -60,8 +9,58 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useSelector } from "react-redux"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
 import { selectCurrentUser } from "@/redux/user/userSlice"
+import {
+    flexRender,
+    getCoreRowModel,
+    useReactTable
+} from "@tanstack/react-table"
+import {
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    Columns3,
+    Eye,
+    ImageOff,
+    MoreVertical,
+    Pencil,
+    Trash2,
+    Zap
+} from "lucide-react"
+import { useState } from "react"
+import { useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 
 export default function PropertyTable({ data, onPageChange, onPageSizeChange }) {
     const [rowSelection, setRowSelection] = useState({})
@@ -103,15 +102,19 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             
             setBoostDialogOpen(false)
             setSelectedProperty(null)
-            
-            // Reload data after boost
+            toast.success("Property boosted successfully!")
+
+            // Reload data after boost (A more robust solution might be to update the local state)
             setTimeout(() => {
                 window.location.reload()
             }, 1000)
         } catch (error) {
             console.error('Boost error:', error)
+            const errorMessage = error.response?.data?.message || 'Failed to boost property.'
             if (error.response?.status === 402) {
-                toast.error('Insufficient balance. Please deposit funds or buy boost credits.')
+                toast.error('Insufficient balance or no boost credits left. Please deposit funds or buy boost credits.')
+            } else {
+                toast.error(errorMessage)
             }
         } finally {
             setBoosting(false)
@@ -128,10 +131,14 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         
         if (diffDays > 0) return `${diffDays}d ago`
         if (diffHours > 0) return `${diffHours}h ago`
+        // Show minutes if less than 1 hour
+        const diffMinutes = Math.floor(diffMs / (1000 * 60))
+        if (diffMinutes > 0) return `${diffMinutes}m ago`
         return 'Just now'
     }
 
     // Dashboard (non-admin area): always show only current user's posts
+    // This logic seems fine for a user's dashboard view.
     const allProperties = data?.properties || []
     const filteredProperties = allProperties.filter((p) => (
         p?.owner === currentUser?._id || p?.owner?._id === currentUser?._id
@@ -179,11 +186,13 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                 alt={row.original.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                    e.target.style.display = 'none'
-                                    const icon = document.createElement('div')
-                                    icon.className = 'text-muted-foreground'
-                                    icon.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>'
-                                    e.target.parentElement.appendChild(icon)
+                                    // Fallback for broken images (e.g., replace with ImageOff icon)
+                                    e.currentTarget.style.display = 'none';
+                                    const parent = e.currentTarget.parentElement;
+                                    const iconDiv = document.createElement('div');
+                                    iconDiv.className = 'text-muted-foreground w-6 h-6';
+                                    iconDiv.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>';
+                                    parent.appendChild(iconDiv);
                                 }}
                             />
                         ) : (
@@ -257,22 +266,6 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             },
             size: 120,
         },
-        // {
-        //     accessorKey: "price",
-        //     header: "Price",
-        //     cell: ({ row }) => (
-        //         <div className="min-w-[120px]">
-        //             <div className="font-medium text-sm">
-        //                 {formatPrice(row.original.price.value, row.original.price.currency)}
-        //             </div>
-        //             {row.original.price.period !== 'other' && (
-        //                 <div className="text-xs text-muted-foreground">
-        //                     /{row.original.price.period}
-        //                 </div>
-        //             )}
-        //         </div>
-        //     ),
-        // },
         {
             accessorKey: "address",
             header: "Location",
@@ -281,58 +274,6 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                     {row.original.address.fullAddress}
                 </div>
             ),
-        },
-        {
-            accessorKey: "ownerInfo",
-            header: "Owner",
-            cell: ({ row }) => {
-                const ownerInfo = row.original.ownerInfo || row.original.owner;
-                
-                if (!ownerInfo) {
-                    return (
-                        <div className="text-xs text-muted-foreground">
-                            No owner info
-                        </div>
-                    );
-                }
-                
-                return (
-                    <div className="flex items-center gap-2 min-w-[180px]">
-                        <Avatar className="h-8 w-8">
-                            {ownerInfo.avatar && (
-                                <AvatarImage src={ownerInfo.avatar} />
-                            )}
-                            <AvatarFallback>
-                                {ownerInfo.fullName?.charAt(0) || ownerInfo.userName?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="text-xs overflow-hidden">
-                            <div className="font-medium truncate">
-                                {ownerInfo.fullName || ownerInfo.userName || 'Unknown'}
-                            </div>
-                            {ownerInfo.userName && (
-                                <div className="text-muted-foreground truncate">
-                                    @{ownerInfo.userName}
-                                </div>
-                            )}
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2 min-w-[180px]">
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={row.original.ownerInfo?.avatar} />
-                        <AvatarFallback>
-                            {row.original.ownerInfo?.fullName?.charAt(0) || "?"}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="text-xs overflow-hidden">
-                        <div className="font-medium truncate">
-                            {row.original.ownerInfo?.fullName || "Unknown"}
-                        </div>
-                        <div className="text-muted-foreground truncate">
-                            {row.original.ownerInfo?.userName ? `@${row.original.ownerInfo.userName}` : "N/A"}
-                        </div>
-                    </div>
-                );
-            },
         },
         {
             accessorKey: "status",
@@ -365,68 +306,50 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             cell: ({ row }) => {
                 const isOwner = row.original.owner === currentUser?._id || row.original.owner?._id === currentUser?._id;
                 return (
-                <div className="flex items-center gap-2">
-                    {/* Boost Button - Only for owner */}
-                    {isOwner && row.original.status === 'active' && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/dashboard/posts/${row.original._id}`)}
-                            className="gap-1 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200"
-                        >
-                            <Zap className="h-3 w-3" />
-                            Đẩy tin
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { navigate(`/properties/${row.id}`) }}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/edit/${row.original._id}`) }}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            ),
-            size: 70,
-                    )}
-                    
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
+                    <div className="flex items-center gap-2">
+                        {/* Boost Button - Only for owner and active status */}
+                        {isOwner && row.original.status === 'active' && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleBoostClick(row.original)}
+                                className="gap-1 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 whitespace-nowrap"
+                            >
+                                <Zap className="h-3 w-3" />
+                                Đẩy tin
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/${row.original._id}`) }}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Xem chi tiết
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { navigate(`/properties/${row.original._id}`) }}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Xem trang công khai
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Chỉnh sửa
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Xóa
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            )},
+                        )}
+                        
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreVertical className="h-4 w-4" />
+                                    <span className="sr-only">Open menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/${row.original._id}`) }}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    Xem chi tiết
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { navigate(`/properties/${row.original._id}`) }}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    Xem trang công khai
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/edit/${row.original._id}`) }}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Chỉnh sửa
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Xóa
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                )
+            },
             size: 150,
         },
     ]
@@ -509,6 +432,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                             {headerGroup.headers.map((header) => (
                                                 <TableHead
                                                     key={header.id}
+                                                    style={{ width: header.getSize() }} // Apply size if available
                                                     className="bg-muted/50"
                                                 >
                                                     {header.isPlaceholder
