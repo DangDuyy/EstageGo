@@ -285,6 +285,36 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         {
             accessorKey: "ownerInfo",
             header: "Owner",
+            cell: ({ row }) => {
+                const ownerInfo = row.original.ownerInfo || row.original.owner;
+                
+                if (!ownerInfo) {
+                    return (
+                        <div className="text-xs text-muted-foreground">
+                            No owner info
+                        </div>
+                    );
+                }
+                
+                return (
+                    <div className="flex items-center gap-2 min-w-[180px]">
+                        <Avatar className="h-8 w-8">
+                            {ownerInfo.avatar && (
+                                <AvatarImage src={ownerInfo.avatar} />
+                            )}
+                            <AvatarFallback>
+                                {ownerInfo.fullName?.charAt(0) || ownerInfo.userName?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="text-xs overflow-hidden">
+                            <div className="font-medium truncate">
+                                {ownerInfo.fullName || ownerInfo.userName || 'Unknown'}
+                            </div>
+                            {ownerInfo.userName && (
+                                <div className="text-muted-foreground truncate">
+                                    @{ownerInfo.userName}
+                                </div>
+                            )}
             cell: ({ row }) => (
                 <div className="flex items-center gap-2 min-w-[180px]">
                     <Avatar className="h-8 w-8">
@@ -301,8 +331,8 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                             {row.original.ownerInfo?.userName ? `@${row.original.ownerInfo.userName}` : "N/A"}
                         </div>
                     </div>
-                </div>
-            ),
+                );
+            },
         },
         {
             accessorKey: "status",
@@ -347,6 +377,25 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                             <Zap className="h-3 w-3" />
                             Đẩy tin
                         </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => { navigate(`/properties/${row.id}`) }}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/edit/${row.original._id}`) }}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+            size: 70,
                     )}
                     
                     <DropdownMenu>

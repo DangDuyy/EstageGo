@@ -34,6 +34,8 @@ router.route('/search-by-tag')
 
 router.route('/:id')
   .get(propertyController.getPropertyDetails)
+  .put(authMiddleware.isAuthorized, propertyController.updateProperty)
+  .delete(authMiddleware.isAuthorized, propertyController.deleteProperty)
 
 // Boost routes
 router.route('/:id/boost')
@@ -57,5 +59,12 @@ router.route('/:propertyId/images/:imageId/tags')
 
 router.route('/:propertyId/images/bulk-analyze')
   .post(authMiddleware.isAuthorized, propertyController.bulkAnalyzeImages)
+
+// Add new routes
+router.route('/:propertyId/status')
+  .patch(authMiddleware.isAuthorized, propertyController.updatePropertyStatus)
+
+router.route('/:propertyId/visibility')
+  .patch(authMiddleware.isAuthorized, propertyController.updatePropertyVisibility)
 
 export const propertyRoutes = router
