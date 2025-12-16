@@ -61,6 +61,23 @@ const addMediaToProperty = async (propertyId, mediaItems) => {
 const getPropertyById = async (id) => {
   try {
     const property = await propertyModel.findById(id)
+    
+    // Ensure all media items have _id (for old documents without _id)
+    if (property && property.media && Array.isArray(property.media)) {
+      let needsSave = false
+      property.media.forEach((media) => {
+        if (!media._id) {
+          // Mongoose will auto-generate _id for subdocuments
+          media._id = new Types.ObjectId()
+          needsSave = true
+        }
+      })
+      // Save property if any media items were missing _id
+      if (needsSave) {
+        await property.save()
+      }
+    }
+    
     return property
   }
   catch (error) {
@@ -184,8 +201,12 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
     else if (sortBy === "featured") {
-      // Ưu tiên VIP posts trước, sau đó sort theo createdAt
-      sort["postType"] = -1 // vip trước normal
+      // Ưu tiên: 1) VIP + Boosted (còn hiệu lực), 2) Boosted, 3) VIP, 4) Normal
+      // Tạo trường tính toán để xếp hạng: vip=2, boost active=1, cộng lại
+      // Sẽ dùng $addFields trong pipeline thay vì sort trực tiếp
+      // Tạm giữ sort cũ, sẽ thay bằng computed field trong pipeline
+      sort["_sortPriority"] = -1
+      sort["bumpedAt"] = -1
       sort["createdAt"] = -1
     }
     else sort["createdAt"] = dir // mặc định mới nhất
@@ -196,6 +217,41 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       pipeline.push({ $match: { $and: [match, { $or: fuzzyOr }] } })
     } else {
       pipeline.push({ $match: match })
+    }
+
+    // Add computed sort priority for featured sorting
+    if (sortBy === "featured") {
+      pipeline.push({
+        $addFields: {
+          _sortPriority: {
+            $let: {
+              vars: {
+                isVip: { $eq: ["$postType", "vip"] },
+                isBoostActive: { $and: [
+                  { $ne: ["$boostExpiresAt", null] },
+                  { $gt: ["$boostExpiresAt", new Date()] }
+                ]}
+              },
+              in: {
+                $cond: [
+                  // VIP + Active Boost = 4 points
+                  { $and: ["$$isVip", "$$isBoostActive"] }, 4,
+                  { $cond: [
+                    // Boost only (not VIP) = 2 points
+                    { $and: ["$$isBoostActive", { $not: "$$isVip" }] }, 2,
+                    { $cond: [
+                      // VIP only (no active boost) = 1 point
+                      { $and: ["$$isVip", { $not: "$$isBoostActive" }] }, 1,
+                      // Normal = 0 points
+                      0
+                    ]}
+                  ]}
+                ]
+              }
+            }
+          }
+        }
+      })
     }
 
     pipeline.push(
@@ -644,40 +700,62 @@ const getPropertiesByFilters = async (filters) => {
   }
 }
 
-const updateImageTags = async (propertyId, imageId, tagsData) => {
-  try {
-    const property = await propertyModel.findById(propertyId)
-
-    if (!property) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
+const updateImageTags = async (propertyId, imageId, tagsData, imageUrl = null) => {
+    try {
+        const property = await propertyModel.findById(propertyId)
+        
+        if (!property) {
+            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
+        }
+        
+        // Find media item by _id first
+        let mediaItem = null
+        if (property.media && typeof property.media.id === 'function') {
+            mediaItem = property.media.id(imageId)
+        }
+        
+        // If not found by _id, try .find()
+        if (!mediaItem && property.media) {
+            mediaItem = property.media.find(item => {
+                if (item._id) {
+                    return item._id.toString() === imageId
+                }
+                return false
+            })
+        }
+        
+        // If still not found and imageUrl is provided, find by URL (most reliable)
+        if (!mediaItem && imageUrl && property.media) {
+            mediaItem = property.media.find(item => item.url === imageUrl)
+        }
+        
+        if (!mediaItem) {
+            console.error('[UpdateImageTags] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
+            console.error('[UpdateImageTags] Available media _ids:', property.media?.map(m => m._id?.toString()))
+            console.error('[UpdateImageTags] Available media urls:', property.media?.map(m => m.url))
+            throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
+        }
+        
+        // Update tags
+        if (tagsData.tags) {
+            mediaItem.tags = tagsData.tags
+        }
+        
+        // Update detected objects
+        if (tagsData.detectedObjects) {
+            mediaItem.detectedObjects = tagsData.detectedObjects
+        }
+        
+        // Mark as analyzed
+        mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
+        mediaItem.analyzedAt = new Date()
+        
+        await property.save()
+        
+        return property
+    } catch (error) {
+        throw error
     }
-
-    const mediaItem = property.media.id(imageId)
-
-    if (!mediaItem) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
-    }
-
-    // Update tags
-    if (tagsData.tags) {
-      mediaItem.tags = tagsData.tags
-    }
-
-    // Update detected objects
-    if (tagsData.detectedObjects) {
-      mediaItem.detectedObjects = tagsData.detectedObjects
-    }
-
-    // Mark as analyzed
-    mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
-    mediaItem.analyzedAt = new Date()
-
-    await property.save()
-
-    return property
-  } catch (error) {
-    throw error
-  }
 }
 
 const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
@@ -711,18 +789,18 @@ const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
 }
 
 const getUserPropertiesWithMedia = async (userId) => {
-  try {
-    const properties = await propertyModel.find({
-      owner: userId,
-      'media.0': { $exists: true } // Only properties with at least one media
-    })
-      .select('_id title slug media createdAt')
-      .sort({ createdAt: -1 })
-
-    return properties
-  } catch (error) {
-    throw error
-  }
+    try {
+        const properties = await propertyModel.find({
+            owner: userId,
+            'media.0': { $exists: true } // Only properties with at least one media
+        })
+        .select('_id title slug media createdAt owner')
+        .sort({ createdAt: -1 })
+        
+        return properties
+    } catch (error) {
+        throw error
+    }
 }
 
 const getAllImageTags = async (userId) => {
@@ -762,6 +840,107 @@ const getAllImageTags = async (userId) => {
   }
 }
 
+const updateProperty = async (propertyId, userId, updateData) => {
+  try {
+    const property = await propertyModel.findOne({ _id: propertyId, owner: userId })
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+
+    // Update fields
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        property[key] = updateData[key]
+      }
+    })
+
+    // Update slug if title changed
+    if (updateData.title && updateData.title !== property.title) {
+      const baseSlug = slugify(updateData.title, { lower: true, strict: true, locale: "vi" })
+      let slug = baseSlug
+      let counter = 1
+      while (await propertyModel.findOne({ slug, _id: { $ne: propertyId } })) {
+        slug = `${baseSlug}-${counter}`
+        counter++
+      }
+      property.slug = slug
+    }
+
+    await property.save()
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const updatePropertyStatus = async (propertyId, userId, status) => {
+  try {
+    const property = await propertyModel.findOneAndUpdate(
+      { _id: propertyId, owner: userId },
+      { status },
+      { new: true }
+    )
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+    
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const updatePropertyVisibility = async (propertyId, userId, visibility) => {
+  try {
+    const property = await propertyModel.findOneAndUpdate(
+      { _id: propertyId, owner: userId },
+      { visibility },
+      { new: true }
+    )
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+    
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const deleteProperty = async (propertyId, userId) => {
+  try {
+    const property = await propertyModel.findOneAndUpdate(
+      { _id: propertyId, owner: userId },
+      { _destroy: true },
+      { new: true }
+    )
+    
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
+    }
+    
+    return property
+  } catch (error) {
+    throw error
+  }
+}
+
+const updateUser = async (userId, updateData) => {
+    try {
+        const user = await userModel.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        )
+        return user
+    } catch (error) {
+        throw error
+    }
+}
+
 export const propertyService = {
   createProperty,
   addMediaToProperty,
@@ -775,5 +954,10 @@ export const propertyService = {
   searchPropertiesByImageTag,
   getUserPropertiesWithMedia,
   getAllImageTags,
-  getPropertiesWithMap
+  getPropertiesWithMap,
+  updateProperty,
+  updatePropertyStatus,
+  updatePropertyVisibility,
+  deleteProperty,
+  updateUser
 }

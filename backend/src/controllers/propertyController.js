@@ -656,10 +656,13 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
 const analyzePropertyImage = async (req, res, next) => {
     try {
         const { propertyId, imageId } = req.params
+        const { imageUrl } = req.query // Get imageUrl from query params as fallback
         const userId = req.jwtDecoded._id
         
-        // Get property and verify ownership
-        const property = await propertyService.getPropertyById(propertyId)
+        // Get property using the same method as getUserPropertiesWithMedia
+        // to ensure _id consistency
+        const properties = await propertyService.getUserPropertiesWithMedia(userId)
+        const property = properties.find(p => p._id.toString() === propertyId)
         
         if (!property) {
             return res.status(StatusCodes.NOT_FOUND).json({
@@ -668,7 +671,8 @@ const analyzePropertyImage = async (req, res, next) => {
             })
         }
         
-        if (property.owner.toString() !== userId) {
+        // Verify ownership (property.owner should exist since we queried by userId)
+        if (!property.owner || property.owner.toString() !== userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: "You can only analyze images of your own properties"
@@ -676,9 +680,56 @@ const analyzePropertyImage = async (req, res, next) => {
         }
         
         // Find image in property media
-        const mediaItem = property.media.id(imageId)
+        // Since _id changes on each query, we use URL as fallback
+        let mediaItem = null
+        
+        // First, try to find by _id (in case it matches)
+        if (property.media && typeof property.media.id === 'function') {
+            mediaItem = property.media.id(imageId)
+        }
+        
+        // If not found by _id, try .find()
+        if (!mediaItem && property.media) {
+            mediaItem = property.media.find(item => {
+                if (item._id) {
+                    return item._id.toString() === imageId
+                }
+                return false
+            })
+        }
+        
+        // If still not found and imageUrl is provided, find by URL (most reliable)
+        if (!mediaItem && imageUrl && property.media) {
+            mediaItem = property.media.find(item => item.url === imageUrl)
+        }
+        
+        // If still not found, query property directly from database
+        if (!mediaItem) {
+            const dbProperty = await propertyService.getPropertyById(propertyId)
+            if (dbProperty && dbProperty.media) {
+                // Try to find by _id
+                if (typeof dbProperty.media.id === 'function') {
+                    mediaItem = dbProperty.media.id(imageId)
+                }
+                if (!mediaItem) {
+                    mediaItem = dbProperty.media.find(item => {
+                        if (item._id) {
+                            return item._id.toString() === imageId
+                        }
+                        return false
+                    })
+                }
+                // If still not found and imageUrl is provided, find by URL
+                if (!mediaItem && imageUrl) {
+                    mediaItem = dbProperty.media.find(item => item.url === imageUrl)
+                }
+            }
+        }
         
         if (!mediaItem) {
+            console.error('[Analyze] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
+            console.error('[Analyze] Available media _ids:', property.media?.map(m => m._id?.toString()))
+            console.error('[Analyze] Available media urls:', property.media?.map(m => m.url))
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Image not found"
@@ -688,8 +739,8 @@ const analyzePropertyImage = async (req, res, next) => {
         // Analyze image with AI
         const analysis = await imageTaggingService.analyzeImageWithGemini(mediaItem.url)
         
-        // Update property with analysis results
-        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis)
+        // Update property with analysis results (pass imageUrl as fallback)
+        const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis, imageUrl || mediaItem.url)
         
         res.status(StatusCodes.OK).json({
             success: true,
@@ -951,6 +1002,375 @@ const clearImageTags = async (req, res, next) => {
     }
 }
 
+const updateProperty = async (req, res, next) => {
+  try {
+    const { id: propertyId } = req.params
+    const userId = req.jwtDecoded._id
+    const updateData = req.body
+
+    const updatedProperty = await propertyService.updateProperty(propertyId, userId, updateData)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Property updated successfully",
+      data: updatedProperty
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const updatePropertyStatus = async (req, res, next) => {
+  try {
+    const { propertyId } = req.params
+    const userId = req.jwtDecoded._id
+    const { status } = req.body
+
+    const updatedProperty = await propertyService.updatePropertyStatus(propertyId, userId, status)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: updatedProperty
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const updatePropertyVisibility = async (req, res, next) => {
+  try {
+    const { propertyId } = req.params
+    const userId = req.jwtDecoded._id
+    const { visibility } = req.body
+
+    const updatedProperty = await propertyService.updatePropertyVisibility(propertyId, userId, visibility)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: updatedProperty
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const deleteProperty = async (req, res, next) => {
+  try {
+    const { id: propertyId } = req.params
+    const userId = req.jwtDecoded._id
+
+    await propertyService.deleteProperty(propertyId, userId)
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Property deleted successfully"
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// Boost/Bump a property to top
+const boostProperty = async (req, res, next) => {
+    try {
+        const propertyId = req.params.id
+        const userId = req.jwtDecoded?._id
+
+        if (!userId) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ 
+                success: false, 
+                message: "Unauthorized" 
+            })
+        }
+
+        // Get property and user
+        const property = await propertyService.getPropertyById(propertyId)
+        if (!property) {
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                success: false, 
+                message: "Property not found" 
+            })
+        }
+
+        // Check ownership
+        if (property.owner.toString() !== userId) {
+            return res.status(StatusCodes.FORBIDDEN).json({ 
+                success: false, 
+                message: "You can only boost your own properties" 
+            })
+        }
+
+        // Check if property is active
+        if (property.status !== 'active') {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                success: false, 
+                message: "Only active properties can be boosted" 
+            })
+        }
+
+        const user = await propertyService.getUserById(userId)
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                success: false, 
+                message: "User not found" 
+            })
+        }
+
+        // Check if user prefers to use credits or balance
+        const { useCredits, durationHours } = req.body
+        // Default boost duration: 48 hours; validate to avoid NaN
+        const parsedHours = Number(durationHours)
+        const boostDuration = !isNaN(parsedHours) && parsedHours > 0 ? parsedHours : 48
+
+        // Calculate boost fee based on membership and duration
+        const membership = user.membershipLevel || 'basic'
+        // Base fee is for 24h boost
+        let base24hFee = 100000 // basic
+        if (membership === 'premium') base24hFee = 50000
+        else if (membership === 'standard') base24hFee = 75000
+
+        const creditsNeeded = Math.max(1, Math.ceil(boostDuration / 24))
+        // Duration multiplier: 24h=1.0, 48h=1.5, 72h=2.0
+        let durationMultiplier = 1
+        if (boostDuration <= 24) durationMultiplier = 1
+        else if (boostDuration <= 48) durationMultiplier = 1.5
+        else durationMultiplier = 2
+        const boostFee = Math.round(base24hFee * durationMultiplier)
+        
+        if (useCredits) {
+            if ((user.boostCredits || 0) < creditsNeeded) {
+                return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+                    success: false,
+                    message: `Insufficient boost credits: need ${creditsNeeded}`,
+                    requiredCredits: creditsNeeded,
+                    currentCredits: user.boostCredits || 0
+                })
+            }
+            await propertyService.updateUser(userId, {
+                boostCredits: (user.boostCredits || 0) - creditsNeeded
+            })
+        } else {
+            // Use balance
+            if (user.balance < boostFee) {
+                return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+                    success: false,
+                    message: "Insufficient balance to boost property",
+                    required: boostFee,
+                    currentBalance: user.balance
+                })
+            }
+
+            // Deduct balance
+            await paymentService.deductBalance({
+                userId: userId,
+                amount: boostFee,
+                description: `Boost property - ${property.title}`,
+                referenceId: propertyId
+            })
+        }
+
+        // Update property with boost info
+        const now = new Date()
+        const expiresAt = new Date(now.getTime() + boostDuration * 60 * 60 * 1000)
+        const updatedProperty = await propertyService.updateProperty(propertyId,userId, {
+            bumpedAt: now,
+            boostExpiresAt: expiresAt,
+            bumpCount: (property.bumpCount || 0) + 1,
+            lastBumpedBy: userId
+        })
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Property boosted successfully",
+            data: updatedProperty,
+            feeCharged: useCredits ? 0 : boostFee,
+            creditsUsed: useCredits ? creditsNeeded : 0,
+            durationHours: boostDuration
+        })
+    } catch (error) {
+        console.error("Error boosting property:", error)
+        next(error)
+    }
+}
+
+// Boost multiple properties at once
+const boostMultipleProperties = async (req, res, next) => {
+    try {
+        const { propertyIds } = req.body
+        const userId = req.jwtDecoded?._id
+
+        if (!userId) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ 
+                success: false, 
+                message: "Unauthorized" 
+            })
+        }
+
+        if (!Array.isArray(propertyIds) || propertyIds.length === 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                success: false, 
+                message: "propertyIds must be a non-empty array" 
+            })
+        }
+
+        const user = await propertyService.getUserById(userId)
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                success: false, 
+                message: "User not found" 
+            })
+        }
+
+        // Get all properties
+        const properties = await Promise.all(
+            propertyIds.map(id => propertyService.getPropertyById(id))
+        )
+
+        // Validate ownership and status
+        const invalidProperties = properties.filter(p => 
+            !p || p.owner.toString() !== userId || p.status !== 'active'
+        )
+
+        if (invalidProperties.length > 0) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                success: false, 
+                message: "Some properties are invalid, not owned by you, or not active" 
+            })
+        }
+
+        // Calculate total fee with bulk discount
+        const membership = user.membershipLevel || 'basic'
+        let baseFee = 100000
+        if (membership === 'premium') baseFee = 50000
+        else if (membership === 'standard') baseFee = 75000
+
+        const count = propertyIds.length
+        let discount = 0
+        if (count >= 5) discount = 0.15 // 15% discount for 5+
+        else if (count >= 3) discount = 0.10 // 10% discount for 3+
+
+        const totalFee = Math.round(baseFee * count * (1 - discount))
+
+        // Check balance
+        if (user.balance < totalFee) {
+            return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+                success: false,
+                message: "Insufficient balance to boost properties",
+                required: totalFee,
+                currentBalance: user.balance
+            })
+        }
+
+        // Deduct balance
+        await paymentService.deductBalance({
+            userId: userId,
+            amount: totalFee,
+            description: `Bulk boost ${count} properties`,
+            referenceId: propertyIds[0]
+        })
+
+        // Update all properties
+        const updatePromises = propertyIds.map(id => 
+            propertyService.updateProperty(id, {
+                bumpedAt: new Date(),
+                bumpCount: properties.find(p => p._id.toString() === id).bumpCount + 1,
+                lastBumpedBy: userId
+            })
+        )
+
+        await Promise.all(updatePromises)
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: `${count} properties boosted successfully`,
+            count: count,
+            totalFee: totalFee,
+            discountPercent: Math.round(discount * 100)
+        })
+    } catch (error) {
+        console.error("Error boosting multiple properties:", error)
+        next(error)
+    }
+}
+
+// Purchase boost package
+const purchaseBoostPackage = async (req, res, next) => {
+    try {
+        const userId = req.jwtDecoded?._id
+        const { packageType } = req.body // 'small', 'medium', 'large'
+
+        if (!userId) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({ 
+                success: false, 
+                message: "Unauthorized" 
+            })
+        }
+
+        const user = await propertyService.getUserById(userId)
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                success: false, 
+                message: "User not found" 
+            })
+        }
+
+        // Define packages
+        const packages = {
+            small: { credits: 5, price: 400000 },
+            medium: { credits: 10, price: 700000 },
+            large: { credits: 20, price: 1200000 }
+        }
+
+        const selectedPackage = packages[packageType]
+        if (!selectedPackage) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ 
+                success: false, 
+                message: "Invalid package type. Choose: small, medium, or large" 
+            })
+        }
+
+        // Membership-based discount: basic 0%, standard 10%, premium 20%
+        const level = user.membershipLevel || 'basic'
+        const discountMap = { basic: 0, standard: 0.1, premium: 0.2 }
+        const discountRate = discountMap[level] ?? 0
+        const discountedPrice = Math.round(selectedPackage.price * (1 - discountRate))
+
+        // Check balance
+        if (user.balance < discountedPrice) {
+            return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+                success: false,
+                message: "Insufficient balance to purchase boost package",
+                required: discountedPrice,
+                currentBalance: user.balance
+            })
+        }
+
+        // Deduct balance and add credits
+        await paymentService.deductBalance({
+            userId: userId,
+            amount: discountedPrice,
+            description: `Purchase boost package (${selectedPackage.credits} credits) - ${level} discount ${Math.round(discountRate*100)}%`,
+            referenceId: userId
+        })
+
+        await propertyService.updateUser(userId, {
+            boostCredits: (user.boostCredits || 0) + selectedPackage.credits
+        })
+
+        res.status(StatusCodes.OK).json({
+            success: true,
+            message: `Boost package purchased successfully`,
+            credits: selectedPackage.credits,
+            price: discountedPrice,
+            newBalance: user.balance - discountedPrice,
+            totalCredits: (user.boostCredits || 0) + selectedPackage.credits
+        })
+    } catch (error) {
+        console.error("Error purchasing boost package:", error)
+        next(error)
+    }
+}
+
 export const propertyController = {
     createProperty,
     uploadPropertyMedia,
@@ -967,5 +1387,12 @@ export const propertyController = {
     getAllUserImageTags,
     bulkAnalyzeImages,
     analyzeTemporaryImage,
-    clearImageTags
+    clearImageTags,
+    boostProperty,
+    boostMultipleProperties,
+    purchaseBoostPackage,
+    updateProperty,
+    updatePropertyStatus,
+    updatePropertyVisibility,
+    deleteProperty
 }

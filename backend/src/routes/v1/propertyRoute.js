@@ -22,9 +22,6 @@ router.route('/nl-search')
 router.route('/in')
   .post(propertyController.getPropertiesWithinPolygon)
 
-router.route('/:id')
-  .get(propertyController.getPropertyDetails)
-
 // Image Tagging Routes
 router.route('/user/properties-with-media')
   .get(authMiddleware.isAuthorized, propertyController.getUserPropertiesWithMedia)
@@ -34,6 +31,21 @@ router.route('/user/image-tags')
 
 router.route('/search-by-tag')
   .get(propertyController.searchPropertiesByTag)
+
+router.route('/:id')
+  .get(propertyController.getPropertyDetails)
+  .put(authMiddleware.isAuthorized, propertyController.updateProperty)
+  .delete(authMiddleware.isAuthorized, propertyController.deleteProperty)
+
+// Boost routes
+router.route('/:id/boost')
+  .post(authMiddleware.isAuthorized, propertyController.boostProperty)
+
+router.route('/boost/batch')
+  .post(authMiddleware.isAuthorized, propertyController.boostMultipleProperties)
+
+router.route('/boost/purchase-package')
+  .post(authMiddleware.isAuthorized, propertyController.purchaseBoostPackage)
 
 router.route('/analyze-temp-image')
   .post(authMiddleware.isAuthorized, uploadFiles, propertyController.analyzeTemporaryImage)
@@ -47,5 +59,12 @@ router.route('/:propertyId/images/:imageId/tags')
 
 router.route('/:propertyId/images/bulk-analyze')
   .post(authMiddleware.isAuthorized, propertyController.bulkAnalyzeImages)
+
+// Add new routes
+router.route('/:propertyId/status')
+  .patch(authMiddleware.isAuthorized, propertyController.updatePropertyStatus)
+
+router.route('/:propertyId/visibility')
+  .patch(authMiddleware.isAuthorized, propertyController.updatePropertyVisibility)
 
 export const propertyRoutes = router

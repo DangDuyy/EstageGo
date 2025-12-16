@@ -355,8 +355,12 @@ export const searchPropertiesByTagAPI = async (tag, page = 1, limit = 12) => {
 }
 
 // Analyze single image
-export const analyzePropertyImageAPI = async (propertyId, imageId) => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/analyze`)
+export const analyzePropertyImageAPI = async (propertyId, imageId, imageUrl = null) => {
+  let url = `${API_ROOT}/v1/properties/${propertyId}/images/${imageId}/analyze`
+  if (imageUrl) {
+    url += `?imageUrl=${encodeURIComponent(imageUrl)}`
+  }
+  const response = await authorizeAxiosInstance.post(url)
   return response.data
 }
 
@@ -532,5 +536,162 @@ export const markNotificationReadAPI = async (id) => {
 
 export const markAllNotificationsReadAPI = async () => {
   const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/notifications/read-all`)
+  return response.data
+}
+
+// ========== AGENT REVIEW APIs ==========
+
+// Get all reviews for an agent
+export const getAgentReviewsAPI = async (agentId, page = 1, limit = 10) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-reviews/agent/${agentId}`, {
+    params: { page, limit }
+  })
+  return response.data
+}
+
+// Get single review by ID
+export const getReviewByIdAPI = async (reviewId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-reviews/review/${reviewId}`)
+  return response.data
+}
+
+// Get user's review for an agent
+export const getUserReviewForAgentAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-reviews/user/${agentId}`)
+  return response.data
+}
+
+// Create a review
+export const createAgentReviewAPI = async (agentId, { rating, comment, media = [] }) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-reviews/${agentId}`, {
+    rating,
+    comment,
+    media
+  })
+  toast.success('Review submitted successfully!')
+  return response.data
+}
+
+// Update a review
+export const updateAgentReviewAPI = async (reviewId, { rating, comment, media }) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/agent-reviews/${reviewId}`, {
+    rating,
+    comment,
+    media
+  })
+  toast.success('Review updated successfully!')
+  return response.data
+}
+
+// Delete a review
+export const deleteAgentReviewAPI = async (reviewId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/agent-reviews/${reviewId}`)
+  toast.success('Review deleted successfully!')
+  return response.data
+}
+
+// ========== AGENT FOLLOW APIs ==========
+
+// Get all followers for an agent
+export const getAgentFollowersAPI = async (agentId, page = 1, limit = 20) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/followers/${agentId}`, {
+    params: { page, limit }
+  })
+  return response.data
+}
+
+// Get all agents user is following
+export const getUserFollowingAPI = async (page = 1, limit = 20) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/following`, {
+    params: { page, limit }
+  })
+  return response.data
+}
+
+// Check if user is following an agent
+export const checkFollowingAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/check/${agentId}`)
+  return response.data
+}
+
+// Follow an agent
+export const followAgentAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-follows/${agentId}`)
+  toast.success('Successfully followed agent!')
+  return response.data
+}
+
+// Unfollow an agent
+export const unfollowAgentAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/agent-follows/${agentId}`)
+  toast.success('Successfully unfollowed agent!')
+  return response.data
+}
+
+// Toggle follow (follow/unfollow)
+export const toggleFollowAgentAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-follows/toggle/${agentId}`)
+  return response.data
+}
+
+// Get follow statistics for an agent
+export const getAgentFollowStatsAPI = async (agentId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/stats/${agentId}`)
+  return response.data
+}
+
+// ========== PROPERTY UPDATE APIs ==========
+
+// Update property
+export const updatePropertyAPI = async (propertyId, propertyData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/properties/${propertyId}`, propertyData)
+  toast.success('Property updated successfully!')
+  return response.data
+}
+
+// Update property status (active/draft/archived)
+export const updatePropertyStatusAPI = async (propertyId, status) => {
+  const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/properties/${propertyId}/status`, { status })
+  return response.data
+}
+
+// Update property visibility (public/private)
+export const updatePropertyVisibilityAPI = async (propertyId, visibility) => {
+  const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/properties/${propertyId}/visibility`, { visibility })
+  return response.data
+}
+
+// Delete property
+export const deletePropertyAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}`)
+  toast.success('Property deleted successfully!')
+  return response.data
+}
+// ========== BOOST/BUMP APIs ==========
+
+// Boost a single property
+export const boostPropertyAPI = async (propertyId, useCredits = false, durationHours) => {
+  const payload = { useCredits }
+  if (durationHours) payload.durationHours = durationHours
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/boost`, payload)
+  toast.success('Property boosted successfully!')
+  return response.data
+}
+
+// Boost multiple properties
+export const boostMultiplePropertiesAPI = async (propertyIds) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/batch`, {
+    propertyIds
+  })
+  toast.success(`${propertyIds.length} properties boosted successfully!`)
+  return response.data
+}
+
+// Purchase boost package
+export const purchaseBoostPackageAPI = async (packageType) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/purchase-package`, {
+    packageType
+  })
+  toast.success('Boost package purchased successfully!')
   return response.data
 }

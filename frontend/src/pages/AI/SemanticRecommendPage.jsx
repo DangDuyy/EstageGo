@@ -22,7 +22,7 @@ export default function SemanticRecommendPage() {
   useEffect(() => {
     if (!currentUser) {
       // Redirect to login if not authenticated
-      navigate('/login')
+      navigate('/')
       return
     }
 
