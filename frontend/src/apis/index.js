@@ -46,6 +46,12 @@ export const refreshTokenAPI = async () => {
   return response.data
 }
 
+// Get current logged-in user's latest data from database
+export const getCurrentUserAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/me`)
+  return response.data
+}
+
 export const fetchAllPropertiesAPI = async (searchPath) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties${searchPath}`)
   console.log(response.data)
@@ -281,9 +287,9 @@ export const getAgentByIdAPI = async (agentId) => {
 
 // Request to become an agent
 export const requestAgentRoleAPI = async () => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/request-agent`)
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-requests`)
   toast.success('Agent request submitted successfully!')
-  return response.data
+  return response.data.user || response.data
 }
 
 // Remove agent role and return to user

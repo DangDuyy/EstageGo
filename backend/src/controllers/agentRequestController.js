@@ -34,7 +34,7 @@ const createAgentRequest = async (req, res, next) => {
       licenseNumber,
       website,
       socialLinks
-    } = req.body;
+    } = req.body || {}; // fallback to empty object to avoid destructuring undefined
 
     // Tạo agent request
     const agentRequest = await agentRequestModel.create({

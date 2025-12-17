@@ -261,6 +261,18 @@ const approveAgentRequest = async (req, res, next) => {
     user.socialLinks = request.socialLinks;
     await user.save();
 
+    // Notify user that their agent request was approved
+    await createAndEmitNotification(user._id, {
+      type: 'ADMIN_ACTION',
+      title: 'Agent request approved',
+      message: 'Your agent request has been approved. You now have agent privileges.',
+      meta: {
+        requestId: request._id,
+        reviewedAt: request.reviewedAt,
+        role: user.role
+      }
+    });
+
     res.status(StatusCodes.OK).json({
       message: 'Agent request approved successfully',
       request,
