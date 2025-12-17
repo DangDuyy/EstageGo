@@ -1,8 +1,9 @@
 import PropertyTable from '@/components/common/Property/PropertyTable'
+import PostFilter from '@/components/common/Property/PostFilter'
 import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Download, Funnel, Plus, Search } from 'lucide-react'
+import { Download, Plus, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -12,7 +13,7 @@ import { fetchAllPropertiesAPI } from '@/apis'
 export default function Post() {
   const [activeTab, setActiveTab] = useState("all")
   const [propertiesData, setPropertiesData] = useState()
-  const [searchValue, setSearchValue] = useState("") // 💡 Lưu nội dung người dùng nhập
+  const [searchValue, setSearchValue] = useState("")
   const location = useLocation()
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -26,9 +27,8 @@ export default function Post() {
   // Fetch data theo query string + owner filter
   useEffect(() => {
     const callAPI = async () => {
-      if (!currentUser?._id) return // Đợi user load xong
+      if (!currentUser?._id) return
       
-      // Thêm owner filter vào query string
       const searchParams = new URLSearchParams(location.search)
       searchParams.set('owner', currentUser._id)
       
@@ -38,20 +38,27 @@ export default function Post() {
     }
 
     callAPI()
-  }, [location.search, currentUser?._id]);
+  }, [location.search, currentUser?._id])
 
-  // 🔍 Hàm xử lý khi người dùng nhấn Enter hoặc click search
+  // Hàm xử lý search
   const handleSearch = () => {
-    // Tạo query mới (?search=...) - owner sẽ tự động được thêm trong useEffect
-    const query = searchValue ? `?page=1&q=${encodeURIComponent(searchValue)}` : ""
+    const searchParams = new URLSearchParams(location.search)
+    
+    if (searchValue.trim()) {
+      searchParams.set('q', searchValue.trim())
+    } else {
+      searchParams.delete('q')
+    }
+    
+    searchParams.set('page', '1')
+    
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : ""
     navigate(`${pathname}${query}`)
   }
 
-  // ⌨️ Cho phép nhấn Enter để tìm
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSearch()
   }
-
 
   return (
     <ContentLayout title="Posts">
@@ -63,15 +70,18 @@ export default function Post() {
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
                 <Search className="w-5 h-5" />
               </span>
-              <Input value={searchValue} onChange={(e) => setSearchValue(e.target.value)} onKeyDown={handleKeyDown} placeholder="Type your post title..." className="pl-10" />
+              <Input 
+                value={searchValue} 
+                onChange={(e) => setSearchValue(e.target.value)} 
+                onKeyDown={handleKeyDown} 
+                placeholder="Nhập tiêu đề hoặc địa chỉ..." 
+                className="pl-10" 
+              />
             </div>
 
-            <Button variant="outline" className="inline-flex items-center gap-2">
-              <Funnel className="w-4 h-4" />
-              <span>Filter</span>
-            </Button>
+            {/* PostFilter Component */}
+            <PostFilter />
 
-            {/* New post: Button asChild + Link để icon & text nằm cùng hàng */}
             <Button asChild className="inline-flex items-center gap-2">
               <Link to={createHref}>
                 <Plus className="w-4 h-4" />

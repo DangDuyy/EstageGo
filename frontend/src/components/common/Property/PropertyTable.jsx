@@ -269,11 +269,24 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         {
             accessorKey: "address",
             header: "Location",
-            cell: ({ row }) => (
-                <div className="text-xs min-w-[200px] max-w-[250px] truncate">
-                    {row.original.address.fullAddress}
-                </div>
-            ),
+            cell: ({ row }) => {
+                const address = row.original.address || {}
+                const parts = [
+                    address.street,
+                    address.ward,
+                    address.district,
+                    address.province,
+                    address.country
+                ].filter(Boolean) // Loại bỏ các giá trị null/undefined/empty
+                
+                const fullAddress = parts.join(', ')
+                
+                return (
+                    <div className="text-xs min-w-[200px] max-w-[250px] truncate" title={fullAddress}>
+                        {fullAddress || 'N/A'}
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "status",
