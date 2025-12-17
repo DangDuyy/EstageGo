@@ -285,6 +285,12 @@ export const getAgentByIdAPI = async (agentId) => {
   return response.data
 }
 
+// Get properties grouped by province with count and sample image
+export const getPropertiesGroupedByProvinceAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/province-summary`)
+  return response.data
+}
+
 // Request to become an agent
 export const requestAgentRoleAPI = async () => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-requests`)

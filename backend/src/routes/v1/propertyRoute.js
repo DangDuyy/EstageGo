@@ -16,6 +16,9 @@ router.route('/verify-documents')
 router.route('/map')
   .get(propertyController.getPropertiesWithMap)
 
+router.route('/province-summary')
+  .get(propertyController.getPropertiesGroupedByProvince)
+
 router.route('/nl-search')
   .post(propertyController.naturalLanguageSearch)
 
