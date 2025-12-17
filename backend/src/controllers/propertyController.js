@@ -1070,6 +1070,15 @@ const deleteProperty = async (req, res, next) => {
   }
 }
 
+const getPropertiesGroupedByProvince = async (req, res, next) => {
+  try {
+    const data = await propertyService.getPropertiesGroupedByProvince()
+    res.status(StatusCodes.OK).json({ data })
+  } catch (error) {
+    next(error)
+  }
+}
+
 // Boost/Bump a property to top
 const boostProperty = async (req, res, next) => {
     try {
@@ -1394,5 +1403,6 @@ export const propertyController = {
     updateProperty,
     updatePropertyStatus,
     updatePropertyVisibility,
+    getPropertiesGroupedByProvince,
     deleteProperty
 }

@@ -928,6 +928,50 @@ const deleteProperty = async (propertyId, userId) => {
   }
 }
 
+const getPropertiesGroupedByProvince = async () => {
+  try {
+    const results = await propertyModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          'address.province': { $exists: true, $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: '$address.province',
+          count: { $sum: 1 },
+          sampleMedia: { $first: '$media' }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          province: '$_id',
+          count: 1,
+          image: {
+            $cond: [
+              {
+                $and: [
+                  { $isArray: '$sampleMedia' },
+                  { $gt: [{ $size: '$sampleMedia' }, 0] }
+                ]
+              },
+              { $arrayElemAt: ['$sampleMedia.url', 0] },
+              '$sampleMedia.url'
+            ]
+          }
+        }
+      },
+      { $sort: { count: -1 } }
+    ])
+
+    return results
+  } catch (error) {
+    throw error
+  }
+}
+
 const updateUser = async (userId, updateData) => {
     try {
         const user = await userModel.findByIdAndUpdate(
@@ -955,6 +999,7 @@ export const propertyService = {
   getUserPropertiesWithMedia,
   getAllImageTags,
   getPropertiesWithMap,
+  getPropertiesGroupedByProvince,
   updateProperty,
   updatePropertyStatus,
   updatePropertyVisibility,

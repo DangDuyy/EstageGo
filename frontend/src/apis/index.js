@@ -46,6 +46,12 @@ export const refreshTokenAPI = async () => {
   return response.data
 }
 
+// Get current logged-in user's latest data from database
+export const getCurrentUserAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/me`)
+  return response.data
+}
+
 export const fetchAllPropertiesAPI = async (searchPath) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties${searchPath}`)
   console.log(response.data)
@@ -279,11 +285,17 @@ export const getAgentByIdAPI = async (agentId) => {
   return response.data
 }
 
+// Get properties grouped by province with count and sample image
+export const getPropertiesGroupedByProvinceAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/province-summary`)
+  return response.data
+}
+
 // Request to become an agent
 export const requestAgentRoleAPI = async () => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/request-agent`)
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/agent-requests`)
   toast.success('Agent request submitted successfully!')
-  return response.data
+  return response.data.user || response.data
 }
 
 // Remove agent role and return to user
@@ -540,6 +552,14 @@ export const markAllNotificationsReadAPI = async () => {
 }
 
 // ========== AGENT REVIEW APIs ==========
+
+// Get all recent reviews for homepage
+export const getAllRecentReviewsAPI = async (limit = 6) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-reviews`, {
+    params: { limit }
+  })
+  return response.data
+}
 
 // Get all reviews for an agent
 export const getAgentReviewsAPI = async (agentId, page = 1, limit = 10) => {

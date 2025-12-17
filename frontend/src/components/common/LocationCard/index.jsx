@@ -10,11 +10,30 @@ import {
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { getPropertiesGroupedByProvinceAPI } from "@/apis";
 
 export default function LocationCard() {
   const [api, setApi] = React.useState(null);
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
+  const [locations, setLocations] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const data = await getPropertiesGroupedByProvinceAPI();
+        setLocations(data.data || []);
+      } catch (error) {
+        console.error("Failed to fetch locations:", error);
+        setLocations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   React.useEffect(() => {
     if (!api) return;
@@ -22,6 +41,18 @@ export default function LocationCard() {
     setCurrent(api.selectedScrollSnap() + 1);
     api.on("select", () => setCurrent(api.selectedScrollSnap() + 1));
   }, [api]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto min-w-full px-2 flex flex-col">
+        <div className="min-w-full flex flex-col gap-5 items-center justify-center py-10 font-semibold">
+          <p className="text-xl text-blue-600">EXPLORE CITIES</p>
+          <h1 className="text-6xl">Our location for you</h1>
+        </div>
+        <div className="text-center py-20">Loading locations...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto min-w-full px-2 flex flex-col">
@@ -36,34 +67,48 @@ export default function LocationCard() {
         opts={{ align: "start", loop: true, containScroll: "trimSnaps" }}
       >
         <CarouselContent className="-ml-4">
-          {Array.from({ length: 10 }).map((_, index) => (
-          <CarouselItem
-              key={index}
-              className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/4 2xl:basis-1/6"
-            >
-            <Card className="p-0 rounded-xl overflow-hidden relative">
-              <CardHeader className="p-0">
-                <img
-                  src={`/images/location/location-${(index % 6) + 1}.jpg`}
-                  alt=""
-                  className="block w-full h-auto rounded-xl"
-                />
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 px-4 py-3 rounded-xl shadow-md flex items-center justify-between w-[95%] cursor-pointer">
-                  <div>
-                    <p className="text-xl font-semibold text-gray-900">321 Property</p>
-                    <p className="text-xl font-medium text-gray-900">Naperville</p>
-                  </div>
-                  <Link
-                    to="/locations"
-                    className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 hover:bg-blue-500 transition"
-                  >
-                    <ArrowRight className="w-7 h-7 text-gray-900"/>
-                  </Link>
-                </div>
-              </CardHeader>
-            </Card>
-          </CarouselItem>
-          ))}
+          {locations.length > 0 ? (
+            locations.map((location, index) => (
+              <CarouselItem
+                key={index}
+                className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/4 2xl:basis-1/6"
+              >
+                <Card className="p-0 rounded-xl overflow-hidden relative">
+                  <CardHeader className="p-0">
+                    <img
+                      src={
+                        location.image ||
+                        `/images/location/location-${(index % 6) + 1}.jpg`
+                      }
+                      alt={location.province}
+                      className="block w-full h-auto rounded-xl object-cover"
+                      style={{ height: "200px" }}
+                    />
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/95 px-4 py-3 rounded-xl shadow-md flex items-center justify-between w-[95%] cursor-pointer">
+                      <div>
+                        <p className="text-xl font-semibold text-gray-900">
+                          {location.count} Property
+                        </p>
+                        <p className="text-xl font-medium text-gray-900">
+                          {location.province}
+                        </p>
+                      </div>
+                      <Link
+                        to={`/listing/grid?province=${encodeURIComponent(location.province)}`}
+                        className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 hover:bg-blue-500 transition"
+                      >
+                        <ArrowRight className="w-7 h-7 text-gray-900" />
+                      </Link>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </CarouselItem>
+            ))
+          ) : (
+            <div className="w-full text-center py-20">
+              No locations available
+            </div>
+          )}
         </CarouselContent>
 
         <CarouselPrevious />

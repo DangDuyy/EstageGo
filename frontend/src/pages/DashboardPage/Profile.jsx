@@ -12,7 +12,7 @@ import { X } from 'lucide-react'
 import { selectCurrentUser, updateUser } from '@/redux/user/userSlice'
 import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { updateUserProfileAPI, changePasswordAPI, requestAgentRoleAPI, removeAgentRoleAPI } from '@/apis'
+import { updateUserProfileAPI, changePasswordAPI, requestAgentRoleAPI, removeAgentRoleAPI, getCurrentUserAPI } from '@/apis'
 import { toast } from 'react-toastify'
 
 export default function Profile() {
@@ -76,6 +76,24 @@ export default function Profile() {
       })
     }
   }, [user])
+
+  // Poll for user data updates every 5 seconds to catch role changes from admin actions
+  useEffect(() => {
+    const pollUserData = async () => {
+      try {
+        const updatedUser = await getCurrentUserAPI()
+        // Only update Redux if data actually changed
+        if (updatedUser && JSON.stringify(updatedUser) !== JSON.stringify(user)) {
+          dispatch(updateUser(updatedUser))
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data:', error)
+      }
+    }
+
+    const interval = setInterval(pollUserData, 1000)
+    return () => clearInterval(interval)
+  }, [user, dispatch])
 
   const handleDrop = (files) => {
     console.log(files)

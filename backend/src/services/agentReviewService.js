@@ -268,12 +268,33 @@ const getUserReviewForAgent = async (userId, agentId) => {
   }
 }
 
+// Get all recent reviews for homepage
+const getAllRecentReviews = async (limit = 6) => {
+  try {
+    const reviews = await agentReviewModel
+      .find({ _destroy: false })
+      .populate('reviewer', 'fullName userName avatar')
+      .populate('agent', 'fullName userName avatar')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean()
+
+    return {
+      success: true,
+      reviews
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const agentReviewService = {
   getAgentReviews,
   getReviewById,
   createReview,
   updateReview,
   deleteReview,
-  getUserReviewForAgent
+  getUserReviewForAgent,
+  getAllRecentReviews
 }
 
