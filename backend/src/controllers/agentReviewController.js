@@ -158,6 +158,17 @@ const uploadReviewImages = async (req, res, next) => {
   }
 }
 
+// Get all recent reviews for homepage
+const getAllRecentReviews = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit) || 6
+    const result = await agentReviewService.getAllRecentReviews(limit)
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const agentReviewController = {
   getAgentReviews,
   getReviewById,
@@ -165,6 +176,8 @@ export const agentReviewController = {
   updateReview,
   deleteReview,
   getUserReviewForAgent,
-  uploadReviewImages
+  uploadReviewImages,
+  getAllRecentReviews
 }
+
 

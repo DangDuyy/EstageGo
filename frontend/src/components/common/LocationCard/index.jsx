@@ -94,7 +94,7 @@ export default function LocationCard() {
                         </p>
                       </div>
                       <Link
-                        to="/locations"
+                        to={`/listing/grid?province=${encodeURIComponent(location.province)}`}
                         className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 hover:bg-blue-500 transition"
                       >
                         <ArrowRight className="w-7 h-7 text-gray-900" />

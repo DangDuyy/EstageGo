@@ -6,6 +6,9 @@ import { uploadFiles } from '~/middlewares/uploadMiddleware'
 const Router = express.Router()
 
 // Public routes (no auth required)
+// GET /api/v1/agent-reviews - Get all recent reviews for homepage
+Router.get('/', agentReviewController.getAllRecentReviews)
+
 // GET /api/v1/agent-reviews/:agentId - Get all reviews for an agent
 Router.get('/agent/:agentId', agentReviewController.getAgentReviews)
 

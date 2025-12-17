@@ -553,6 +553,14 @@ export const markAllNotificationsReadAPI = async () => {
 
 // ========== AGENT REVIEW APIs ==========
 
+// Get all recent reviews for homepage
+export const getAllRecentReviewsAPI = async (limit = 6) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-reviews`, {
+    params: { limit }
+  })
+  return response.data
+}
+
 // Get all reviews for an agent
 export const getAgentReviewsAPI = async (agentId, page = 1, limit = 10) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-reviews/agent/${agentId}`, {
