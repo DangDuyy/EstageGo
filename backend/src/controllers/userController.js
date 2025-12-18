@@ -453,6 +453,19 @@ const upgradeMembership = async (req, res, next) => {
   }
 }
 
+// ✅ Get agent dashboard stats
+const getAgentDashboardStats = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.getAgentDashboardStats(userId)
+    
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    console.error('❌ Get agent dashboard stats error:', error)
+    next(error)
+  }
+}
+
 // Export
 export const userController = {
   createNew,
@@ -472,5 +485,6 @@ export const userController = {
   getCurrentUser,
   sendPhoneVerification,
   verifyPhoneCode,
-  upgradeMembership
+  upgradeMembership,
+  getAgentDashboardStats
 }

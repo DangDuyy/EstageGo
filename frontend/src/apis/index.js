@@ -305,6 +305,12 @@ export const removeAgentRoleAPI = async () => {
   return response.data
 }
 
+// ==================== Agent Dashboard Stats ============================
+export const getAgentDashboardStatsAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/agent/dashboard-stats`)
+  return response.data
+}
+
 // ========== CONVERSATION APIs ==========
 
 // Get all conversations for current user

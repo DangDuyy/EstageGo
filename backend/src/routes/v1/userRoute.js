@@ -65,4 +65,8 @@ Router.route('/phone/verify')
 Router.route('/upgrade-membership')
   .post(authMiddleware.isAuthorized, userController.upgradeMembership)
 
+// Thêm route mới sau các route khác
+Router.route('/agent/dashboard-stats')
+  .get(authMiddleware.isAuthorized, userController.getAgentDashboardStats)
+
 export const userRoutes = Router

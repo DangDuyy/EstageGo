@@ -8,6 +8,9 @@ import { pickUser } from "~/utils/formatter"
 import { JwtProvider } from "~/providers/JwtProvider"
 import { env } from "~/config/environment"
 import { OAuth2Client } from 'google-auth-library'
+import propertyModel from '~/models/properties'
+import agentFollowModel from '~/models/agentFollows'
+import agentReviewModel from '~/models/agentReviews'
 
 /**
  * Generate random fullName
@@ -563,6 +566,67 @@ const updateMembership = async (userId, membershipLevel, billingCycle) => {
   }
 }
 
+const getAgentDashboardStats = async (userId) => {
+  try {
+    const user = await userModel.findById(userId)
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    if (user.role == 'user') {
+      throw new ApiError(StatusCodes.FORBIDDEN, 'User is not an agent')
+    }
+
+    // Get all properties
+    const allProperties = await propertyModel.find({ 
+      owner: userId,
+      _destroy: false 
+    })
+
+    // Count by status
+    const totalProperties = allProperties.length
+    const activeListings = allProperties.filter(p => p.status === 'active').length
+    const draftProperties = allProperties.filter(p => p.status === 'draft').length
+    const hiddenProperties = allProperties.filter(p => p.status === 'hidden').length
+    const soldProperties = allProperties.filter(p => p.status === 'sold').length
+    const rentedProperties = allProperties.filter(p => p.status === 'rented').length
+
+    // Calculate total views
+    const totalViews = allProperties.reduce((sum, property) => sum + (property.views || 0), 0)
+
+    // Get followers count
+    const followersCount = await agentFollowModel.countDocuments({
+      agent: userId,
+      _destroy: false
+    })
+
+    // Get reviews stats
+    const reviews = await agentReviewModel.find({
+      agent: userId,
+      _destroy: false
+    })
+    const totalReviews = reviews.length
+    const averageRating = totalReviews > 0 
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
+      : 0
+
+    return {
+      totalProperties,
+      activeListings,
+      draftProperties,
+      hiddenProperties,
+      soldProperties,
+      rentedProperties,
+      totalViews,
+      followersCount,
+      totalReviews,
+      averageRating: parseFloat(averageRating.toFixed(1))
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
@@ -578,5 +642,6 @@ export const userService = {
   getAgentById,
   getUserProfileById,
   updatePhone,
-  updateMembership
+  updateMembership,
+  getAgentDashboardStats
 }
