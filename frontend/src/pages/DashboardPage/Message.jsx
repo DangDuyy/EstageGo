@@ -13,9 +13,8 @@ import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '@/redux/user/userSlice'
 import { emitTypingStart, emitTypingStop } from '@/lib/socket'
 import ReactionButton from '@/components/common/Chat/ReactionButton'
-import { deleteMessageForMeAPI, recallMessageAPI } from '@/apis'
+import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
-import { useRef as useReactRef } from 'react'
 
 const toDateKey = (date) => {
   const d = new Date(date || Date.now())
@@ -64,7 +63,7 @@ export default function Message() {
   const previousScrollHeight = useRef(0)
   const [locallyDeletedIds, setLocallyDeletedIds] = useState(new Set())
   const [contextMenu, setContextMenu] = useState({ openForId: null, x: 0, y: 0 })
-  const contextMenuRef = useReactRef(null)
+  const contextMenuRef = useRef(null)
 
   const {
     messages,
@@ -205,6 +204,14 @@ export default function Message() {
     return selectedConversation.participants?.find((p) => p._id === typingId) || null
   }, [typingUsers, selectedConversation, currentUser])
 
+  const participantMap = useMemo(() => {
+    const map = new Map()
+    selectedConversation?.participants?.forEach((p) => {
+      if (p?._id) map.set(String(p._id), p)
+    })
+    return map
+  }, [selectedConversation])
+
   return (
     <ContentLayout title="Messages">
       <div className="h-[calc(100vh-200px)] flex gap-4">
@@ -334,6 +341,32 @@ export default function Message() {
                             const sameSenderNext = nextMsg && nextMsg.senderId?._id === msg.senderId?._id
                             const showTimestamp = !sameSenderNext
 
+                            // Get all emojis current user has reacted with on this message
+                            const userEmojis = (msg.reactions || [])
+                              .filter((r) => String(r.userId) === String(currentUser?._id))
+                              .map((r) => r.emoji)
+
+                            // Group reactions by emoji with count and users
+                            const reactionsByEmoji = (msg.reactions || []).reduce((acc, r) => {
+                              if (!r?.emoji) return acc
+                              const key = r.emoji
+                              if (!acc[key]) {
+                                acc[key] = { emoji: key, count: 0, userIds: [], userNames: [] }
+                              }
+                              acc[key].count += 1
+                              acc[key].userIds.push(String(r.userId))
+                              const participant = participantMap.get(String(r.userId))
+                              if (participant) {
+                                const name = participant.fullName || participant.userName || 'Someone'
+                                if (!acc[key].userNames.includes(name)) {
+                                  acc[key].userNames.push(name)
+                                }
+                              }
+                              return acc
+                            }, {})
+
+                            const reactionGroups = Object.values(reactionsByEmoji)
+
                             return (
                               <div key={msg._id} className={`group flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`flex gap-2 max-w-[75%] ${isOwn ? 'flex-row-reverse' : ''}`}>
@@ -406,11 +439,23 @@ export default function Message() {
                                     )}
 
                                     {Array.isArray(msg.reactions) && msg.reactions.length > 0 && (
-                                      <div className={`mt-1 flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                                        <div className="rounded-full bg-background border px-2 py-0.5 text-xs flex gap-1">
-                                          {[...new Set(msg.reactions.map((r) => r.emoji))].slice(0, 3).join(' ')}{' '}
-                                          <span>{msg.reactions.length}</span>
-                                        </div>
+                                      <div className={`mt-2 flex flex-wrap gap-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                        {reactionGroups.map((group) => (
+                                          <button
+                                            key={group.emoji}
+                                            type="button"
+                                            onClick={() => toggleReactionAPI(msg._id, group.emoji)}
+                                            className={`rounded-full px-2 py-1 text-xs flex items-center gap-1 transition ${
+                                              userEmojis.includes(group.emoji)
+                                                ? 'bg-blue-100 border border-blue-300 hover:bg-blue-200'
+                                                : 'bg-background border hover:bg-accent'
+                                            }`}
+                                            title={`${group.userNames.slice(0, 3).join(', ')}${group.userNames.length > 3 ? ` and ${group.userNames.length - 3} more` : ''}`}
+                                          >
+                                            <span className="text-sm">{group.emoji}</span>
+                                            <span className="text-xs font-medium">{group.count}</span>
+                                          </button>
+                                        ))}
                                       </div>
                                     )}
 
@@ -421,7 +466,7 @@ export default function Message() {
                                         }`}
                                       >
                                         <div className="pointer-events-auto">
-                                          <ReactionButton messageId={msg._id} />
+                                          <ReactionButton messageId={msg._id} userEmojis={userEmojis} />
                                         </div>
                                         <button
                                           type="button"

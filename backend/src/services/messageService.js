@@ -112,7 +112,7 @@ const sendMessage = async ({ conversationId, senderId, text, files = [], io }) =
 /**
  * Toggle a reaction (emoji) on a message for a given user.
  * If same emoji already exists for that user → remove it.
- * If different emoji exists → update to new emoji.
+ * If different emoji → add it (multiple reactions per user allowed).
  */
 const toggleReaction = async ({ messageId, userId, emoji, io }) => {
   const message = await messageModel.findById(messageId)
@@ -130,19 +130,15 @@ const toggleReaction = async ({ messageId, userId, emoji, io }) => {
   }
 
   const reactions = message.reactions || []
-  const idx = reactions.findIndex(
-    (r) => String(r.userId) === String(userId)
+  const reactionIdx = reactions.findIndex(
+    (r) => String(r.userId) === String(userId) && r.emoji === emoji
   )
 
-  if (idx !== -1 && reactions[idx].emoji === emoji) {
-    // Same emoji → remove reaction
-    reactions.splice(idx, 1)
-  } else if (idx !== -1) {
-    // Different emoji → update
-    reactions[idx].emoji = emoji
-    reactions[idx].createdAt = new Date()
+  if (reactionIdx !== -1) {
+    // Same emoji from same user → remove it
+    reactions.splice(reactionIdx, 1)
   } else {
-    // New reaction
+    // Add new reaction (multiple reactions per user allowed)
     reactions.push({ userId, emoji, createdAt: new Date() })
   }
 

@@ -5,25 +5,16 @@ import { toggleReactionAPI } from "@/apis"
 
 const defaultReactions = ["👍", "❤️", "😂", "😮", "😢", "😡"]
 
-export default function ReactionButton({ messageId }) {
+export default function ReactionButton({ messageId, userEmojis = [] }) {
   const [loading, setLoading] = useState(false)
 
   const handleReactionClick = async (emoji) => {
     if (loading) return
+    console.log('Adding reaction:', emoji, 'for message:', messageId)
     try {
       setLoading(true)
-      await toggleReactionAPI(messageId, emoji)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleRemoveReaction = async () => {
-    if (loading) return
-    try {
-      setLoading(true)
-      // toggle với emoji rỗng sẽ bị backend reject, nên mình dùng emoji cuối cùng để "tắt" nếu đã chọn giống vậy.
-      await toggleReactionAPI(messageId, "👍")
+      const result = await toggleReactionAPI(messageId, emoji)
+      console.log('Reaction added:', result)
     } finally {
       setLoading(false)
     }
@@ -52,23 +43,18 @@ export default function ReactionButton({ messageId }) {
             <button
               key={emoji}
               type="button"
-              className="text-xl hover:scale-110 transition-transform"
+              className={`text-xl hover:scale-110 transition-transform ${
+                userEmojis.includes(emoji) ? 'opacity-100 scale-110' : 'opacity-60'
+              }`}
               onClick={() => handleReactionClick(emoji)}
+              title={userEmojis.includes(emoji) ? 'Remove reaction' : 'Add reaction'}
             >
               {emoji}
             </button>
           ))}
-          <button
-            type="button"
-            className="hover:scale-110 transition-transform"
-            onClick={handleRemoveReaction}
-          >
-            <X className="w-4 h-4 text-foreground" />
-          </button>
         </div>
       </Button>
     </div>
   )
 }
-
 
