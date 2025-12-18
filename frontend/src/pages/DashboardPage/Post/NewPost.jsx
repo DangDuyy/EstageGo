@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/select";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    DialogClose,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, getAllProvinces, getBalanceAPI, getProvince, verifyPropertyDocumentsAPI } from "@/apis";
+import { createProperty, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getWard, verifyPropertyDocumentsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -31,6 +32,7 @@ import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
+import { Check, X } from "lucide-react";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
@@ -162,7 +164,7 @@ export default function AddPropertyWizard() {
         docsVerificationResult?.cccdVerified && docsVerificationResult?.houseDocVerified
     );
     const [selectedPlan, setSelectedPlan] = useState(membershipLevel);
-    
+
     // 🚨 STATE MỚI CHO DIALOG LỖI THANH TOÁN
     const [depositDialogOpen, setDepositDialogOpen] = useState(false);
     const [requiredFee, setRequiredFee] = useState(0);
@@ -288,7 +290,7 @@ export default function AddPropertyWizard() {
         const streetValue = [streetNumber, routeName].filter(Boolean).join(" ") || fallbackStreet;
 
         const newValues = {};
-        
+
         // 1. CHUẨN HÓA VÀ ĐỐI CHIẾU TỈNH/THÀNH PHỐ
         if (mapsProvinceName) {
             const normalizedMapsProvince = normalizeName(mapsProvinceName);
@@ -296,7 +298,7 @@ export default function AddPropertyWizard() {
             if (matchingProvince) {
                 newValues['address.province'] = matchingProvince.name;
             } else {
-                 newValues['address.province'] = mapsProvinceName;
+                newValues['address.province'] = mapsProvinceName;
             }
         }
 
@@ -333,7 +335,7 @@ export default function AddPropertyWizard() {
 
             setCenter({ lat, lng });
             form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
-            
+
             populateAddressFromComponents(primary.address_components, primary.formatted_address);
 
             if (updateFullAddress && primary.formatted_address) {
@@ -447,10 +449,10 @@ export default function AddPropertyWizard() {
 
     // Update districts when province changes
     useEffect(() => {
-        const handleSelectProvince = async (provinceCode) => {
+        const handleSelectProvince = async (provinceId) => {
             try {
-                const response = await getProvince(provinceCode)
-                setDistricts(response.districts)
+                const response = await getDistrict(provinceId)
+                setDistricts(response)
             } catch (error) {
                 toast.error("Failed to load districts.");
             }
@@ -462,19 +464,29 @@ export default function AddPropertyWizard() {
             form.setValue('address.district', '');
             return
         }
-        handleSelectProvince(provinceData.code)
+        handleSelectProvince(provinceData.id)
         form.setValue('address.district', ''); // Reset district when province changes
     }, [province, provinces, form])
 
     // Update wards when district changes
     useEffect(() => {
+        const handleSelectDistrict = async (districtId) => {
+            try {
+                const response = await getWard(districtId)
+                setWards(response)
+            } catch (error) {
+                toast.error("Failed to load districts.");
+            }
+        }
+
         const districtSelected = districts.find(d => d.name === district)
         if (!districtSelected) {
             setWards([]);
             form.setValue('address.ward', '');
             return;
         }
-        setWards(districtSelected.wards)
+
+        handleSelectDistrict(districtSelected.id)
         form.setValue('address.ward', '') // Reset ward when district changes
     }, [district, districts, form])
 
@@ -617,11 +629,11 @@ export default function AddPropertyWizard() {
     // Final submission
     const onSubmit = async (data) => {
         console.log('[onSubmit] data snapshot:', data);
-        if (!docsValid) {
-            toast.error("Please verify documents first.");
-            setStep(2);
-            return;
-        }
+        // if (!docsValid) {
+        //     toast.error("Please verify documents first.");
+        //     setStep(2);
+        //     return;
+        // }
         // Extra guard (address & coords)
         const coords = data?.address?.location?.coordinates;
         if (!coords || coords.length !== 2) {
@@ -641,6 +653,9 @@ export default function AddPropertyWizard() {
         formData.append("selectedPlan", selectedPlan);
         formData.append("listingFeeClient", String(listingFee));
 
+        formData.append('tierId', selectedTier)
+        formData.append('durationId', selectedDuration._id)
+
         // ONLY listing images
         if (Array.isArray(data.files)) data.files.forEach(f => formData.append("files", f));
 
@@ -651,12 +666,12 @@ export default function AddPropertyWizard() {
             await createProperty(formData);
             console.log('[onSubmit] Success');
             toast.success("Listing published.");
-            navigate("/dashboard/posts");
+            // navigate("/dashboard/posts");
         } catch (error) {
             console.error('[onSubmit] API error:', error);
             const status = error?.response?.status;
             const payload = error?.response?.data;
-            
+
             // 🚨 XỬ LÝ LỖI 402 PAYMENT REQUIRED
             if (status === 402) {
                 const required = Number(payload?.required ?? listingFee);
@@ -665,10 +680,84 @@ export default function AddPropertyWizard() {
                 setDepositDialogOpen(true);
                 return;
             }
-            
+
             toast.error(payload?.message || "Failed to publish listing.");
         }
     };
+
+
+    // Listing Tier new
+    const [listingTiers, setListingTiers] = useState()
+    const [selectedTier, setSelectedTier] = useState(null)
+    const [selectedDuration, setSelectedDuration] = useState({})
+    const [durationDialog, setDurationDialog] = useState(false)
+
+    useEffect(() => {
+        const fetchListingTiers = async () => {
+            const response = await getListingTiers()
+
+            response.forEach((tier) => {
+                if (tier.tierName === 'advanced') {
+                    tier.title = { text: 'Breakthrough Visibility & Leads', color: 'orange' }
+                    tier.description =
+                        'A premium solution for sellers and landlords who want to dominate the market, maximize visibility, and attract potential customers immediately after posting.'
+                    tier.highlights = [
+                        { text: "Display size is double compared to Basic listings", enabled: true },
+                        { text: "Includes 4 Top Boosts", enabled: true },
+                        { text: "Priority listing displayed at the top of listing pages", enabled: true },
+                        // { text: "Free trial of 3 premium services", enabled: true },
+                        // { text: "Optional purchase of 3 add-on services (Priority Listing, Boost, Scheduled Boost)", enabled: true, color: "orange" }
+                    ]
+                    tier.color = 'from-yellow-600/80 to-yellow-800/80'
+                }
+                else if (tier.tierName === 'boosted') {
+                    tier.title = { text: 'Enhanced Exposure', color: 'gray' }
+                    tier.description =
+                        'A popular solution for sellers and landlords looking to accelerate performance right after posting at a reasonable cost.'
+                    tier.highlights = [
+                        { text: "Boosted listings are prioritized over Basic listings", enabled: true },
+                        { text: "Includes 2 Top Boosts", enabled: true },
+                        // { text: "Priority listing displayed at the top of listing pages for 1 day", enabled: false, color: "gray" },
+                        // { text: "Free trial of 1 premium service", enabled: true },
+                        // { text: "Optional purchase of 3 add-on services (Priority Listing, Boost, Scheduled Boost)", enabled: true, color: "orange" }
+                    ]
+                    tier.color = 'from-slate-600/80 to-slate-800/80'
+                }
+                else if (tier.tierName === 'basic') {
+                    tier.title = { text: 'Sustained Presence', color: 'gray' }
+                    tier.description =
+                        'A basic solution for sellers and landlords who want to maintain exposure.'
+                    tier.highlights = [
+                        { text: "Basic listing", enabled: true },
+                        { text: "Includes boost", enabled: false },
+                        // { text: "Priority listing displayed at the top of listing pages for 1 day", enabled: false },
+                        // { text: "Free trial of premium services", enabled: false },
+                        // { text: "Optional purchase of 1 add-on service (Boost)", enabled: true, color: "orange" }
+                    ]
+                    tier.color = 'from-gray-600/50 to-gray-800/60'
+                }
+            })
+
+            setListingTiers(response)
+
+            // set default
+            const tierDefault = response.filter((t) => t.tierName === 'basic')
+            setSelectedTier(tierDefault[0]._id)
+            setSelectedDuration(tierDefault[0].durations[0])
+        }
+
+        fetchListingTiers()
+    }, [])
+
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('vi-VN').format(price)
+    }
+
+    const handleSelectTier = (tier) => {
+        setSelectedTier(tier._id)
+        setSelectedDuration(tier.durations[0])
+    }
 
     // ----- Render -----
     return (
@@ -1379,11 +1468,12 @@ export default function AddPropertyWizard() {
 
                     {/* STEP 3: Agent & Payment */}
                     {step === 3 && (
-                        <div className="min-h-screen">
+                        <div>
                             <Card className="mb-6">
                                 <CardHeader><CardTitle>Select Listing Plan</CardTitle></CardHeader>
-                                <CardContent className="grid gap-4 md:grid-cols-3">
-                                    {(['basic', 'standard', 'premium']).map(p => {
+                                <CardContent>
+                                    {/* <CardContent className="grid gap-4 md:grid-cols-3"> */}
+                                    {/* {(['basic', 'standard', 'premium']).map(p => {
                                         const info = planInfo[p];
                                         const isDefault = p === membershipLevel;
                                         const isSelected = p === selectedPlan;
@@ -1428,11 +1518,136 @@ export default function AddPropertyWizard() {
                                                 )}
                                             </div>
                                         );
-                                    })}
+                                    })} */}
+
+                                    {/* <div className="w-full min-h-screen bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200 p-8"> */}
+                                    <div className="w-full mx-auto">
+                                        <div className="grid grid-cols-3 gap-8 items-start">
+                                            {listingTiers.map((tier) => {
+                                                const isSelected = selectedTier === tier._id;
+                                                console.log(isSelected, selectedTier)
+                                                const currentDuration = selectedDuration?.days;
+                                                const currentPrice = tier.durations.find(d => d.days === currentDuration)?.price || tier.durations[0].price;
+
+                                                return (
+                                                    <div key={tier._id} className="flex flex-col h-full">
+                                                        <Card
+                                                            onClick={() => handleSelectTier(tier)}
+                                                            className={`p-0 overflow-hidden transition-all duration-500 hover:scale-105 cursor-pointer flex flex-col h-full ${isSelected ? 'border border-primary scale-105 border-3' : 'shadow-lg'
+                                                                }`}
+                                                        >
+                                                            {/* Header */}
+                                                            <div
+                                                                className={`min-h-[10rem] bg-gradient-to-r ${tier.color} text-white px-6 py-4 flex flex-col gap-2 rounded-t-lg`}
+                                                            >
+                                                                <h3 className="text-3xl font-bold">
+                                                                    {tier.displayName.en}
+                                                                </h3>
+
+                                                                {/* <p className="font-bold pt-2">
+                                                                    {tier.title.text}
+                                                                </p> */}
+
+                                                                <p className="text-sm opacity-90 pt-2">
+                                                                    {tier.description}
+                                                                </p>
+                                                            </div>
+
+
+                                                            <CardContent className="p-6 bg-white flex flex-col flex-grow">
+                                                                {/* Price Card */}
+                                                                {/* <div className="bg-white rounded-xl p-5 mb-5 shadow-md border-2 border-gray-100">
+                                                                    <div className="flex items-center justify-center mb-2">
+                                                                        <div className="w-24 h-16 bg-gray-100 rounded flex items-center justify-center">
+                                                                            <div className="w-20 h-12 bg-white rounded shadow-sm"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600 mb-1 text-center">Căn hộ</div>
+                                                                    <div className="text-2xl font-bold text-red-500 text-center">
+                                                                        {formatPrice(currentPrice)}
+                                                                    </div>
+                                                                </div> */}
+
+                                                                {/* Description */}
+                                                                <p className="text-md font-bold text-orange-500 mb-4">Features</p>
+
+                                                                {/* Features List */}
+                                                                <div className="space-y-2.5 mb-6 flex-grow">
+                                                                    {tier.highlights.map((highlight, idx) => (
+                                                                        <div key={idx} className="flex items-start gap-2.5">
+                                                                            {highlight.enabled ? (
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                                    <Check className="w-2.5 h-2.5 text-white" strokeWidth={2} />
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                                    <X className="w-2.5 h-2.5 text-white" strokeWidth={2} />
+                                                                                </div>
+                                                                            )}
+                                                                            <span
+                                                                                className={`text-sm leading-snug ${highlight.enabled ? 'text-gray-800' : 'text-gray-400'
+                                                                                    } ${highlight.color === 'orange' ? 'text-orange-600 font-medium' : ''}`}
+                                                                            >
+                                                                                {highlight.text}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Action Button - Only for middle tier */}
+                                                                {/* {tier.tierName === 'boosted' && (
+                                                                        <Button
+                                                                            className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold text-base py-6 shadow-lg"
+                                                                            onClick={() => handleSelectTier(tier)}
+                                                                        >
+                                                                            ĐĂNG CHỌN
+                                                                        </Button>
+                                                                    )} */}
+                                                            </CardContent>
+                                                        </Card>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Timeline Section */}
+                                        {(() => {
+                                            const tierSelected = listingTiers.find(
+                                                (t) => t._id === selectedTier
+                                            )
+
+
+                                            return (
+                                                <div className="mt-8">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <h3 className="font-bold text-gray-800">Display duration</h3>
+                                                        <Button onClick={() => { setDurationDialog((v) => !v) }} variant="outline" size="sm" className="font-semibold">Replace</Button>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                        <div className="flex items-center justify-center w-14 h-14 bg-red-50 rounded-lg border-2 border-red-200">
+                                                            <div className="text-center">
+                                                                <div className="text-lg font-bold text-red-600 leading-none">{selectedDuration.days}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold text-gray-900">{tierSelected?.displayName?.en}</span>
+                                                            <span className="text-gray-400">|</span>
+                                                            <span className="text-gray-600">{selectedDuration.days} days</span>
+                                                        </div>
+                                                        <div className="ml-auto text-lg font-bold text-gray-900">
+                                                            {formatPrice(selectedDuration.price)} đ
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
+                                    {/* </div> */}
                                 </CardContent>
                             </Card>
 
-                            <Card className="mb-8">
+                            {/* <Card className="mb-8">
                                 <CardHeader><CardTitle>Payment Summary</CardTitle></CardHeader>
                                 <CardContent className="space-y-2">
                                     <div className="text-sm text-muted-foreground">
@@ -1443,31 +1658,79 @@ export default function AddPropertyWizard() {
                                         Phí niêm yết được tính dựa trên **giá trị tài sản** và **gói niêm yết** đã chọn.
                                     </div>
                                 </CardContent>
-                            </Card>
+                            </Card> */}
 
                             <div className="flex items-center justify-between">
                                 <Button variant="outline" type="button" onClick={() => setStep(2)}>Back</Button>
                                 <Button
-                                  type="button"
-                                  disabled={form.formState.isSubmitting || planOrder[selectedPlan] > planOrder[membershipLevel]}
-                                  onClick={() => {
-                                    console.log('[Publish] Attempting submit');
-                                    form.handleSubmit(onSubmit, (errors) => {
-                                      console.log('[Publish] Validation errors:', errors);
-                                      toast.error('Validation failed. Please review required fields.');
-                                      // Optionally jump back to step 1 if address invalid:
-                                      if (errors?.['address.province'] || errors?.['address.district'] || errors?.['address.ward']) setStep(1);
-                                    })();
-                                  }}
+                                    type="button"
+                                    disabled={form.formState.isSubmitting || planOrder[selectedPlan] > planOrder[membershipLevel]}
+                                    onClick={() => {
+                                        console.log('[Publish] Attempting submit');
+                                        form.handleSubmit(onSubmit, (errors) => {
+                                            console.log('[Publish] Validation errors:', errors);
+                                            toast.error('Validation failed. Please review required fields.');
+                                            // Optionally jump back to step 1 if address invalid:
+                                            if (errors?.['address.province'] || errors?.['address.district'] || errors?.['address.ward']) setStep(1);
+                                        })();
+                                    }}
                                 >
-                                  {form.formState.isSubmitting ? "Publishing..." : "Publish listing"}
+                                    {form.formState.isSubmitting ? "Publishing..." : "Publish listing"}
                                 </Button>
                             </div>
                         </div>
                     )}
                 </form>
             </Form>
-            
+
+            <Dialog open={durationDialog} onOpenChange={setDurationDialog}>
+                <DialogContent className="max-w-md rounded-2xl p-0">
+                    {/* Header */}
+                    <DialogHeader className="relative border-b px-6 py-4">
+                        <DialogTitle className="text-center text-lg font-semibold">
+                            Select display duration
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {/* Body */}
+                    <div className="space-y-4 p-6">
+                        {(() => {
+                            const tierSelected = listingTiers?.find(
+                                (t) => t._id === selectedTier
+                            )
+
+                            return tierSelected?.durations?.map((d) => (
+
+                                <div
+                                    onClick={() => {
+                                        setSelectedDuration(d)
+                                        setDurationDialog(false)
+                                    }}
+                                    className={`flex items-center justify-between rounded-xl border px-4 py-3 cursor-pointer transition
+                                        ${d.days === selectedDuration.days ? "border-primary border-2" : "border-gray-200"}
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        {/* Icon calendar */}
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                                            <span className="font-bold text-gray-700">{d.days}</span>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-semibold text-gray-900">
+                                                {tierSelected.displayName.en} <span className="text-gray-500 font-normal">| {d.days} days</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <p className="font-semibold text-gray-900">{formatPrice(d.price)} ₫</p>
+                                </div>
+                            ))
+                        })()}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* 🚨 DIALOG XỬ LÝ LỖI THANH TOÁN (HTTP 402) */}
             <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
                 <DialogContent>

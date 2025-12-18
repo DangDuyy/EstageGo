@@ -37,6 +37,9 @@ const createProperty = async (req, res, next) => {
     body.address = safeParse(body.address)
     body.rooms = safeParse(body.rooms)
 
+    res.status(StatusCodes.OK).json(body)
+    return
+
     const owner = req.jwtDecoded?._id
     if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
 

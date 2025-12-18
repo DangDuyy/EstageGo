@@ -97,9 +97,14 @@ export const fetchPropertyDetail = async (propertyId) => {
   return response.data
 }
 
+// export const getAllProvinces = async () => {
+//   const response = await axios.get('https://provinces.open-api.vn/api/v1/p/')
+//   return response.data
+// }
+
 export const getAllProvinces = async () => {
-  const response = await axios.get('https://provinces.open-api.vn/api/v1/p/')
-  return response.data
+  const response = await axios.get('https://open.oapi.vn/location/provinces?page=0&size=63')
+  return response.data.data
 }
 
 export const getProvince = async (provinceCode) => {
@@ -110,6 +115,24 @@ export const getProvince = async (provinceCode) => {
   })
   console.log("province: ", response.data)
   return response.data
+}
+
+export const getDistrict = async (provinceCode) => {
+  const response = await axios.get(`https://open.oapi.vn/location/districts/${provinceCode}?page=0&size=300`, {
+    params: {
+      depth: 3
+    }
+  })
+  return response.data.data
+}
+
+export const getWard = async (districtId) => {
+  const response = await axios.get(`https://open.oapi.vn/location/wards/${districtId}?page=0&size=300`, {
+    params: {
+      depth: 3
+    }
+  })
+  return response.data.data
 }
 
 export const searchPropertiesAPI = async (filters) => {
@@ -693,5 +716,13 @@ export const purchaseBoostPackageAPI = async (packageType) => {
     packageType
   })
   toast.success('Boost package purchased successfully!')
+  return response.data
+}
+
+// ==================================
+// Listing Tier
+// ==================================
+export const getListingTiers = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/listingTier`)
   return response.data
 }
