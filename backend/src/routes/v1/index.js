@@ -16,6 +16,7 @@ import { notificationRoutes } from './notificationRoute'
 import { agentReviewRoute } from './agentReviewRoute'
 import { agentFollowRoute } from './agentFollowRoute'
 import { listingTierRoutes } from './listingTierRoute'
+import { addressRoutes } from './addressRoute'
 
 const Router = express.Router()
 
@@ -54,5 +55,7 @@ Router.use('/agent-reviews', agentReviewRoute)
 Router.use('/agent-follows', agentFollowRoute)
 
 Router.use('/listingTier', listingTierRoutes)
+
+Router.use('/api.vn', addressRoutes)
 
 export const APIs_V1 = Router
