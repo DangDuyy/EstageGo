@@ -1,18 +1,49 @@
 import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Send, Loader2, Search } from 'lucide-react'
+import { Send, Loader2, Search, Paperclip, Mic, MoreHorizontal } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '@/redux/user/userSlice'
 import { emitTypingStart, emitTypingStop } from '@/lib/socket'
+import ReactionButton from '@/components/common/Chat/ReactionButton'
+import { deleteMessageForMeAPI, recallMessageAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
+import { useRef as useReactRef } from 'react'
+
+const toDateKey = (date) => {
+  const d = new Date(date || Date.now())
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const formatDateChip = (dateObj, count) => {
+  const d = new Date(dateObj)
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const date = d.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return count === 1 ? `${time} ${date}` : date
+}
+
+const groupByDay = (items = []) => {
+  const map = new Map()
+  items.forEach((m) => {
+    const key = toDateKey(m.createdAt || m.timestamp || Date.now())
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(m)
+  })
+  return Array.from(map.entries()).map(([key, arr]) => ({ key, items: arr }))
+}
+
+const formatTimeOnly = (dateObj) => {
+  if (!dateObj) return ''
+  const d = new Date(dateObj)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
 
 export default function Message() {
   const currentUser = useSelector(selectCurrentUser)
@@ -20,119 +51,126 @@ export default function Message() {
   const { conversations, loading: conversationsLoading } = useConversations()
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [messageText, setMessageText] = useState('')
+  const [attachedFiles, setAttachedFiles] = useState([])
+  const [isRecording, setIsRecording] = useState(false)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef(null)
   const messagesStartRef = useRef(null)
   const scrollAreaRef = useRef(null)
+  const fileInputRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const previousScrollHeight = useRef(0)
+  const [locallyDeletedIds, setLocallyDeletedIds] = useState(new Set())
+  const [contextMenu, setContextMenu] = useState({ openForId: null, x: 0, y: 0 })
+  const contextMenuRef = useReactRef(null)
 
-  const { 
-    messages, 
-    loading: messagesLoading, 
+  const {
+    messages,
+    loading: messagesLoading,
     loadingMore,
-    sending, 
-    typingUsers, 
+    sending,
+    typingUsers,
     pagination,
     sendMessage,
-    loadMoreMessages 
+    loadMoreMessages
   } = useChat(selectedConversation?._id)
 
-  // Auto scroll to bottom when new messages arrive (only if near bottom)
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
     if (!scrollContainer) return
-
     const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 100
-
     if (isNearBottom || messages.length === 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
 
-  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (!contextMenu.openForId) return
+
+    const handleClickOutside = (e) => {
+      if (!contextMenuRef.current) return
+      if (!contextMenuRef.current.contains(e.target)) {
+        setContextMenu({ openForId: null, x: 0, y: 0 })
+      }
+    }
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        setContextMenu({ openForId: null, x: 0, y: 0 })
+      }
+    }
+
+    window.addEventListener('mousedown', handleClickOutside)
+    window.addEventListener('keydown', handleEsc)
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [contextMenu.openForId])
+
   useEffect(() => {
     if (!messagesStartRef.current || !pagination.hasMore) return
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadingMore) {
           const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
-          if (scrollContainer) {
-            previousScrollHeight.current = scrollContainer.scrollHeight
-          }
+          if (scrollContainer) previousScrollHeight.current = scrollContainer.scrollHeight
           loadMoreMessages()
         }
       },
       { threshold: 0.1 }
     )
-
     observer.observe(messagesStartRef.current)
-
-    return () => {
-      observer.disconnect()
-    }
+    return () => observer.disconnect()
   }, [pagination.hasMore, loadingMore, loadMoreMessages])
 
-  // Maintain scroll position after loading more messages
   useEffect(() => {
     if (!loadingMore && previousScrollHeight.current > 0) {
       const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
       if (scrollContainer) {
         const newScrollHeight = scrollContainer.scrollHeight
-        const scrollDiff = newScrollHeight - previousScrollHeight.current
-        scrollContainer.scrollTop = scrollDiff
+        scrollContainer.scrollTop = newScrollHeight - previousScrollHeight.current
         previousScrollHeight.current = 0
       }
     }
   }, [messages, loadingMore])
 
-  // Auto select conversation from navigation state
   useEffect(() => {
     if (location.state?.conversationId && conversations.length > 0) {
       const conv = conversations.find((c) => c._id === location.state.conversationId)
-      if (conv) {
-        setSelectedConversation(conv)
-      }
+      if (conv) setSelectedConversation(conv)
     }
   }, [location.state, conversations])
 
-  // Handle message send
   const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (!messageText.trim() || sending) return
-
-    await sendMessage(messageText)
+    if (sending) return
+    const hasText = !!messageText.trim()
+    const hasFiles = attachedFiles.length > 0
+    if (!hasText && !hasFiles) return
+    await sendMessage({ text: messageText, files: attachedFiles })
     setMessageText('')
+    setAttachedFiles([])
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // Handle typing indicator
   const handleTyping = (e) => {
     setMessageText(e.target.value)
-
     if (!selectedConversation?._id) return
-
-    // Emit typing start
     emitTypingStart(selectedConversation._id)
-
-    // Clear previous timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-
-    // Emit typing stop after 2 seconds of inactivity
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     typingTimeoutRef.current = setTimeout(() => {
       emitTypingStop(selectedConversation._id)
     }, 2000)
   }
 
-  // Get other user in conversation
   const getOtherUser = (conversation) => {
     if (!conversation || !currentUser) return null
     return conversation.participants?.find((p) => p._id !== currentUser._id)
   }
 
-  // Filter conversations by search
   const filteredConversations = conversations.filter((conv) => {
     const otherUser = getOtherUser(conv)
     const searchLower = searchQuery.toLowerCase()
@@ -143,7 +181,6 @@ export default function Message() {
     )
   })
 
-  // Get typing user names
   const typingUserNames = typingUsers
     .filter((uid) => uid !== currentUser?._id)
     .map((uid) => {
@@ -151,10 +188,26 @@ export default function Message() {
       return participant?.fullName || participant?.userName || 'Someone'
     })
 
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort((a, b) => {
+      const aTime = new Date(a.createdAt || a.timestamp || 0).getTime()
+      const bTime = new Date(b.createdAt || b.timestamp || 0).getTime()
+      return aTime - bTime
+    })
+  }, [messages])
+
+  const groupedMessages = useMemo(() => groupByDay(sortedMessages), [sortedMessages])
+
+  const typingUser = useMemo(() => {
+    if (!selectedConversation) return null
+    const typingId = typingUsers.find((uid) => uid !== currentUser?._id)
+    if (!typingId) return null
+    return selectedConversation.participants?.find((p) => p._id === typingId) || null
+  }, [typingUsers, selectedConversation, currentUser])
+
   return (
     <ContentLayout title="Messages">
       <div className="h-[calc(100vh-200px)] flex gap-4">
-        {/* Conversations List */}
         <Card className="w-80 flex flex-col h-full">
           <div className="p-4 border-b">
             <div className="relative">
@@ -167,22 +220,18 @@ export default function Message() {
               />
             </div>
           </div>
-
           <ScrollArea className="flex-1">
             {conversationsLoading ? (
               <div className="flex justify-center items-center h-40">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                No conversations yet
-              </div>
+              <div className="p-4 text-center text-muted-foreground">No conversations yet</div>
             ) : (
               <div className="p-2">
                 {filteredConversations.map((conv) => {
                   const otherUser = getOtherUser(conv)
                   const isSelected = selectedConversation?._id === conv._id
-
                   return (
                     <div
                       key={conv._id}
@@ -218,7 +267,6 @@ export default function Message() {
           </ScrollArea>
         </Card>
 
-        {/* Chat Area */}
         <Card className="flex-1 flex flex-col h-full overflow-hidden">
           {!selectedConversation ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -226,7 +274,6 @@ export default function Message() {
             </div>
           ) : (
             <>
-              {/* Chat Header */}
               <div className="p-4 border-b flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={getOtherUser(selectedConversation)?.avatar} />
@@ -236,8 +283,8 @@ export default function Message() {
                 </Avatar>
                 <div>
                   <p className="font-semibold">
-                    {getOtherUser(selectedConversation)?.fullName || 
-                     getOtherUser(selectedConversation)?.userName || 
+                    {getOtherUser(selectedConversation)?.fullName ||
+                     getOtherUser(selectedConversation)?.userName ||
                      'Unknown'}
                   </p>
                   {typingUserNames.length > 0 && (
@@ -248,75 +295,254 @@ export default function Message() {
                 </div>
               </div>
 
-              {/* Messages Area */}
               <div className="flex-1 overflow-hidden min-h-0">
                 <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-                {messagesLoading ? (
-                  <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground">
-                    No messages yet. Start the conversation!
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Loading more indicator */}
-                    <div ref={messagesStartRef} className="flex justify-center py-2">
-                      {loadingMore && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Loading older messages...</span>
-                        </div>
-                      )}
-                      {!pagination.hasMore && messages.length > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          Beginning of conversation
-                        </span>
-                      )}
+                  {messagesLoading ? (
+                    <div className="flex justify-center items-center h-40">
+                      <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
+                  ) : sortedMessages.length === 0 ? (
+                    <div className="text-center text-muted-foreground">
+                      No messages yet. Start the conversation!
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div ref={messagesStartRef} className="flex justify-center py-2">
+                        {loadingMore && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Loading older messages...</span>
+                          </div>
+                        )}
+                        {!pagination.hasMore && sortedMessages.length > 0 && (
+                          <span className="text-xs text-muted-foreground">Beginning of conversation</span>
+                        )}
+                      </div>
 
-                    {messages.map((msg) => {
-                      const isOwn = msg.senderId._id === currentUser?._id
-                      return (
-                        <div
-                          key={msg._id}
-                          className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : ''}`}>
-                            <Avatar className="h-8 w-8 shrink-0">
-                              <AvatarImage src={msg.senderId.avatar} />
-                              <AvatarFallback>
-                                {msg.senderId.fullName?.charAt(0) || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div
-                                className={`px-4 py-2 rounded-2xl ${
-                                  isOwn
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted'
-                                }`}
-                              >
-                                <p className="break-words">{msg.text}</p>
+                      {groupedMessages.map((group) => (
+                        <div key={group.key} className="space-y-3">
+                          <div className="flex justify-center my-2">
+                            <span className="px-3 py-1 rounded-full text-xs bg-muted text-muted-foreground">
+                              {formatDateChip(group.items[0]?.createdAt || group.items[0]?.timestamp, group.items.length)}
+                            </span>
+                          </div>
+
+                          {group.items.map((msg, idx) => {
+                            if (locallyDeletedIds.has(msg._id)) return null
+                            const isOwn = msg.senderId?._id === currentUser?._id
+                            const nextMsg = group.items[idx + 1]
+                            const sameSenderNext = nextMsg && nextMsg.senderId?._id === msg.senderId?._id
+                            const showTimestamp = !sameSenderNext
+
+                            return (
+                              <div key={msg._id} className={`group flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`flex gap-2 max-w-[75%] ${isOwn ? 'flex-row-reverse' : ''}`}>
+                                  <Avatar className="h-8 w-8 shrink-0">
+                                    <AvatarImage src={msg.senderId?.avatar} />
+                                    <AvatarFallback>
+                                      {msg.senderId?.fullName?.charAt(0) || msg.senderId?.userName?.charAt(0) || '?'}
+                                    </AvatarFallback>
+                                  </Avatar>
+
+                                  <div className="relative flex-1 min-w-0">
+                                    {Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                                      <div className={`mb-1 flex flex-col gap-2 ${isOwn ? 'items-end' : 'items-start'}`}>
+                                        {msg.attachments.map((att) => {
+                                          const key = `${att.url}-${att.filename}`
+                                          if (att.type === 'image') {
+                                            return (
+                                              <img
+                                                key={key}
+                                                src={att.url}
+                                                alt={att.filename || 'attachment'}
+                                                className="max-w-xs rounded-lg border"
+                                              />
+                                            )
+                                          }
+                                          if (att.type === 'audio') {
+                                            return (
+                                              <div
+                                                key={key}
+                                                className={`flex items-center gap-2 p-2 max-w-xs rounded-sm ${
+                                                  isOwn
+                                                    ? 'ml-auto bg-primary/10 border border-primary rounded-l-lg rounded-tr-lg'
+                                                    : 'mr-auto bg-gray-100 text-black rounded-r-lg rounded-tl-lg'
+                                                } shadow-sm`}
+                                              >
+                                                <audio controls className="flex-1 min-w-0">
+                                                  <source src={att.url} type={att.mimetype || 'audio/webm'} />
+                                                  Your browser does not support the audio element.
+                                                </audio>
+                                              </div>
+                                            )
+                                          }
+                                          return (
+                                            <a
+                                              key={key}
+                                              href={att.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-xs underline break-all"
+                                            >
+                                              {att.filename || att.url}
+                                            </a>
+                                          )
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {msg.recalled ? (
+                                      <div className="px-4 py-2 rounded-2xl bg-muted text-xs italic text-muted-foreground">
+                                        Message was recalled
+                                      </div>
+                                    ) : msg.text && (
+                                      <div
+                                        className={`px-4 py-2 rounded-2xl ${
+                                          isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                                        }`}
+                                      >
+                                        <p className="break-words">{msg.text}</p>
+                                      </div>
+                                    )}
+
+                                    {Array.isArray(msg.reactions) && msg.reactions.length > 0 && (
+                                      <div className={`mt-1 flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                        <div className="rounded-full bg-background border px-2 py-0.5 text-xs flex gap-1">
+                                          {[...new Set(msg.reactions.map((r) => r.emoji))].slice(0, 3).join(' ')}{' '}
+                                          <span>{msg.reactions.length}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {!msg.recalled && (
+                                      <div
+                                        className={`absolute top-2 flex gap-2 items-start opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition ${
+                                          isOwn ? 'right-full mr-3 flex-row-reverse' : 'left-full ml-3'
+                                        }`}
+                                      >
+                                        <div className="pointer-events-auto">
+                                          <ReactionButton messageId={msg._id} />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          className="pointer-events-auto h-8 w-8 rounded-full flex items-center justify-center bg-muted hover:bg-muted/80"
+                                          onClick={(e) => {
+                                            const rect = e.currentTarget.getBoundingClientRect()
+                                            setContextMenu({
+                                              openForId: msg._id,
+                                              x: rect.right,
+                                              y: rect.bottom
+                                            })
+                                          }}
+                                        >
+                                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {showTimestamp && (
+                                      <div
+                                        className={`flex items-center gap-1 mt-2 text-xs text-muted-foreground ${
+                                          isOwn ? 'justify-end' : 'justify-start'
+                                        }`}
+                                      >
+                                        <span>{formatTimeOnly(msg.createdAt || msg.timestamp)}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <span className="text-xs text-muted-foreground mt-1 block">
-                                {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
-                              </span>
+                            )
+                          })}
+                        </div>
+                      ))}
+
+                      {typingUser && (
+                        <div className="flex items-end space-x-2 px-1">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={typingUser.avatar} />
+                            <AvatarFallback>{typingUser.fullName?.[0] || typingUser.userName?.[0] || '?'}</AvatarFallback>
+                          </Avatar>
+                          <div className="relative px-3 py-2 rounded-lg bg-muted text-foreground">
+                            <div className="flex space-x-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce [animation-delay:120ms]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce [animation-delay:240ms]" />
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
-                )}
+                      )}
+
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
                 </ScrollArea>
               </div>
 
-              {/* Message Input */}
+              {contextMenu.openForId && (
+                <div
+                  ref={contextMenuRef}
+                  className="fixed z-50 bg-white border rounded-md shadow-lg text-sm"
+                  style={{ top: contextMenu.y, left: contextMenu.x - 160, minWidth: 160 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100"
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await deleteMessageForMeAPI(contextMenu.openForId)
+                        setLocallyDeletedIds((prev) => new Set(prev).add(contextMenu.openForId))
+                      } catch (e) {
+                        console.error('delete failed', e)
+                      } finally {
+                        setContextMenu({ openForId: null, x: 0, y: 0 })
+                      }
+                    }}
+                  >
+                    Delete for me
+                  </button>
+                  <button
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600"
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await recallMessageAPI(contextMenu.openForId)
+                      } catch (e) {
+                        console.error('recall failed', e)
+                      } finally {
+                        setContextMenu({ openForId: null, x: 0, y: 0 })
+                      }
+                    }}
+                  >
+                    Recall for everyone
+                  </button>
+                </div>
+              )}
+
               <form onSubmit={handleSendMessage} className="p-4 border-t">
                 <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      setAttachedFiles(files)
+                    }}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4 mr-1" />
+                    Attach
+                  </Button>
+
                   <Input
                     placeholder="Type a message..."
                     value={messageText}
@@ -324,14 +550,54 @@ export default function Message() {
                     disabled={sending}
                     className="flex-1"
                   />
-                  <Button type="submit" disabled={sending || !messageText.trim()}>
-                    {sending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
+                  <Button
+                    type="button"
+                    variant={isRecording ? 'destructive' : 'outline'}
+                    className="shrink-0"
+                    onClick={async () => {
+                      if (isRecording) {
+                        mediaRecorderRef.current?.stop()
+                        mediaRecorderRef.current?.stream.getTracks().forEach((t) => t.stop())
+                        setIsRecording(false)
+                      } else {
+                        try {
+                          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                          const mr = new MediaRecorder(stream)
+                          mediaRecorderRef.current = mr
+                          audioChunksRef.current = []
+                          mr.ondataavailable = (event) => {
+                            if (event.data.size > 0) audioChunksRef.current.push(event.data)
+                          }
+                          mr.onstop = async () => {
+                            const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+                            audioChunksRef.current = []
+                            const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' })
+                            await sendMessage({ files: [file] })
+                          }
+                          mr.start()
+                          setIsRecording(true)
+                        } catch (err) {
+                          console.error('Microphone error', err)
+                        }
+                      }
+                    }}
+                  >
+                    <Mic className={`h-4 w-4 ${isRecording ? 'animate-pulse' : ''}`} />
+                  </Button>
+                  <Button type="submit" disabled={sending || (!messageText.trim() && attachedFiles.length === 0)}>
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
+
+                {attachedFiles.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    {attachedFiles.map((f) => (
+                      <span key={f.name} className="px-2 py-1 rounded bg-muted">
+                        {f.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </form>
             </>
           )}

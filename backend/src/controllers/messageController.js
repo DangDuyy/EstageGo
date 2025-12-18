@@ -5,12 +5,15 @@ import { createAndEmitNotification } from '~/services/notificationService'
 const sendMessage = async (req, res, next) => {
   try {
     const senderId = req.jwtDecoded._id
-    const { conversationId, text } = req.body
+    const { conversationId } = req.body
+    const text = req.body.text
+    const files = req.files || []
     const io = req.io
 
-    if (!conversationId || !text) {
+    // Require at least text or one attachment
+    if (!conversationId || (!text && (!files || !files.length))) {
       return res.status(StatusCodes.BAD_REQUEST).json({ 
-        message: 'conversationId and text are required' 
+        message: 'conversationId and at least text or file is required' 
       })
     }
 
@@ -18,6 +21,7 @@ const sendMessage = async (req, res, next) => {
       conversationId,
       senderId,
       text,
+      files,
       io
     })
 
@@ -64,7 +68,70 @@ const getMessages = async (req, res, next) => {
   }
 }
 
+const toggleReaction = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { messageId } = req.params
+    const { emoji } = req.body
+    const io = req.io
+
+    if (!emoji) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'emoji is required'
+      })
+    }
+
+    const message = await messageService.toggleReaction({
+      messageId,
+      userId,
+      emoji,
+      io
+    })
+
+    res.status(StatusCodes.OK).json(message)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const deleteMessageForMe = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { messageId } = req.params
+
+    const result = await messageService.deleteForUser({
+      messageId,
+      userId
+    })
+
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+const recallMessage = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { messageId } = req.params
+    const io = req.io
+
+    const message = await messageService.recallMessage({
+      messageId,
+      userId,
+      io
+    })
+
+    res.status(StatusCodes.OK).json(message)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const messageController = {
   sendMessage,
-  getMessages
+  getMessages,
+  toggleReaction,
+  deleteMessageForMe,
+  recallMessage
 }
