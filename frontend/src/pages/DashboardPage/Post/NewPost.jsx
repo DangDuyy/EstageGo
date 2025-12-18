@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getWard, verifyPropertyDocumentsAPI } from "@/apis";
+import { createProperty, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -32,12 +32,79 @@ import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
-import { Check, X } from "lucide-react";
+import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
 const currencies = ['VND', 'USD', 'EUR']
 const period = ['month', 'year', 'other']
+
+// amenities
+const AMENITIES = {
+    safety: {
+        label: "Safety & Security",
+        items: [
+            "CCTV",
+            "24/7 Security",
+            "Fire alarm system",
+            "Smart door lock",
+            "Key card / fingerprint access",
+        ],
+    },
+
+    interior: {
+        label: "Interior & Furnishing",
+        items: [
+            "Basic furnishing",
+            "Fully furnished",
+            "Bed",
+            "Wardrobe",
+            "Table & chairs",
+            "Curtains",
+        ],
+    },
+
+    kitchen: {
+        label: "Kitchen",
+        items: [
+            "Electric / gas stove",
+            "Range hood",
+            "Kitchen cabinets",
+            "Microwave",
+            "Refrigerator",
+        ],
+    },
+
+    utilities: {
+        label: "Building Amenities",
+        items: [
+            "Elevator",
+            "Swimming pool",
+            "Gym",
+            "Park",
+            "Rooftop",
+            "BBQ area",
+        ],
+    },
+
+    parking: {
+        label: "Parking",
+        items: [
+            "Motorbike parking",
+            "Car parking",
+            "Basement parking",
+        ],
+    },
+};
+
+const ICONS = {
+    safety: <ShieldCheck className="h-5 w-5 text-primary" />,
+    interior: <Sofa className="h-5 w-5 text-primary" />,
+    kitchen: <CookingPot className="h-5 w-5 text-primary" />,
+    utilities: <Building2 className="h-5 w-5 text-primary" />,
+    parking: <Car className="h-5 w-5 text-primary" />,
+}
 
 // DỮ LIỆU MOCK CHO PLAN LISTING
 const planInfo = {
@@ -452,9 +519,9 @@ export default function AddPropertyWizard() {
     useEffect(() => {
         const handleSelectProvince = async (provinceId) => {
             try {
-                const response = await getDistrict(provinceId)
-                setDistricts(response)
-                
+                const response = await getProvince(provinceId)
+                setDistricts(response.districts)
+
                 // Kiểm tra xem district hiện tại có nằm trong danh sách mới không
                 const currentDistrict = form.getValues('address.district');
                 if (currentDistrict && !response.find(d => d.name === currentDistrict)) {
@@ -471,25 +538,25 @@ export default function AddPropertyWizard() {
             setDistricts([]);
             return
         }
-        handleSelectProvince(provinceData.id)
+        handleSelectProvince(provinceData.code)
     }, [province, provinces, form])
 
     // Update wards when district changes
     useEffect(() => {
-        const handleSelectDistrict = async (districtId) => {
-            try {
-                const response = await getWard(districtId)
-                setWards(response)
-                
-                // Kiểm tra xem ward hiện tại có nằm trong danh sách mới không
-                const currentWard = form.getValues('address.ward');
-                if (currentWard && !response.find(w => w.name === currentWard)) {
-                    form.setValue('address.ward', '');
-                }
-            } catch (error) {
-                toast.error("Failed to load wards.");
-            }
-        }
+        // const handleSelectDistrict = async (districtId) => {
+        //     try {
+        //         const response = await getWard(districtId)
+        //         setWards(response)
+
+        //         // Kiểm tra xem ward hiện tại có nằm trong danh sách mới không
+        //         const currentWard = form.getValues('address.ward');
+        //         if (currentWard && !response.find(w => w.name === currentWard)) {
+        //             form.setValue('address.ward', '');
+        //         }
+        //     } catch (error) {
+        //         toast.error("Failed to load wards.");
+        //     }
+        // }
 
         const districtSelected = districts.find(d => d.name === district)
         if (!districtSelected) {
@@ -497,7 +564,8 @@ export default function AddPropertyWizard() {
             return;
         }
 
-        handleSelectDistrict(districtSelected.id)
+        setWards(districtSelected.wards)
+        // handleSelectDistrict(districtSelected.id)
     }, [district, districts, form])
 
     // Scroll to top on step change
@@ -545,7 +613,7 @@ export default function AddPropertyWizard() {
         setStep(2);
     };
 
-    
+
 
     // Document verification API call
     const handleVerifyDocuments = async () => {
@@ -649,14 +717,19 @@ export default function AddPropertyWizard() {
         for (const key in data) {
             if (key !== "files") {
                 const value = data[key];
-                if (typeof value === "object" && value !== null) formData.append(key, JSON.stringify(value));
-                else formData.append(key, value);
+                if (Array.isArray(value)) {
+                    value.forEach(v => formData.append(`${key}[]`, v))
+                } else if (typeof value === "object" && value !== null) {
+                    formData.append(key, JSON.stringify(value))
+                } else {
+                    formData.append(key, value)
+                }
             }
         }
         formData.append("selectedPlan", selectedPlan);
         formData.append("listingFeeClient", String(listingFee));
 
-        formData.append('tierId', selectedTier)
+        formData.append('tier', selectedTier)
         formData.append('durationId', selectedDuration._id)
 
         // ONLY listing images
@@ -838,58 +911,20 @@ export default function AddPropertyWizard() {
 
                             {/* Information */}
                             <Card className="mb-8">
-                                <CardHeader><CardTitle>Information</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Address</CardTitle></CardHeader>
                                 <CardContent className="space-y-6">
-                                    <div className="grid gap-4">
-                                        <div className="grid gap-2">
-                                            <FormField
-                                                control={form.control}
-                                                name='title'
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                placeholder="3-bedroom townhouse with garden"
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <FormField
-                                                control={form.control}
-                                                name='description'
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Description</FormLabel>
-                                                        <FormControl>
-                                                            <Textarea
-                                                                placeholder="Write your description..."
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
 
-                                    <div className="grid gap-2">
+                                    {/* <div className="grid gap-2">
                                         <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Search Location</Label>
-                                        <CustomSearchBox 
+                                        <CustomSearchBox
                                             searchValue={searchValue}
                                             setSearchValue={setSearchValue}
-                                            onPlaceSelected={handlePlaceSelected} 
+                                            onPlaceSelected={handlePlaceSelected}
                                         />
                                         <p className="text-xs text-muted-foreground">
                                             Start typing to get Google Maps suggestions or pick a point directly on the map.
                                         </p>
-                                    </div>
+                                    </div> */}
 
                                     <div className="grid gap-4 md:grid-cols-3">
                                         {/* Province */}
@@ -1022,7 +1057,7 @@ export default function AddPropertyWizard() {
 
                                     {/* Map */}
                                     <div>
-                                        <MapContainer center={center} zoom={13} onClick={handleMapClick}>
+                                        <MapContainer style={{ height: "350px", width: "100%", cursor: "default" }} center={center} zoom={13} onClick={handleMapClick}>
                                             <MarkerLayer items={results} onMarkerClick={handleMarkerClick} />
                                         </MapContainer>
                                         <p className="mt-2 text-xs text-muted-foreground">
@@ -1037,6 +1072,35 @@ export default function AddPropertyWizard() {
                                 <CardHeader><CardTitle>Price</CardTitle></CardHeader>
                                 <CardContent className='space-y-6'>
                                     <div className="grid gap-4 md:grid-cols-2">
+                                        {/* Purpose */}
+                                        <FormField
+                                            control={form.control}
+                                            name='purpose'
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className={cn(
+                                                                "w-full",
+                                                                form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : ''
+                                                            )}>
+                                                                <SelectValue placeholder="Select purpose" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
+                                                            <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage className='absolute bottom-0' />
+                                                </FormItem>
+                                            )}
+                                        />
+
                                         {/* Price Value */}
                                         <FormField
                                             control={form.control}
@@ -1056,7 +1120,6 @@ export default function AddPropertyWizard() {
                                                 </FormItem>
                                             )}
                                         />
-                                        <div></div> {/* Spacer */}
 
                                         {/* Currency */}
                                         <FormField
@@ -1124,6 +1187,58 @@ export default function AddPropertyWizard() {
                                             />
                                         )}
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="mb-8">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">
+                                        Amenities
+                                    </CardTitle>
+                                </CardHeader>
+
+                                <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {Object.entries(AMENITIES).map(([key, group]) => (
+                                        <div key={key} className="space-y-3">
+                                            <div className="flex items-center gap-2 font-medium">
+                                                {ICONS[key]}
+                                                {group.label}
+                                            </div>
+
+                                            <FormField
+                                                control={form.control}
+                                                name="amenities"
+                                                render={({ field }) => (
+                                                    <div className="space-y-2">
+                                                        {group.items.map((item) => (
+                                                            <FormItem
+                                                                key={item}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value?.includes(item)}
+                                                                        onCheckedChange={(checked) => {
+                                                                            return checked
+                                                                                ? field.onChange([...(field.value || []), item])
+                                                                                : field.onChange(
+                                                                                    field.value?.filter(
+                                                                                        (value) => value !== item
+                                                                                    )
+                                                                                )
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormLabel className="font-normal">
+                                                                    {item}
+                                                                </FormLabel>
+                                                            </FormItem>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            />
+                                        </div>
+                                    ))}
                                 </CardContent>
                             </Card>
 
@@ -1283,34 +1398,72 @@ export default function AddPropertyWizard() {
                                                 </FormItem>
                                             )}
                                         />
-                                        {/* Purpose */}
-                                        <FormField
-                                            control={form.control}
-                                            name='purpose'
-                                            render={({ field }) => (
-                                                <FormItem className='relative pb-6'>
-                                                    <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
-                                                    <Select
-                                                        value={field.value}
-                                                        onValueChange={field.onChange}
-                                                    >
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="mb-8">
+                                <CardHeader><CardTitle>Information</CardTitle></CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="flex items-center">
+                                        <p className="text-sm font-medium">Quickly create titles and descriptions with AI</p>
+                                        <Button
+                                            variant="outline"
+                                            type='button'
+                                            className="
+                                                ml-auto
+                                                w-fit
+                                                rounded-full
+                                                border-black
+                                                px-6 py-5
+                                                text-base font-medium
+                                                flex items-center gap-2
+                                                hover:bg-black/5
+                                              "
+                                        >
+                                            <Sparkles className="h-5 w-5 text-purple-500" />
+                                            Regenerate with AI
+                                        </Button>
+
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <div className="grid gap-2">
+                                            <FormField
+                                                control={form.control}
+                                                name='title'
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</FormLabel>
                                                         <FormControl>
-                                                            <SelectTrigger className={cn(
-                                                                "w-full",
-                                                                form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : ''
-                                                            )}>
-                                                                <SelectValue placeholder="Select purpose" />
-                                                            </SelectTrigger>
+                                                            <Input
+                                                                placeholder="3-bedroom townhouse with garden"
+                                                                {...field}
+                                                            />
                                                         </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
-                                                            <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage className='absolute bottom-0' />
-                                                </FormItem>
-                                            )}
-                                        />
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <FormField
+                                                control={form.control}
+                                                name='description'
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Description</FormLabel>
+                                                        <FormControl>
+                                                            <Textarea
+                                                                placeholder="Write your description..."
+                                                                className={"h-30"}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -1350,8 +1503,6 @@ export default function AddPropertyWizard() {
                             </Dialog>
                         </div>
                     )}
-
-                    
 
                     {/* STEP 2: Agent & Payment */}
                     {step === 2 && (

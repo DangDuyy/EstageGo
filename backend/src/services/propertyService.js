@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes"
 import { Types } from "mongoose"
+import { ListingTierConfig } from "~/models/listingTierConfig"
 import userModel from "~/models/users"
 import { pagingSkipValue } from "~/utils/algorithms"
 import ApiError from "~/utils/ApiError"
@@ -32,6 +33,32 @@ const createProperty = async (propertyData) => {
 
     const newProperty = await propertyModel.create(propertyToCreate)
 
+    const tierConfig = await ListingTierConfig.findById(newProperty.tier)
+
+    if (!tierConfig) {
+      throw new Error('Listing tier config not found')
+    }
+
+    newProperty.priority = tierConfig.priority
+
+    const duration = tierConfig.durations.find(
+      (d) => d._id.toString() === propertyData.durationId
+    )
+
+    if (!duration) {
+      throw new Error('Invalid listing duration')
+    }
+
+    newProperty.expireAt = new Date(
+      Date.now() + duration.days * 24 * 60 * 60 * 1000
+    )
+
+    newProperty.listingFee = duration.price
+
+    newProperty.isFeatured = tierConfig.features.featuredListing
+
+    await newProperty.save()
+
     return newProperty
   }
   catch (error) {
@@ -61,7 +88,7 @@ const addMediaToProperty = async (propertyId, mediaItems) => {
 const getPropertyById = async (id) => {
   try {
     const property = await propertyModel.findById(id)
-    
+
     // Ensure all media items have _id (for old documents without _id)
     if (property && property.media && Array.isArray(property.media)) {
       let needsSave = false
@@ -77,7 +104,7 @@ const getPropertyById = async (id) => {
         await property.save()
       }
     }
-    
+
     return property
   }
   catch (error) {
@@ -227,25 +254,31 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
             $let: {
               vars: {
                 isVip: { $eq: ["$postType", "vip"] },
-                isBoostActive: { $and: [
-                  { $ne: ["$boostExpiresAt", null] },
-                  { $gt: ["$boostExpiresAt", new Date()] }
-                ]}
+                isBoostActive: {
+                  $and: [
+                    { $ne: ["$boostExpiresAt", null] },
+                    { $gt: ["$boostExpiresAt", new Date()] }
+                  ]
+                }
               },
               in: {
                 $cond: [
                   // VIP + Active Boost = 4 points
                   { $and: ["$$isVip", "$$isBoostActive"] }, 4,
-                  { $cond: [
-                    // Boost only (not VIP) = 2 points
-                    { $and: ["$$isBoostActive", { $not: "$$isVip" }] }, 2,
-                    { $cond: [
-                      // VIP only (no active boost) = 1 point
-                      { $and: ["$$isVip", { $not: "$$isBoostActive" }] }, 1,
-                      // Normal = 0 points
-                      0
-                    ]}
-                  ]}
+                  {
+                    $cond: [
+                      // Boost only (not VIP) = 2 points
+                      { $and: ["$$isBoostActive", { $not: "$$isVip" }] }, 2,
+                      {
+                        $cond: [
+                          // VIP only (no active boost) = 1 point
+                          { $and: ["$$isVip", { $not: "$$isBoostActive" }] }, 1,
+                          // Normal = 0 points
+                          0
+                        ]
+                      }
+                    ]
+                  }
                 ]
               }
             }
@@ -701,61 +734,61 @@ const getPropertiesByFilters = async (filters) => {
 }
 
 const updateImageTags = async (propertyId, imageId, tagsData, imageUrl = null) => {
-    try {
-        const property = await propertyModel.findById(propertyId)
-        
-        if (!property) {
-            throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
-        }
-        
-        // Find media item by _id first
-        let mediaItem = null
-        if (property.media && typeof property.media.id === 'function') {
-            mediaItem = property.media.id(imageId)
-        }
-        
-        // If not found by _id, try .find()
-        if (!mediaItem && property.media) {
-            mediaItem = property.media.find(item => {
-                if (item._id) {
-                    return item._id.toString() === imageId
-                }
-                return false
-            })
-        }
-        
-        // If still not found and imageUrl is provided, find by URL (most reliable)
-        if (!mediaItem && imageUrl && property.media) {
-            mediaItem = property.media.find(item => item.url === imageUrl)
-        }
-        
-        if (!mediaItem) {
-            console.error('[UpdateImageTags] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
-            console.error('[UpdateImageTags] Available media _ids:', property.media?.map(m => m._id?.toString()))
-            console.error('[UpdateImageTags] Available media urls:', property.media?.map(m => m.url))
-            throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
-        }
-        
-        // Update tags
-        if (tagsData.tags) {
-            mediaItem.tags = tagsData.tags
-        }
-        
-        // Update detected objects
-        if (tagsData.detectedObjects) {
-            mediaItem.detectedObjects = tagsData.detectedObjects
-        }
-        
-        // Mark as analyzed
-        mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
-        mediaItem.analyzedAt = new Date()
-        
-        await property.save()
-        
-        return property
-    } catch (error) {
-        throw error
+  try {
+    const property = await propertyModel.findById(propertyId)
+
+    if (!property) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
     }
+
+    // Find media item by _id first
+    let mediaItem = null
+    if (property.media && typeof property.media.id === 'function') {
+      mediaItem = property.media.id(imageId)
+    }
+
+    // If not found by _id, try .find()
+    if (!mediaItem && property.media) {
+      mediaItem = property.media.find(item => {
+        if (item._id) {
+          return item._id.toString() === imageId
+        }
+        return false
+      })
+    }
+
+    // If still not found and imageUrl is provided, find by URL (most reliable)
+    if (!mediaItem && imageUrl && property.media) {
+      mediaItem = property.media.find(item => item.url === imageUrl)
+    }
+
+    if (!mediaItem) {
+      console.error('[UpdateImageTags] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
+      console.error('[UpdateImageTags] Available media _ids:', property.media?.map(m => m._id?.toString()))
+      console.error('[UpdateImageTags] Available media urls:', property.media?.map(m => m.url))
+      throw new ApiError(StatusCodes.NOT_FOUND, "Image not found")
+    }
+
+    // Update tags
+    if (tagsData.tags) {
+      mediaItem.tags = tagsData.tags
+    }
+
+    // Update detected objects
+    if (tagsData.detectedObjects) {
+      mediaItem.detectedObjects = tagsData.detectedObjects
+    }
+
+    // Mark as analyzed
+    mediaItem.analyzed = tagsData.analyzed !== undefined ? tagsData.analyzed : true
+    mediaItem.analyzedAt = new Date()
+
+    await property.save()
+
+    return property
+  } catch (error) {
+    throw error
+  }
 }
 
 const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
@@ -789,18 +822,18 @@ const searchPropertiesByImageTag = async (tagLabel, page = 1, limit = 12) => {
 }
 
 const getUserPropertiesWithMedia = async (userId) => {
-    try {
-        const properties = await propertyModel.find({
-            owner: userId,
-            'media.0': { $exists: true } // Only properties with at least one media
-        })
-        .select('_id title slug media createdAt owner')
-        .sort({ createdAt: -1 })
-        
-        return properties
-    } catch (error) {
-        throw error
-    }
+  try {
+    const properties = await propertyModel.find({
+      owner: userId,
+      'media.0': { $exists: true } // Only properties with at least one media
+    })
+      .select('_id title slug media createdAt owner')
+      .sort({ createdAt: -1 })
+
+    return properties
+  } catch (error) {
+    throw error
+  }
 }
 
 const getAllImageTags = async (userId) => {
@@ -843,7 +876,7 @@ const getAllImageTags = async (userId) => {
 const updateProperty = async (propertyId, userId, updateData) => {
   try {
     const property = await propertyModel.findOne({ _id: propertyId, owner: userId })
-    
+
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
     }
@@ -881,11 +914,11 @@ const updatePropertyStatus = async (propertyId, userId, status) => {
       { status },
       { new: true }
     )
-    
+
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
     }
-    
+
     return property
   } catch (error) {
     throw error
@@ -899,11 +932,11 @@ const updatePropertyVisibility = async (propertyId, userId, visibility) => {
       { visibility },
       { new: true }
     )
-    
+
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
     }
-    
+
     return property
   } catch (error) {
     throw error
@@ -917,11 +950,11 @@ const deleteProperty = async (propertyId, userId) => {
       { _destroy: true },
       { new: true }
     )
-    
+
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
     }
-    
+
     return property
   } catch (error) {
     throw error
@@ -929,16 +962,16 @@ const deleteProperty = async (propertyId, userId) => {
 }
 
 const updateUser = async (userId, updateData) => {
-    try {
-        const user = await userModel.findByIdAndUpdate(
-            userId,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        )
-        return user
-    } catch (error) {
-        throw error
-    }
+  try {
+    const user = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    )
+    return user
+  } catch (error) {
+    throw error
+  }
 }
 
 export const propertyService = {

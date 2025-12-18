@@ -192,6 +192,21 @@ const propertySchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    tier: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ListingTierConfig',
+        required: true
+    },
+    priority: {
+        type: Number,
+        // required: true
+    },
+    // Tính năng nổi bật (chỉ Advanced)
+    isFeatured: {
+        type: Boolean,
+        default: false,
+        index: true
+    },
     listingFee: {
         type: Number,
         default: 0,

@@ -103,18 +103,18 @@ export const fetchPropertyDetail = async (propertyId) => {
 // }
 
 export const getAllProvinces = async () => {
-  const response = await axios.get('https://open.oapi.vn/location/provinces?page=0&size=63')
+  const response = await axios.get(`${API_ROOT}/v1/api.vn/provinces`)
   return response.data.data
 }
 
 export const getProvince = async (provinceCode) => {
-  const response = await axios.get(`https://provinces.open-api.vn/api/v1/p/${provinceCode}`, {
+  const response = await axios.get(`${API_ROOT}/v1/api.vn/provinces/${provinceCode}/full`, {
     params: {
       depth: 3
     }
   })
   console.log("province: ", response.data)
-  return response.data
+  return response.data.data
 }
 
 export const getDistrict = async (provinceCode) => {
