@@ -1,6 +1,6 @@
 import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,9 @@ import { emitTypingStart, emitTypingStop } from '@/lib/socket'
 import ReactionButton from '@/components/common/Chat/ReactionButton'
 import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
+import PropertyPreview from '@/components/common/Chat/PropertyPreview'
+import { parseMessageWithProperties } from '@/utils/propertyLinkDetector'
+import MessageContent from '@/components/common/Chat/MessageContent'
 
 const toDateKey = (date) => {
   const d = new Date(date || Date.now())
@@ -47,6 +50,8 @@ const formatTimeOnly = (dateObj) => {
 export default function Message() {
   const currentUser = useSelector(selectCurrentUser)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { conversationId: paramConversationId } = useParams()
   const { conversations, loading: conversationsLoading } = useConversations()
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [messageText, setMessageText] = useState('')
@@ -75,6 +80,41 @@ export default function Message() {
     sendMessage,
     loadMoreMessages
   } = useChat(selectedConversation?._id)
+
+  // Handle route parameter - select conversation from URL
+  useEffect(() => {
+    if (paramConversationId && conversations.length > 0 && !selectedConversation) {
+      const conv = conversations.find((c) => c._id === paramConversationId)
+      if (conv) {
+        setSelectedConversation(conv)
+      }
+    }
+  }, [paramConversationId, conversations, selectedConversation])
+
+  // Update URL when conversation is selected
+  useEffect(() => {
+    if (selectedConversation?._id && selectedConversation._id !== paramConversationId) {
+      navigate(`/dashboard/messages/${selectedConversation._id}`, { replace: false })
+    }
+  }, [selectedConversation?._id, paramConversationId, navigate])
+
+  // Auto scroll to bottom when conversation is selected or messages load
+  useEffect(() => {
+    if (!selectedConversation?._id) return
+    
+    const scrollToBottom = () => {
+      const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        // Cuộn container trực tiếp
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
+    }
+    
+    // Thử nhiều lần để đảm bảo DOM render xong
+    scrollToBottom()
+    setTimeout(scrollToBottom, 100)
+    setTimeout(scrollToBottom, 300)
+  }, [selectedConversation?._id])
 
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
@@ -429,13 +469,7 @@ export default function Message() {
                                         Message was recalled
                                       </div>
                                     ) : msg.text && (
-                                      <div
-                                        className={`px-4 py-2 rounded-2xl ${
-                                          isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                                        }`}
-                                      >
-                                        <p className="break-words">{msg.text}</p>
-                                      </div>
+                                      <MessageContent text={msg.text} isOwn={isOwn} />
                                     )}
 
                                     {Array.isArray(msg.reactions) && msg.reactions.length > 0 && (

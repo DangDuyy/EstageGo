@@ -1,6 +1,5 @@
 import { useState } from "react"
-import { Smile, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Smile } from "lucide-react"
 import { toggleReactionAPI } from "@/apis"
 
 const defaultReactions = ["👍", "❤️", "😂", "😮", "😢", "😡"]
@@ -22,11 +21,9 @@ export default function ReactionButton({ messageId, userEmojis = [] }) {
 
   return (
     <div className="relative inline-block">
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-6 w-6 p-0 group"
+      <button
         type="button"
+        className="h-6 w-6 p-0 group inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition"
       >
         <Smile className="w-3 h-3" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-12 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto" />
@@ -53,8 +50,9 @@ export default function ReactionButton({ messageId, userEmojis = [] }) {
             </button>
           ))}
         </div>
-      </Button>
+      </button>
     </div>
   )
 }
+
 
