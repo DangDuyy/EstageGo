@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
-import { Archive, Eye, EyeOff, Save, Trash2 } from 'lucide-react'
+import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 import { selectCurrentUser } from '@/redux/user/userSlice'
 import { MapsContext } from "@/components/common/GoogleMap/MapProvider"
@@ -30,24 +31,91 @@ import TourLinkModal from "@/components/common/Upload/tour-link-modal"
 import { 
     updatePropertyAPI, 
     updatePropertyStatusAPI, 
-    updatePropertyVisibilityAPI, 
-    deletePropertyAPI 
+    updatePropertyVisibilityAPI,
+    getAllProvinces,
+    getProvince
 } from '@/apis'
-import { getAllProvinces, getProvince } from '@/apis'
 import { propertySchema } from "@/schemas/property.schema"
 import { API_ROOT } from '@/utils/constants'
+import { deletePropertyAPI } from '@/apis/adminAPI'
 
 // ----- Mock data -----
-const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"]
+const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial","Office","Villa","Townhouse","Other"]
 const currencies = ['VND', 'USD', 'EUR']
 const period = ['month', 'year', 'other']
+
+// amenities
+const AMENITIES = {
+    safety: {
+        label: "Safety & Security",
+        items: [
+            "CCTV",
+            "24/7 Security",
+            "Fire alarm system",
+            "Smart door lock",
+            "Key card / fingerprint access",
+        ],
+    },
+
+    interior: {
+        label: "Interior & Furnishing",
+        items: [
+            "Basic furnishing",
+            "Fully furnished",
+            "Bed",
+            "Wardrobe",
+            "Table & chairs",
+            "Curtains",
+        ],
+    },
+
+    kitchen: {
+        label: "Kitchen",
+        items: [
+            "Electric / gas stove",
+            "Range hood",
+            "Kitchen cabinets",
+            "Microwave",
+            "Refrigerator",
+        ],
+    },
+
+    utilities: {
+        label: "Building Amenities",
+        items: [
+            "Elevator",
+            "Swimming pool",
+            "Gym",
+            "Park",
+            "Rooftop",
+            "BBQ area",
+        ],
+    },
+
+    parking: {
+        label: "Parking",
+        items: [
+            "Motorbike parking",
+            "Car parking",
+            "Basement parking",
+        ],
+    },
+}
+
+const ICONS = {
+    safety: <ShieldCheck className="h-5 w-5 text-primary" />,
+    interior: <Sofa className="h-5 w-5 text-primary" />,
+    kitchen: <CookingPot className="h-5 w-5 text-primary" />,
+    utilities: <Building2 className="h-5 w-5 text-primary" />,
+    parking: <Car className="h-5 w-5 text-primary" />,
+}
 
 // ----- Utils -----
 const currency = (n) =>
     Number(n || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 })
 
 const normalizeName = (name) => {
-    if (!name) return name
+    if (!name) return ""
     return name
         .toLowerCase()
         .replace(/thành phố|tỉnh|quận|huyện|phường|xã/g, "")
@@ -62,6 +130,7 @@ export default function EditPost() {
 
     // ----- State -----
     const [isLoading, setIsLoading] = useState(true)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [property, setProperty] = useState(null)
     const [visibility, setVisibility] = useState("public")
     const [status, setStatus] = useState("active") // active, draft, archived
@@ -107,6 +176,7 @@ export default function EditPost() {
             },
             files: [],
             yearBuilt: new Date().getFullYear(),
+            amenities: [],
         },
         resolver: zodResolver(propertySchema),
         mode: 'onBlur',
@@ -131,7 +201,7 @@ export default function EditPost() {
         'area'
     ])
 
-    // Load property data
+    // Load property data - FIX: Remove 'form' from dependency array
     useEffect(() => {
         const loadProperty = async () => {
             if (!propertyId) return
@@ -139,14 +209,12 @@ export default function EditPost() {
             try {
                 setIsLoading(true)
                 
-                // Debug: Log propertyId và URL
                 console.log('Loading property ID:', propertyId)
                 const apiUrl = `${API_ROOT}/v1/properties/${propertyId}`
                 console.log('API URL:', apiUrl)
                 
                 const response = await fetch(apiUrl)
                 
-                // Kiểm tra response status trước khi parse JSON
                 if (!response.ok) {
                     console.error('Response status:', response.status)
                     const text = await response.text()
@@ -182,7 +250,7 @@ export default function EditPost() {
                 setProperty(data)
                 setVisibility(data.visibility || 'public')
                 setStatus(data.status || 'active')
-                setExistingMedia(data.media || []) // Lưu media URLs
+                setExistingMedia(data.media || [])
                 
                 // Populate form
                 form.reset({
@@ -212,8 +280,9 @@ export default function EditPost() {
                         livingrooms: data.rooms?.livingrooms || 0,
                         kitchens: data.rooms?.kitchens || 0,
                     },
-                    files: [], // Không load media URLs vào files field vì nó expect File objects
+                    files: [],
                     yearBuilt: data.yearBuilt || new Date().getFullYear(),
+                    amenities: data.amenities || [],
                 })
                 
                 // Set map center if coordinates exist
@@ -239,7 +308,7 @@ export default function EditPost() {
         }
         
         loadProperty()
-    }, [propertyId, currentUser, navigate, form])
+    }, [propertyId, currentUser?._id, navigate]) // FIXED: Removed 'form' from dependencies
 
     // Update visibility form value
     useEffect(() => {
@@ -248,7 +317,9 @@ export default function EditPost() {
 
     // Update price.period when purpose changes
     useEffect(() => {
-        if (purposeValue === 'rent' && form.getValues('price.period') === 'other') {
+        if (purposeValue === 'sale') {
+            form.setValue('price.period', 'other')
+        } else if (purposeValue === 'rent' && form.getValues('price.period') === 'other') {
             form.setValue('price.period', 'month')
         }
     }, [purposeValue, form])
@@ -313,7 +384,7 @@ export default function EditPost() {
         if (selectedDistrict?.wards) {
             setWards(selectedDistrict.wards)
         }
-    }, [district, districts, form])
+    }, [district, districts])
 
     // Google Maps functions
     const getAddressComponent = (components = [], type) =>
@@ -488,7 +559,6 @@ export default function EditPost() {
         
         try {
             await deletePropertyAPI(propertyId)
-            // toast.success đã được gọi trong deletePropertyAPI
             navigate('/dashboard/posts')
         } catch (error) {
             console.error('Error deleting property:', error)
@@ -497,8 +567,13 @@ export default function EditPost() {
     }
 
     const onSubmit = async (data) => {
+        if (isSubmitting) return // Prevent double submission
+        
         try {
-            // Chuẩn bị data để gửi (loại bỏ files nếu không có file mới)
+            setIsSubmitting(true)
+            console.log('Submitting update data:', data)
+            
+            // Chuẩn bị data để gửi
             const updateData = {
                 title: data.title,
                 description: data.description,
@@ -510,15 +585,21 @@ export default function EditPost() {
                 visibility: visibility,
                 rooms: data.rooms,
                 yearBuilt: data.yearBuilt,
-                status: status
+                status: status,
+                amenities: data.amenities || []
             }
             
+            console.log('Update payload:', updateData)
+            
             await updatePropertyAPI(propertyId, updateData)
-            // toast.success đã được gọi trong updatePropertyAPI
+            console.log('Update successful')
             navigate('/dashboard/posts')
         } catch (error) {
             console.error('Error updating property:', error)
-            toast.error('Failed to update property')
+            console.error('Error details:', error.response?.data)
+            toast.error(error.response?.data?.message || 'Failed to update property')
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -653,44 +734,10 @@ export default function EditPost() {
                         </TabsContent>
                     </Tabs>
 
-                    {/* Information */}
+                    {/* Address */}
                     <Card className="mb-8">
-                        <CardHeader><CardTitle>Information</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Address</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name='title'
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="3-bedroom townhouse with garden" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='description'
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Description</FormLabel>
-                                            <FormControl>
-                                                <Textarea placeholder="Write your description..." {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Search Location</Label>
-                                <CustomSearchBox onPlaceSelected={handlePlaceSelected} />
-                            </div>
-
                             <div className="grid gap-4 md:grid-cols-3">
                                 <FormField
                                     control={form.control}
@@ -698,18 +745,18 @@ export default function EditPost() {
                                     render={({ field }) => (
                                         <FormItem className='relative pb-6'>
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Province/City</FormLabel>
-                                            <FormControl>
-                                                <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger className={cn("w-full", form.formState.errors.address?.province ? "border-red-500" : '')}>
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <FormControl>
+                                                    <SelectTrigger className={cn("w-full", form.formState.errors.address?.province ? "border-red-500 focus:ring-red-500" : '')}>
                                                         <SelectValue placeholder="Select province" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
-                                                        {provinces.map((p) => (
-                                                            <SelectItem key={p.code} value={p.name}>{p.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {provinces.map((p) => (
+                                                        <SelectItem key={p.code} value={p.name}>{p.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage className='absolute bottom-0' />
                                         </FormItem>
                                     )}
@@ -720,18 +767,18 @@ export default function EditPost() {
                                     render={({ field }) => (
                                         <FormItem className='relative pb-6'>
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">District</FormLabel>
-                                            <FormControl>
-                                                <Select value={field.value} onValueChange={field.onChange} disabled={!districts.length}>
-                                                    <SelectTrigger className={cn("w-full", form.formState.errors.address?.district ? "border-red-500" : '')}>
+                                            <Select value={field.value} onValueChange={field.onChange} disabled={!districts.length}>
+                                                <FormControl>
+                                                    <SelectTrigger className={cn("w-full", form.formState.errors.address?.district ? "border-red-500 focus:ring-red-500" : '')}>
                                                         <SelectValue placeholder="Select district" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
-                                                        {districts.map((d) => (
-                                                            <SelectItem key={d.code} value={d.name}>{d.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {districts.map((d) => (
+                                                        <SelectItem key={d.code} value={d.name}>{d.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage className='absolute bottom-0' />
                                         </FormItem>
                                     )}
@@ -742,18 +789,18 @@ export default function EditPost() {
                                     render={({ field }) => (
                                         <FormItem className='relative pb-6'>
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Ward</FormLabel>
-                                            <FormControl>
-                                                <Select value={field.value} onValueChange={field.onChange} disabled={!wards.length}>
-                                                    <SelectTrigger className={cn("w-full", form.formState.errors.address?.ward ? "border-red-500" : '')}>
+                                            <Select value={field.value} onValueChange={field.onChange} disabled={!wards.length}>
+                                                <FormControl>
+                                                    <SelectTrigger className={cn("w-full", form.formState.errors.address?.ward ? "border-red-500 focus:ring-red-500" : '')}>
                                                         <SelectValue placeholder="Select ward" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
-                                                        {wards.map((w) => (
-                                                            <SelectItem key={w.code} value={w.name}>{w.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {wards.map((w) => (
+                                                        <SelectItem key={w.code} value={w.name}>{w.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage className='absolute bottom-0' />
                                         </FormItem>
                                     )}
@@ -780,13 +827,16 @@ export default function EditPost() {
 
                             <div className="grid gap-2">
                                 <Label>Coordinates Address</Label>
-                                <Input placeholder="Location derived from map" disabled value={fullAddress} />
+                                <Input placeholder="Location derived from map coordinates" disabled value={fullAddress} />
                             </div>
 
                             <div>
-                                <MapContainer center={center} zoom={13} onClick={handleMapClick}>
+                                <MapContainer style={{ height: "350px", width: "100%", cursor: "default" }} center={center} zoom={13} onClick={handleMapClick}>
                                     <MarkerLayer items={results} onMarkerClick={handleMarkerClick} />
                                 </MapContainer>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    Click on the map to update the coordinates or use the search box above.
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
@@ -796,6 +846,28 @@ export default function EditPost() {
                         <CardHeader><CardTitle>Price</CardTitle></CardHeader>
                         <CardContent className='space-y-6'>
                             <div className="grid gap-4 md:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name='purpose'
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <FormControl>
+                                                    <SelectTrigger className={cn("w-full", form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : '')}>
+                                                        <SelectValue placeholder="Select purpose" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
+                                                    <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
                                 <FormField
                                     control={form.control}
                                     name='price.value'
@@ -814,7 +886,6 @@ export default function EditPost() {
                                         </FormItem>
                                     )}
                                 />
-                                <div></div> {/* Spacer */}
 
                                 <FormField
                                     control={form.control}
@@ -822,21 +893,18 @@ export default function EditPost() {
                                     render={({ field }) => (
                                         <FormItem className='relative pb-6'>
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Currency</FormLabel>
-                                            <FormControl>
-                                                <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger className={cn(
-                                                        "w-full",
-                                                        form.formState.errors.price?.currency ? "border-red-500 focus:ring-red-500" : ''
-                                                    )}>
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <FormControl>
+                                                    <SelectTrigger className={cn("w-full", form.formState.errors.price?.currency ? "border-red-500 focus:ring-red-500" : '')}>
                                                         <SelectValue placeholder="Select currency" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
-                                                        {currencies.map((c) => (
-                                                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {currencies.map((c) => (
+                                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage className='absolute bottom-0' />
                                         </FormItem>
                                     )}
@@ -849,27 +917,111 @@ export default function EditPost() {
                                         render={({ field }) => (
                                             <FormItem className='relative pb-6'>
                                                 <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Period</FormLabel>
-                                                <FormControl>
-                                                    <Select value={field.value} onValueChange={field.onChange}>
-                                                        <SelectTrigger className={cn(
-                                                            "w-full",
-                                                            form.formState.errors.price?.period ? "border-red-500 focus:ring-red-500" : ''
-                                                        )}>
+                                                <Select value={field.value} onValueChange={field.onChange}>
+                                                    <FormControl>
+                                                        <SelectTrigger className={cn("w-full", form.formState.errors.price?.period ? "border-red-500 focus:ring-red-500" : '')}>
                                                             <SelectValue placeholder="Select period" />
                                                         </SelectTrigger>
-                                                        <SelectContent>
-                                                            {period.filter(p => p !== 'other').map((p) => (
-                                                                <SelectItem key={p} value={p}>{p.toUpperCase()}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormControl>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {period.filter(p => p !== 'other').map((p) => (
+                                                            <SelectItem key={p} value={p}>{p.toUpperCase()}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                                 <FormMessage className='absolute bottom-0' />
                                             </FormItem>
                                         )}
                                     />
                                 )}
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Amenities */}
+                    <Card className="mb-8">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Amenities</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {Object.entries(AMENITIES).map(([key, group]) => (
+                                <div key={key} className="space-y-3">
+                                    <div className="flex items-center gap-2 font-medium">
+                                        {ICONS[key]}
+                                        {group.label}
+                                    </div>
+
+                                    <FormField
+                                        control={form.control}
+                                        name="amenities"
+                                        render={({ field }) => (
+                                            <div className="space-y-2">
+                                                {group.items.map((item) => (
+                                                    <FormItem
+                                                        key={item}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(item)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...(field.value || []), item])
+                                                                        : field.onChange(
+                                                                            field.value?.filter(
+                                                                                (value) => value !== item
+                                                                            )
+                                                                        )
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">
+                                                            {item}
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                ))}
+
+                                                {/* Custom amenity input */}
+                                                <FormItem className="flex items-center gap-2">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes('other')}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...(field.value || []), 'other'])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                            (value) => value !== 'other'
+                                                                        )
+                                                                    )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        Khác (vui lòng ghi rõ)
+                                                    </FormLabel>
+
+                                                    {field.value?.includes('other') && (
+                                                        <Input
+                                                            placeholder="Nhập tiện ích khác"
+                                                            value={field.value.find(v => v !== 'other') || ''}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value
+                                                                if (!val) {
+                                                                    field.onChange(field.value.filter(v => v !== 'other'))
+                                                                } else {
+                                                                    field.onChange([...(field.value.filter(v => v !== 'other')), val])
+                                                                  }
+                                                            }}
+                                                            className="ml-4 flex-1"
+                                                        />
+                                                    )}
+                                                </FormItem>
+                                            </div>
+                                        )}
+                                    />
+                                </div>
+                            ))}
                         </CardContent>
                     </Card>
 
@@ -998,46 +1150,74 @@ export default function EditPost() {
                                     render={({ field }) => (
                                         <FormItem className='relative pb-6'>
                                             <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Property Type</FormLabel>
-                                            <FormControl>
-                                                <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger className={cn(
-                                                        "w-full",
-                                                        form.formState.errors.type ? "border-red-500 focus:ring-red-500" : ''
-                                                    )}>
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <FormControl>
+                                                    <SelectTrigger className={cn("w-full", form.formState.errors.type ? "border-red-500 focus:ring-red-500" : '')}>
                                                         <SelectValue placeholder="Select type" />
                                                     </SelectTrigger>
-                                                    <SelectContent>
-                                                        {propertyTypes.map((t) => (
-                                                            <SelectItem key={t} value={t.toLowerCase()}>{t}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {propertyTypes.map((t) => (
+                                                        <SelectItem key={t} value={t.toLowerCase()}>{t}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage className='absolute bottom-0' />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Information (Title & Description) */}
+                    <Card className="mb-8">
+                        <CardHeader><CardTitle>Information</CardTitle></CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center">
+                                <p className="text-sm font-medium">Quickly create titles and descriptions with AI</p>
+                                <Button
+                                    variant="outline"
+                                    type='button'
+                                    className="
+                                        ml-auto
+                                        w-fit
+                                        rounded-full
+                                        border-black
+                                        px-6 py-5
+                                        text-base font-medium
+                                        flex items-center gap-2
+                                        hover:bg-black/5
+                                      "
+                                >
+                                    <Sparkles className="h-5 w-5 text-purple-500" />
+                                    Regenerate with AI
+                                </Button>
+                            </div>
+                            <div className="grid gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name='title'
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="3-bedroom townhouse with garden" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name='purpose'
+                                    name='description'
                                     render={({ field }) => (
-                                        <FormItem className='relative pb-6'>
-                                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
+                                        <FormItem>
+                                            <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Description</FormLabel>
                                             <FormControl>
-                                                <Select value={field.value} onValueChange={field.onChange}>
-                                                    <SelectTrigger className={cn(
-                                                        "w-full",
-                                                        form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : ''
-                                                    )}>
-                                                        <SelectValue placeholder="Select purpose" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
-                                                        <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <Textarea placeholder="Write your description..." className="h-30" {...field} />
                                             </FormControl>
-                                            <FormMessage className='absolute bottom-0' />
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -1051,11 +1231,11 @@ export default function EditPost() {
                             Cancel
                         </Button>
                         <div className="flex gap-3">
-                            <Button variant="outline" type="button" onClick={handleSaveDraft}>
+                            <Button variant="outline" type="button" onClick={handleSaveDraft} disabled={isSubmitting}>
                                 Save as Draft
                             </Button>
-                            <Button type="submit">
-                                Update Property
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Updating...' : 'Update Property'}
                             </Button>
                         </div>
                     </div>

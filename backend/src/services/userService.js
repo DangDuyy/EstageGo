@@ -11,6 +11,7 @@ import { OAuth2Client } from 'google-auth-library'
 import propertyModel from '~/models/properties'
 import agentFollowModel from '~/models/agentFollows'
 import agentReviewModel from '~/models/agentReviews'
+import mongoose from 'mongoose'
 
 /**
  * Generate random fullName
@@ -577,11 +578,12 @@ const getAgentDashboardStats = async (userId) => {
       throw new ApiError(StatusCodes.FORBIDDEN, 'User is not an agent')
     }
 
-    // Get all properties
+    // Get all properties - BỎ _destroy filter
     const allProperties = await propertyModel.find({ 
-      owner: userId,
-      _destroy: false 
+      owner: userId
     })
+    .sort({ createdAt: -1 }) // Sort by newest first
+    .lean() // Optimize query
 
     // Count by status
     const totalProperties = allProperties.length
@@ -591,19 +593,23 @@ const getAgentDashboardStats = async (userId) => {
     const soldProperties = allProperties.filter(p => p.status === 'sold').length
     const rentedProperties = allProperties.filter(p => p.status === 'rented').length
 
-    // Calculate total views
-    const totalViews = allProperties.reduce((sum, property) => sum + (property.views || 0), 0)
-
-    // Get followers count
-    const followersCount = await agentFollowModel.countDocuments({
-      agent: userId,
-      _destroy: false
+    // Calculate total views from UserActivity collection
+    const UserActivity = mongoose.model('UserActivity')
+    const propertyIds = allProperties.map(p => p._id)
+    
+    const totalViews = await UserActivity.countDocuments({
+      propertyId: { $in: propertyIds },
+      eventType: 'VIEW'
     })
 
-    // Get reviews stats
+    // Get followers count - BỎ _destroy filter
+    const followersCount = await agentFollowModel.countDocuments({
+      agent: userId
+    })
+
+    // Get reviews stats - BỎ _destroy filter
     const reviews = await agentReviewModel.find({
-      agent: userId,
-      _destroy: false
+      agent: userId
     })
     const totalReviews = reviews.length
     const averageRating = totalReviews > 0 
@@ -620,7 +626,9 @@ const getAgentDashboardStats = async (userId) => {
       totalViews,
       followersCount,
       totalReviews,
-      averageRating: parseFloat(averageRating.toFixed(1))
+      averageRating: parseFloat(averageRating.toFixed(1)),
+      // ✅ Thêm danh sách properties
+      properties: allProperties
     }
   } catch (error) {
     throw error

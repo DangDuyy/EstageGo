@@ -43,6 +43,24 @@ export const notificationController = {
     } catch (e) { next(e) }
   },
 
+  async deleteNotification(req, res, next) {
+    try {
+      const userId = req.jwtDecoded?._id || req.user?._id
+      const { id } = req.params
+      const doc = await Notification.findOneAndDelete({ _id: id, user: userId })
+      if (!doc) return res.status(404).json({ message: 'Not found' })
+      res.json({ success: true, message: 'Notification deleted' })
+    } catch (e) { next(e) }
+  },
+
+  async deleteAllNotifications(req, res, next) {
+    try {
+      const userId = req.jwtDecoded?._id || req.user?._id
+      await Notification.deleteMany({ user: userId })
+      res.json({ success: true, message: 'All notifications deleted' })
+    } catch (e) { next(e) }
+  },
+
   async createNotification(req, res, next) {
     try {
       const userId = req.jwtDecoded?._id || req.user?._id

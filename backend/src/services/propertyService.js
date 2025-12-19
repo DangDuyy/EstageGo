@@ -825,6 +825,7 @@ const getUserPropertiesWithMedia = async (userId) => {
   try {
     const properties = await propertyModel.find({
       owner: userId,
+      _destroy: { $ne: true },
       'media.0': { $exists: true } // Only properties with at least one media
     })
       .select('_id title slug media createdAt owner')
@@ -881,9 +882,9 @@ const updateProperty = async (propertyId, userId, updateData) => {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
     }
 
-    // Update fields
+    // Update fields - SKIP tier field for update
     Object.keys(updateData).forEach(key => {
-      if (updateData[key] !== undefined) {
+      if (updateData[key] !== undefined && key !== 'tier') { // Skip tier
         property[key] = updateData[key]
       }
     })
@@ -900,7 +901,7 @@ const updateProperty = async (propertyId, userId, updateData) => {
       property.slug = slug
     }
 
-    await property.save()
+    await property.save({ validateModifiedOnly: true }) // Only validate modified fields
     return property
   } catch (error) {
     throw error

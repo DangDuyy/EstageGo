@@ -9,5 +9,7 @@ Router.use(authMiddleware.isAuthorized)
 Router.get('/', notificationController.getMyNotifications)
 Router.patch('/:id/read', notificationController.markRead)
 Router.patch('/read-all', notificationController.markAllRead)
+Router.delete('/:id', notificationController.deleteNotification)
+Router.delete('/all/clear', notificationController.deleteAllNotifications)
 
 export const notificationRoutes = Router

@@ -86,6 +86,7 @@ const updateLastMessage = async (conversationId, message) => {
         lastMessage: {
           messageId: message._id,
           text: message.text,
+          attachments: message.attachments || [],
           senderId: message.senderId,
           createdAt: message.createdAt
         },

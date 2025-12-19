@@ -1,20 +1,24 @@
 import { ContentLayout } from '@/components/common/SidebarMenu/content-layout'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Send, Loader2, Search, Paperclip, Mic, MoreHorizontal } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '@/redux/user/userSlice'
-import { emitTypingStart, emitTypingStop } from '@/lib/socket'
+import { emitTypingStart, emitTypingStop, joinConversation, leaveConversation } from '@/lib/socket'
 import ReactionButton from '@/components/common/Chat/ReactionButton'
 import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
+import PropertyPreview from '@/components/common/Chat/PropertyPreview'
+import MessageContent from '@/components/common/Chat/MessageContent'
+import { getConversationPreviewText } from '@/utils/messagePreview'
 
 const toDateKey = (date) => {
   const d = new Date(date || Date.now())
@@ -47,6 +51,8 @@ const formatTimeOnly = (dateObj) => {
 export default function Message() {
   const currentUser = useSelector(selectCurrentUser)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { conversationId: paramConversationId } = useParams()
   const { conversations, loading: conversationsLoading } = useConversations()
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [messageText, setMessageText] = useState('')
@@ -64,6 +70,9 @@ export default function Message() {
   const [locallyDeletedIds, setLocallyDeletedIds] = useState(new Set())
   const [contextMenu, setContextMenu] = useState({ openForId: null, x: 0, y: 0 })
   const contextMenuRef = useRef(null)
+  // Image viewer state
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerImageUrl, setViewerImageUrl] = useState(null)
 
   const {
     messages,
@@ -75,6 +84,54 @@ export default function Message() {
     sendMessage,
     loadMoreMessages
   } = useChat(selectedConversation?._id)
+
+  // Handle route parameter - select conversation from URL
+  useEffect(() => {
+    if (paramConversationId && conversations.length > 0 && !selectedConversation) {
+      const conv = conversations.find((c) => c._id === paramConversationId)
+      if (conv) {
+        setSelectedConversation(conv)
+      }
+    }
+  }, [paramConversationId, conversations, selectedConversation])
+
+  // Update URL when conversation is selected
+  useEffect(() => {
+    if (selectedConversation?._id && selectedConversation._id !== paramConversationId) {
+      navigate(`/dashboard/messages/${selectedConversation._id}`, { replace: false })
+    }
+  }, [selectedConversation?._id, paramConversationId, navigate])
+
+  // Join/leave conversation rooms for presence tracking
+  useEffect(() => {
+    if (!selectedConversation?._id) return
+    
+    const conversationId = selectedConversation._id
+    joinConversation(conversationId)
+    
+    // Cleanup: leave room when switching conversations or unmounting
+    return () => {
+      leaveConversation(conversationId)
+    }
+  }, [selectedConversation?._id])
+
+  // Auto scroll to bottom when conversation is selected or messages load
+  useEffect(() => {
+    if (!selectedConversation?._id) return
+    
+    const scrollToBottom = () => {
+      const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        // Cuộn container trực tiếp
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
+    }
+    
+    // Thử nhiều lần để đảm bảo DOM render xong
+    scrollToBottom()
+    setTimeout(scrollToBottom, 100)
+    setTimeout(scrollToBottom, 300)
+  }, [selectedConversation?._id])
 
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
@@ -173,10 +230,11 @@ export default function Message() {
   const filteredConversations = conversations.filter((conv) => {
     const otherUser = getOtherUser(conv)
     const searchLower = searchQuery.toLowerCase()
+    const previewText = getConversationPreviewText(conv.lastMessage, 200).toLowerCase()
     return (
       otherUser?.fullName?.toLowerCase().includes(searchLower) ||
       otherUser?.userName?.toLowerCase().includes(searchLower) ||
-      conv.lastMessage?.text?.toLowerCase().includes(searchLower)
+      previewText.includes(searchLower)
     )
   })
 
@@ -258,7 +316,7 @@ export default function Message() {
                           {otherUser?.fullName || otherUser?.userName || 'Unknown'}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {conv.lastMessage?.text || 'No messages yet'}
+                          {getConversationPreviewText(conv.lastMessage)}
                         </p>
                       </div>
                       {conv.lastMessage?.createdAt && (
@@ -309,8 +367,35 @@ export default function Message() {
                       <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                   ) : sortedMessages.length === 0 ? (
-                    <div className="text-center text-muted-foreground">
-                      No messages yet. Start the conversation!
+                    <div className="flex flex-col items-center justify-center h-full space-y-6 py-8">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          No messages yet
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Start the conversation with a quick message
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 w-full max-w-md px-4">
+                        <p className="text-xs text-muted-foreground text-center mb-2">
+                          Suggested messages:
+                        </p>
+                        {[
+                          "Tôi cần được tư vấn về bất động sản",
+                          "Tôi muốn xem thêm thông tin chi tiết",
+                          "Bất động sản này còn không?",
+                          "Tôi muốn đặt lịch xem nhà"
+                        ].map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setMessageText(suggestion)}
+                            className="px-4 py-3 text-sm text-left rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-200 shadow-sm"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -388,7 +473,11 @@ export default function Message() {
                                                 key={key}
                                                 src={att.url}
                                                 alt={att.filename || 'attachment'}
-                                                className="max-w-xs rounded-lg border"
+                                                className="max-w-xs rounded-lg border cursor-zoom-in"
+                                                onClick={() => {
+                                                  setViewerImageUrl(att.url)
+                                                  setViewerOpen(true)
+                                                }}
                                               />
                                             )
                                           }
@@ -429,13 +518,7 @@ export default function Message() {
                                         Message was recalled
                                       </div>
                                     ) : msg.text && (
-                                      <div
-                                        className={`px-4 py-2 rounded-2xl ${
-                                          isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                                        }`}
-                                      >
-                                        <p className="break-words">{msg.text}</p>
-                                      </div>
+                                      <MessageContent text={msg.text} isOwn={isOwn} />
                                     )}
 
                                     {Array.isArray(msg.reactions) && msg.reactions.length > 0 && (
@@ -523,6 +606,22 @@ export default function Message() {
                   )}
                 </ScrollArea>
               </div>
+
+              {/* Image viewer dialog */}
+              <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+                <DialogContent className="bg-black p-2 sm:max-w-3xl">
+                  {viewerImageUrl && (
+                    <img
+                      src={viewerImageUrl}
+                      alt="preview"
+                      className="max-h-[80vh] w-auto object-contain mx-auto"
+                      onError={(e) => {
+                        e.currentTarget.alt = 'Image not available'
+                      }}
+                    />
+                  )}
+                </DialogContent>
+              </Dialog>
 
               {contextMenu.openForId && (
                 <div
