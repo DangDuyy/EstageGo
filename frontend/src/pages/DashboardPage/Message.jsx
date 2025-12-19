@@ -367,8 +367,35 @@ export default function Message() {
                       <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                   ) : sortedMessages.length === 0 ? (
-                    <div className="text-center text-muted-foreground">
-                      No messages yet. Start the conversation!
+                    <div className="flex flex-col items-center justify-center h-full space-y-6 py-8">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          No messages yet
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Start the conversation with a quick message
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 w-full max-w-md px-4">
+                        <p className="text-xs text-muted-foreground text-center mb-2">
+                          Suggested messages:
+                        </p>
+                        {[
+                          "Tôi cần được tư vấn về bất động sản",
+                          "Tôi muốn xem thêm thông tin chi tiết",
+                          "Bất động sản này còn không?",
+                          "Tôi muốn đặt lịch xem nhà"
+                        ].map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setMessageText(suggestion)}
+                            className="px-4 py-3 text-sm text-left rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-200 shadow-sm"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">

@@ -3,7 +3,7 @@
  * Handles: text messages, attachments, reactions
  */
 
-export const getConversationPreviewText = (lastMessage, maxLength = 50) => {
+export const getConversationPreviewText = (lastMessage, maxLength = 20) => {
   if (!lastMessage) {
     return 'No messages yet'
   }
