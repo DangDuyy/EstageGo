@@ -223,7 +223,9 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       )
     }
 
-    const sort = {}
+    const sort = {
+      priority: -1,
+    }
     const dir = (String(sortDir).toLowerCase() === "asc") ? 1 : -1
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
@@ -542,7 +544,10 @@ const getPropertiesWithMap = async (query) => {
   /* =======================
       2️⃣ SORT
   ======================== */
-  const sort = { [sortBy]: sortDir === "asc" ? 1 : -1 }
+  const sort = {
+    priority: -1,
+    [sortBy]: sortDir === "asc" ? 1 : -1
+  }
 
   /* =======================
       3️⃣ LIST
@@ -610,7 +615,8 @@ const getPropertiesWithMap = async (query) => {
 
   mapResult.markers = await propertyModel
     .find(baseFilter)
-    .select("_id price address")
+    .select("_id price address isFeatured")
+    .sort({ priority: -1 })
     .limit(300) // HARD LIMIT chống lag
 
   /* =======================
