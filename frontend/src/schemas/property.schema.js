@@ -45,8 +45,9 @@ export const propertySchema = z.object({
     fullAddress: z.string().nonempty("The full address can't be empty").optional(),
     country: z.string().nonempty("The country can't be empty").optional(),
     province: z.string().nonempty("The province can't be empty"),
-    district: z.string().nonempty("The district can't be empty"),
-    ward: z.string().nonempty("The ward can't be empty"),
+    // district/ward có thể rỗng nếu đã có coordinates
+    district: z.string().optional(),
+    ward: z.string().optional(),
     street: z.string().nonempty("The street can't be empty"),
     location: z.object({
       coordinates: z
@@ -56,7 +57,7 @@ export const propertySchema = z.object({
   }),
 
   price: z.object({
-    value: z.number().min(0, "Giá phải ≥ 0"),
+    value: z.number({ invalid_type_error: "Giá phải là số" }).gt(0, "Vui lòng nhập giá"),
     currency: z.enum(["VND", "USD", "EUR"]),
     period: z.enum(["month", "year", "other"]),
   }),

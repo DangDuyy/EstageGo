@@ -91,11 +91,13 @@ const propertySchema = new mongoose.Schema({
         },
         district: {
             type: String,
-            required: true
+            // Cho phép bỏ trống nếu người dùng chọn tọa độ trước
+            required: false
         },
         ward: {
             type: String,
-            required: true
+            // Cho phép bỏ trống nếu người dùng chọn tọa độ trước
+            required: false
         },
         street: {
             type: String,
@@ -191,6 +193,21 @@ const propertySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    tier: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ListingTierConfig',
+        required: true
+    },
+    priority: {
+        type: Number,
+        // required: true
+    },
+    // Tính năng nổi bật (chỉ Advanced)
+    isFeatured: {
+        type: Boolean,
+        default: false,
+        index: true
     },
     listingFee: {
         type: Number,

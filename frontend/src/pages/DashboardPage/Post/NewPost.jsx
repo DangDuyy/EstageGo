@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/select";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    DialogClose,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, getAllProvinces, getBalanceAPI, getProvince, verifyPropertyDocumentsAPI } from "@/apis";
+import { createProperty, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -31,11 +32,79 @@ import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
+import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ----- Mock data -----
-const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
+const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial","Office","Villa","Townhouse","Other"];
 const currencies = ['VND', 'USD', 'EUR']
 const period = ['month', 'year', 'other']
+
+// amenities
+const AMENITIES = {
+    safety: {
+        label: "Safety & Security",
+        items: [
+            "CCTV",
+            "24/7 Security",
+            "Fire alarm system",
+            "Smart door lock",
+            "Key card / fingerprint access",
+        ],
+    },
+
+    interior: {
+        label: "Interior & Furnishing",
+        items: [
+            "Basic furnishing",
+            "Fully furnished",
+            "Bed",
+            "Wardrobe",
+            "Table & chairs",
+            "Curtains",
+        ],
+    },
+
+    kitchen: {
+        label: "Kitchen",
+        items: [
+            "Electric / gas stove",
+            "Range hood",
+            "Kitchen cabinets",
+            "Microwave",
+            "Refrigerator",
+        ],
+    },
+
+    utilities: {
+        label: "Building Amenities",
+        items: [
+            "Elevator",
+            "Swimming pool",
+            "Gym",
+            "Park",
+            "Rooftop",
+            "BBQ area",
+        ],
+    },
+
+    parking: {
+        label: "Parking",
+        items: [
+            "Motorbike parking",
+            "Car parking",
+            "Basement parking",
+        ],
+    },
+};
+
+const ICONS = {
+    safety: <ShieldCheck className="h-5 w-5 text-primary" />,
+    interior: <Sofa className="h-5 w-5 text-primary" />,
+    kitchen: <CookingPot className="h-5 w-5 text-primary" />,
+    utilities: <Building2 className="h-5 w-5 text-primary" />,
+    parking: <Car className="h-5 w-5 text-primary" />,
+}
 
 // DỮ LIỆU MOCK CHO PLAN LISTING
 const planInfo = {
@@ -60,10 +129,10 @@ const normalizeName = (name) => {
 };
 
 function Stepper({ step, setStep }) {
-    const items = ["Listing Details", "Verify Documents", "Agent & Payment"];
+    const items = ["Listing Details", "Agent & Payment"];
     return (
         <div className="mb-8">
-            <div className="grid grid-cols-3 border-b">
+            <div className="grid grid-cols-2 border-b">
                 {items.map((label, i) => {
                     const idx = i + 1;
                     const active = step === idx;
@@ -110,7 +179,7 @@ const propertyDefaultValue = {
         }
     },
     price: {
-        value: 0,
+        value: null,
         currency: 'VND',
         period: 'month'
     },
@@ -146,11 +215,14 @@ export default function AddPropertyWizard() {
     // ----- Listing info (Step 1) -----
     const [visibility, setVisibility] = useState("public");
 
+    const [searchValue, setSearchValue] = useState("");
     const [fullAddress, setFullAddress] = useState("");
     const [provinces, setProvinces] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
     const skipGeocodeRef = useRef(false);
+    const pendingDistrictNameRef = useRef('');
+    const pendingWardNameRef = useRef('');
 
     // ----- Documents + Payment (Step 2 & 3) -----
     const [houseDocs, setHouseDocs] = useState([]);
@@ -162,7 +234,7 @@ export default function AddPropertyWizard() {
         docsVerificationResult?.cccdVerified && docsVerificationResult?.houseDocVerified
     );
     const [selectedPlan, setSelectedPlan] = useState(membershipLevel);
-    
+
     // 🚨 STATE MỚI CHO DIALOG LỖI THANH TOÁN
     const [depositDialogOpen, setDepositDialogOpen] = useState(false);
     const [requiredFee, setRequiredFee] = useState(0);
@@ -288,20 +360,19 @@ export default function AddPropertyWizard() {
         const streetValue = [streetNumber, routeName].filter(Boolean).join(" ") || fallbackStreet;
 
         const newValues = {};
-        
+
         // 1. CHUẨN HÓA VÀ ĐỐI CHIẾU TỈNH/THÀNH PHỐ
         if (mapsProvinceName) {
             const normalizedMapsProvince = normalizeName(mapsProvinceName);
             const matchingProvince = provinces.find(p => normalizeName(p.name) === normalizedMapsProvince || p.name === mapsProvinceName);
             if (matchingProvince) {
                 newValues['address.province'] = matchingProvince.name;
-            } else {
-                 newValues['address.province'] = mapsProvinceName;
+                // Lưu tạm district/ward do Google trả về để auto-match sau khi danh sách được load
+                pendingDistrictNameRef.current = mapsDistrictName || '';
+                pendingWardNameRef.current = mapsWardName || '';
             }
         }
 
-        if (mapsDistrictName) newValues['address.district'] = mapsDistrictName;
-        if (mapsWardName) newValues['address.ward'] = mapsWardName;
         if (streetValue) newValues['address.street'] = streetValue;
 
         // Apply changes
@@ -314,7 +385,7 @@ export default function AddPropertyWizard() {
 
 
     const handleGeocodeSuccess = useCallback(
-        (results, { updateFullAddress = false } = {}) => {
+        (results, { updateFullAddress = false, updateAddressFields = true, singleMarker = false } = {}) => {
             if (!results || results.length === 0) return;
 
             const markers = results.map((r, index) => ({
@@ -324,17 +395,26 @@ export default function AddPropertyWizard() {
                 address: r.formatted_address,
             }));
 
-            setResults(markers);
-
             const primary = results[0];
             const loc = primary.geometry.location;
             const lat = loc.lat();
             const lng = loc.lng();
+            const primaryMarker = {
+                id: primary.place_id || 0,
+                lat,
+                lng,
+                address: primary.formatted_address,
+            };
+
+            setResults(singleMarker ? [primaryMarker] : markers);
 
             setCenter({ lat, lng });
             form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
-            
-            populateAddressFromComponents(primary.address_components, primary.formatted_address);
+
+            // 🚨 Chỉ update address fields khi từ place select/map click, không khi blur street
+            if (updateAddressFields) {
+                populateAddressFromComponents(primary.address_components, primary.formatted_address);
+            }
 
             if (updateFullAddress && primary.formatted_address) {
                 skipGeocodeRef.current = true;
@@ -350,7 +430,7 @@ export default function AddPropertyWizard() {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
                 if (status === "OK") {
-                    handleGeocodeSuccess(results, { updateFullAddress: true });
+                    handleGeocodeSuccess(results, { updateFullAddress: true, updateAddressFields: true, singleMarker: true });
                 } else {
                     console.error("Reverse geocode failed:", status);
                     toast.error("Reverse geocode failed: " + status);
@@ -378,6 +458,7 @@ export default function AddPropertyWizard() {
             },
         ]);
 
+        // 🚨 Từ place select, cập nhật address fields
         populateAddressFromComponents(place.address_components || [], formattedAddress);
         if (formattedAddress) {
             skipGeocodeRef.current = true;
@@ -424,7 +505,8 @@ export default function AddPropertyWizard() {
         const geocoder = new window.google.maps.Geocoder();
         geocoder.geocode({ address: fullAddress }, (results, status) => {
             if (status === "OK") {
-                handleGeocodeSuccess(results, { updateFullAddress: false });
+                // 🚨 Từ handleSearch (blur street) chỉ update coordinates, không update address fields
+                handleGeocodeSuccess(results, { updateFullAddress: false, updateAddressFields: false });
             }
             else {
                 console.error("Geocode failed: ", status);
@@ -447,10 +529,28 @@ export default function AddPropertyWizard() {
 
     // Update districts when province changes
     useEffect(() => {
-        const handleSelectProvince = async (provinceCode) => {
+        const handleSelectProvince = async (provinceId) => {
             try {
-                const response = await getProvince(provinceCode)
+                const response = await getProvince(provinceId)
                 setDistricts(response.districts)
+
+                // Auto-match district từ dữ liệu Google (đã lưu tạm) hoặc từ giá trị hiện có
+                const currentDistrict = form.getValues('address.district');
+                const pendingDistrictNormalized = normalizeName(pendingDistrictNameRef.current);
+
+                const matchedDistrict =
+                    response.districts?.find(d => normalizeName(d.name) === pendingDistrictNormalized) ||
+                    response.districts?.find(d => normalizeName(d.name) === normalizeName(currentDistrict));
+
+                if (matchedDistrict) {
+                    form.setValue('address.district', matchedDistrict.name);
+                } else {
+                    // Nếu giá trị hiện tại không nằm trong danh sách mới, reset về rỗng
+                    if (currentDistrict && !response.districts?.find(d => d.name === currentDistrict)) {
+                        form.setValue('address.district', '');
+                        form.setValue('address.ward', '');
+                    }
+                }
             } catch (error) {
                 toast.error("Failed to load districts.");
             }
@@ -459,23 +559,48 @@ export default function AddPropertyWizard() {
         const provinceData = provinces.find(p => p.name === province)
         if (!provinceData) {
             setDistricts([]);
-            form.setValue('address.district', '');
             return
         }
         handleSelectProvince(provinceData.code)
-        form.setValue('address.district', ''); // Reset district when province changes
     }, [province, provinces, form])
 
     // Update wards when district changes
     useEffect(() => {
+        // const handleSelectDistrict = async (districtId) => {
+        //     try {
+        //         const response = await getWard(districtId)
+        //         setWards(response)
+
+        //         // Kiểm tra xem ward hiện tại có nằm trong danh sách mới không
+        //         const currentWard = form.getValues('address.ward');
+        //         if (currentWard && !response.find(w => w.name === currentWard)) {
+        //             form.setValue('address.ward', '');
+        //         }
+        //     } catch (error) {
+        //         toast.error("Failed to load wards.");
+        //     }
+        // }
+
         const districtSelected = districts.find(d => d.name === district)
         if (!districtSelected) {
             setWards([]);
-            form.setValue('address.ward', '');
             return;
         }
+
         setWards(districtSelected.wards)
-        form.setValue('address.ward', '') // Reset ward when district changes
+
+        // Auto-match ward từ dữ liệu Google (đã lưu tạm) hoặc từ giá trị hiện có
+        const currentWard = form.getValues('address.ward');
+        const pendingWardNormalized = normalizeName(pendingWardNameRef.current);
+
+        const matchedWard =
+            districtSelected.wards?.find(w => normalizeName(w.name) === pendingWardNormalized) ||
+            districtSelected.wards?.find(w => normalizeName(w.name) === normalizeName(currentWard));
+
+        if (matchedWard) {
+            form.setValue('address.ward', matchedWard.name);
+        }
+        // handleSelectDistrict(districtSelected.id)
     }, [district, districts, form])
 
     // Scroll to top on step change
@@ -490,12 +615,14 @@ export default function AddPropertyWizard() {
 
     // Step continuation handlers
     const handleContinueFromStep1 = async () => {
-        const isValid = await form.trigger([
+        const coords = form.getValues("address.location.coordinates");
+        const hasValidCoords = Array.isArray(coords) && coords.length === 2 && !(coords[0] === 0 && coords[1] === 0);
+
+        // Nếu đã có tọa độ hợp lệ, không bắt buộc district/ward ở bước 1
+        const requiredFields = [
             "title",
             "description",
             "address.province",
-            "address.district",
-            "address.ward",
             "address.street",
             "price.value",
             "price.currency",
@@ -506,31 +633,46 @@ export default function AddPropertyWizard() {
             "rooms.bathrooms",
             "rooms.livingrooms",
             "rooms.kitchens",
-            "yearBuilt"
-        ]);
+            "yearBuilt",
+            // Media bắt buộc: cần ít nhất 1 ảnh
+            "files"
+        ];
+
+        if (!hasValidCoords) {
+            // Chưa có tọa độ: vẫn yêu cầu district/ward như cũ
+            requiredFields.push("address.district", "address.ward");
+        }
+
+        const isValid = await form.trigger(requiredFields);
 
         if (!isValid) {
             toast.error("Please complete the required fields and fix errors before continuing.");
             return;
         }
 
-        const coords = form.getValues("address.location.coordinates");
-        if (!coords || coords.length !== 2 || (coords[0] === 0 && coords[1] === 0)) {
+        if (!hasValidCoords) {
             toast.error("Please confirm the property location on the map.");
+            return;
+        }
+
+        // Extra guard: price phải > 0
+        const priceValue = form.getValues("price.value");
+        if (!priceValue || Number(priceValue) <= 0) {
+            toast.error("Please enter a valid price.");
+            return;
+        }
+
+        // Extra guard: ensure at least 1 media file before next step
+        const files = form.getValues("files") || [];
+        if (!files.length) {
+            toast.error("Please upload at least one image.");
             return;
         }
 
         setStep(2);
     };
 
-    const handleContinueFromStep2 = () => {
-        if (!docsValid) {
-            toast.error("Please complete AI verification.")
-            return
-        }
-        setSelectedPlan(membershipLevel);
-        setStep(3)
-    };
+
 
     // Document verification API call
     const handleVerifyDocuments = async () => {
@@ -617,11 +759,11 @@ export default function AddPropertyWizard() {
     // Final submission
     const onSubmit = async (data) => {
         console.log('[onSubmit] data snapshot:', data);
-        if (!docsValid) {
-            toast.error("Please verify documents first.");
-            setStep(2);
-            return;
-        }
+        // if (!docsValid) {
+        //     toast.error("Please verify documents first.");
+        //     setStep(2);
+        //     return;
+        // }
         // Extra guard (address & coords)
         const coords = data?.address?.location?.coordinates;
         if (!coords || coords.length !== 2) {
@@ -630,16 +772,39 @@ export default function AddPropertyWizard() {
             return;
         }
 
+        // 🚨 TẠO fullAddress TỪ CÁC THÀNH PHẦN ĐỊA CHỈ
+        const { street, ward, district, province } = data.address;
+        const fullAddress = [street, ward, district, province]
+            .filter(Boolean)
+            .join(', ');
+        if (!fullAddress) {
+            toast.error("Please ensure all address fields are filled.");
+            setStep(1);
+            return;
+        }
+
         const formData = new FormData();
         for (const key in data) {
             if (key !== "files") {
                 const value = data[key];
-                if (typeof value === "object" && value !== null) formData.append(key, JSON.stringify(value));
-                else formData.append(key, value);
+                if (key === "address") {
+                    // Thêm fullAddress vào address object
+                    const addressWithFullAddress = { ...value, fullAddress };
+                    formData.append(key, JSON.stringify(addressWithFullAddress));
+                } else if (Array.isArray(value)) {
+                    value.forEach(v => formData.append(`${key}[]`, v))
+                } else if (typeof value === "object" && value !== null) {
+                    formData.append(key, JSON.stringify(value))
+                } else {
+                    formData.append(key, value)
+                }
             }
         }
         formData.append("selectedPlan", selectedPlan);
         formData.append("listingFeeClient", String(listingFee));
+
+        formData.append('tier', selectedTier)
+        formData.append('durationId', selectedDuration._id)
 
         // ONLY listing images
         if (Array.isArray(data.files)) data.files.forEach(f => formData.append("files", f));
@@ -651,12 +816,12 @@ export default function AddPropertyWizard() {
             await createProperty(formData);
             console.log('[onSubmit] Success');
             toast.success("Listing published.");
-            navigate("/dashboard/posts");
+            // navigate("/dashboard/posts");
         } catch (error) {
             console.error('[onSubmit] API error:', error);
             const status = error?.response?.status;
             const payload = error?.response?.data;
-            
+
             // 🚨 XỬ LÝ LỖI 402 PAYMENT REQUIRED
             if (status === 402) {
                 const required = Number(payload?.required ?? listingFee);
@@ -665,10 +830,84 @@ export default function AddPropertyWizard() {
                 setDepositDialogOpen(true);
                 return;
             }
-            
+
             toast.error(payload?.message || "Failed to publish listing.");
         }
     };
+
+
+    // Listing Tier new
+    const [listingTiers, setListingTiers] = useState()
+    const [selectedTier, setSelectedTier] = useState(null)
+    const [selectedDuration, setSelectedDuration] = useState({})
+    const [durationDialog, setDurationDialog] = useState(false)
+
+    useEffect(() => {
+        const fetchListingTiers = async () => {
+            const response = await getListingTiers()
+
+            response.forEach((tier) => {
+                if (tier.tierName === 'advanced') {
+                    tier.title = { text: 'Breakthrough Visibility & Leads', color: 'orange' }
+                    tier.description =
+                        'A premium solution for sellers and landlords who want to dominate the market, maximize visibility, and attract potential customers immediately after posting.'
+                    tier.highlights = [
+                        { text: "Display size is double compared to Basic listings", enabled: true },
+                        { text: "Includes 4 Top Boosts", enabled: true },
+                        { text: "Priority listing displayed at the top of listing pages", enabled: true },
+                        // { text: "Free trial of 3 premium services", enabled: true },
+                        // { text: "Optional purchase of 3 add-on services (Priority Listing, Boost, Scheduled Boost)", enabled: true, color: "orange" }
+                    ]
+                    tier.color = 'from-yellow-600/80 to-yellow-800/80'
+                }
+                else if (tier.tierName === 'boosted') {
+                    tier.title = { text: 'Enhanced Exposure', color: 'gray' }
+                    tier.description =
+                        'A popular solution for sellers and landlords looking to accelerate performance right after posting at a reasonable cost.'
+                    tier.highlights = [
+                        { text: "Boosted listings are prioritized over Basic listings", enabled: true },
+                        { text: "Includes 2 Top Boosts", enabled: true },
+                        // { text: "Priority listing displayed at the top of listing pages for 1 day", enabled: false, color: "gray" },
+                        // { text: "Free trial of 1 premium service", enabled: true },
+                        // { text: "Optional purchase of 3 add-on services (Priority Listing, Boost, Scheduled Boost)", enabled: true, color: "orange" }
+                    ]
+                    tier.color = 'from-slate-600/80 to-slate-800/80'
+                }
+                else if (tier.tierName === 'basic') {
+                    tier.title = { text: 'Sustained Presence', color: 'gray' }
+                    tier.description =
+                        'A basic solution for sellers and landlords who want to maintain exposure.'
+                    tier.highlights = [
+                        { text: "Basic listing", enabled: true },
+                        { text: "Includes boost", enabled: false },
+                        // { text: "Priority listing displayed at the top of listing pages for 1 day", enabled: false },
+                        // { text: "Free trial of premium services", enabled: false },
+                        // { text: "Optional purchase of 1 add-on service (Boost)", enabled: true, color: "orange" }
+                    ]
+                    tier.color = 'from-gray-600/50 to-gray-800/60'
+                }
+            })
+
+            setListingTiers(response)
+
+            // set default
+            const tierDefault = response.filter((t) => t.tierName === 'basic')
+            setSelectedTier(tierDefault[0]._id)
+            setSelectedDuration(tierDefault[0].durations[0])
+        }
+
+        fetchListingTiers()
+    }, [])
+
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('vi-VN').format(price)
+    }
+
+    const handleSelectTier = (tier) => {
+        setSelectedTier(tier._id)
+        setSelectedDuration(tier.durations[0])
+    }
 
     // ----- Render -----
     return (
@@ -746,54 +985,20 @@ export default function AddPropertyWizard() {
 
                             {/* Information */}
                             <Card className="mb-8">
-                                <CardHeader><CardTitle>Information</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Address</CardTitle></CardHeader>
                                 <CardContent className="space-y-6">
-                                    <div className="grid gap-4">
-                                        <div className="grid gap-2">
-                                            <FormField
-                                                control={form.control}
-                                                name='title'
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                placeholder="3-bedroom townhouse with garden"
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <FormField
-                                                control={form.control}
-                                                name='description'
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Description</FormLabel>
-                                                        <FormControl>
-                                                            <Textarea
-                                                                placeholder="Write your description..."
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
 
-                                    <div className="grid gap-2">
+                                    {/* <div className="grid gap-2">
                                         <Label className="after:content-['*'] after:text-red-500 after:ml-0.1">Search Location</Label>
-                                        <CustomSearchBox onPlaceSelected={handlePlaceSelected} />
+                                        <CustomSearchBox
+                                            searchValue={searchValue}
+                                            setSearchValue={setSearchValue}
+                                            onPlaceSelected={handlePlaceSelected}
+                                        />
                                         <p className="text-xs text-muted-foreground">
                                             Start typing to get Google Maps suggestions or pick a point directly on the map.
                                         </p>
-                                    </div>
+                                    </div> */}
 
                                     <div className="grid gap-4 md:grid-cols-3">
                                         {/* Province */}
@@ -803,26 +1008,26 @@ export default function AddPropertyWizard() {
                                             render={({ field }) => (
                                                 <FormItem className='relative pb-6'>
                                                     <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Province/City</FormLabel>
-                                                    <FormControl>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={field.onChange}
-                                                        >
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <FormControl>
                                                             <SelectTrigger className={cn(
                                                                 "w-full",
                                                                 form.formState.errors.address?.province ? "border-red-500 focus:ring-red-500" : ''
                                                             )}>
                                                                 <SelectValue placeholder="Select province" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
-                                                                {provinces.map((p) => (
-                                                                    <SelectItem key={p.code} value={p.name}>
-                                                                        {p.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {provinces.map((p) => (
+                                                                <SelectItem key={p.code} value={p.name}>
+                                                                    {p.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                     <FormMessage className='absolute bottom-0' />
                                                 </FormItem>
                                             )}
@@ -835,27 +1040,27 @@ export default function AddPropertyWizard() {
                                             render={({ field }) => (
                                                 <FormItem className='relative pb-6'>
                                                     <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">District</FormLabel>
-                                                    <FormControl>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={field.onChange}
-                                                            disabled={!districts.length} // Disable if no districts loaded
-                                                        >
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                        disabled={!districts.length} // Disable if no districts loaded
+                                                    >
+                                                        <FormControl>
                                                             <SelectTrigger className={cn(
                                                                 "w-full",
                                                                 form.formState.errors.address?.district ? "border-red-500 focus:ring-red-500" : ''
                                                             )}>
                                                                 <SelectValue placeholder="Select district" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
-                                                                {districts.map((d) => (
-                                                                    <SelectItem key={d.code} value={d.name}>
-                                                                        {d.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {districts.map((d) => (
+                                                                <SelectItem key={d.code} value={d.name}>
+                                                                    {d.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                     <FormMessage className='absolute bottom-0' />
                                                 </FormItem>
                                             )}
@@ -868,27 +1073,27 @@ export default function AddPropertyWizard() {
                                             render={({ field }) => (
                                                 <FormItem className='relative pb-6'>
                                                     <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Ward</FormLabel>
-                                                    <FormControl>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={field.onChange}
-                                                            disabled={!wards.length} // Disable if no wards loaded
-                                                        >
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                        disabled={!wards.length} // Disable if no wards loaded
+                                                    >
+                                                        <FormControl>
                                                             <SelectTrigger className={cn(
                                                                 "w-full",
                                                                 form.formState.errors.address?.ward ? "border-red-500 focus:ring-red-500" : ''
                                                             )}>
                                                                 <SelectValue placeholder="Select ward" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
-                                                                {wards.map((w) => (
-                                                                    <SelectItem key={w.code} value={w.name}>
-                                                                        {w.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {wards.map((w) => (
+                                                                <SelectItem key={w.code} value={w.name}>
+                                                                    {w.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                     <FormMessage className='absolute bottom-0' />
                                                 </FormItem>
                                             )}
@@ -926,7 +1131,7 @@ export default function AddPropertyWizard() {
 
                                     {/* Map */}
                                     <div>
-                                        <MapContainer center={center} zoom={13} onClick={handleMapClick}>
+                                        <MapContainer style={{ height: "350px", width: "100%", cursor: "default" }} center={center} zoom={13} onClick={handleMapClick}>
                                             <MarkerLayer items={results} onMarkerClick={handleMarkerClick} />
                                         </MapContainer>
                                         <p className="mt-2 text-xs text-muted-foreground">
@@ -941,6 +1146,35 @@ export default function AddPropertyWizard() {
                                 <CardHeader><CardTitle>Price</CardTitle></CardHeader>
                                 <CardContent className='space-y-6'>
                                     <div className="grid gap-4 md:grid-cols-2">
+                                        {/* Purpose */}
+                                        <FormField
+                                            control={form.control}
+                                            name='purpose'
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className={cn(
+                                                                "w-full",
+                                                                form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : ''
+                                                            )}>
+                                                                <SelectValue placeholder="Select purpose" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
+                                                            <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage className='absolute bottom-0' />
+                                                </FormItem>
+                                            )}
+                                        />
+
                                         {/* Price Value */}
                                         <FormField
                                             control={form.control}
@@ -960,7 +1194,6 @@ export default function AddPropertyWizard() {
                                                 </FormItem>
                                             )}
                                         />
-                                        <div></div> {/* Spacer */}
 
                                         {/* Currency */}
                                         <FormField
@@ -969,26 +1202,26 @@ export default function AddPropertyWizard() {
                                             render={({ field }) => (
                                                 <FormItem className='relative pb-6'>
                                                     <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Currency</FormLabel>
-                                                    <FormControl>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={field.onChange}
-                                                        >
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <FormControl>
                                                             <SelectTrigger className={cn(
                                                                 "w-full",
                                                                 form.formState.errors.price?.currency ? "border-red-500 focus:ring-red-500" : ''
                                                             )}>
                                                                 <SelectValue placeholder="Select currency" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
-                                                                {currencies.map((c) => (
-                                                                    <SelectItem key={c} value={c}>
-                                                                        {c}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {currencies.map((c) => (
+                                                                <SelectItem key={c} value={c}>
+                                                                    {c}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                     <FormMessage className='absolute bottom-0' />
                                                 </FormItem>
                                             )}
@@ -1002,32 +1235,84 @@ export default function AddPropertyWizard() {
                                                 render={({ field }) => (
                                                     <FormItem className='relative pb-6'>
                                                         <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Period</FormLabel>
-                                                        <FormControl>
-                                                            <Select
-                                                                value={field.value}
-                                                                onValueChange={field.onChange}
-                                                            >
+                                                        <Select
+                                                            value={field.value}
+                                                            onValueChange={field.onChange}
+                                                        >
+                                                            <FormControl>
                                                                 <SelectTrigger className={cn(
                                                                     "w-full",
                                                                     form.formState.errors.price?.period ? "border-red-500 focus:ring-red-500" : ''
                                                                 )}>
                                                                     <SelectValue placeholder="Select period" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {period.filter(p => p !== 'other').map((p) => ( // Filter out 'other' for rent
-                                                                        <SelectItem key={p} value={p}>
-                                                                            {p.toUpperCase()}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </FormControl>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {period.filter(p => p !== 'other').map((p) => ( // Filter out 'other' for rent
+                                                                    <SelectItem key={p} value={p}>
+                                                                        {p.toUpperCase()}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                         <FormMessage className='absolute bottom-0' />
                                                     </FormItem>
                                                 )}
                                             />
                                         )}
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="mb-8">
+                                <CardHeader>
+                                    <CardTitle className="text-lg">
+                                        Amenities
+                                    </CardTitle>
+                                </CardHeader>
+
+                                <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {Object.entries(AMENITIES).map(([key, group]) => (
+                                        <div key={key} className="space-y-3">
+                                            <div className="flex items-center gap-2 font-medium">
+                                                {ICONS[key]}
+                                                {group.label}
+                                            </div>
+
+                                            <FormField
+                                                control={form.control}
+                                                name="amenities"
+                                                render={({ field }) => (
+                                                    <div className="space-y-2">
+                                                        {group.items.map((item) => (
+                                                            <FormItem
+                                                                key={item}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value?.includes(item)}
+                                                                        onCheckedChange={(checked) => {
+                                                                            return checked
+                                                                                ? field.onChange([...(field.value || []), item])
+                                                                                : field.onChange(
+                                                                                    field.value?.filter(
+                                                                                        (value) => value !== item
+                                                                                    )
+                                                                                )
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormLabel className="font-normal">
+                                                                    {item}
+                                                                </FormLabel>
+                                                            </FormItem>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            />
+                                        </div>
+                                    ))}
                                 </CardContent>
                             </Card>
 
@@ -1163,58 +1448,96 @@ export default function AddPropertyWizard() {
                                             render={({ field }) => (
                                                 <FormItem className='relative pb-6'>
                                                     <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Property Type</FormLabel>
-                                                    <FormControl>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={field.onChange}
-                                                        >
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <FormControl>
                                                             <SelectTrigger className={cn(
                                                                 "w-full",
                                                                 form.formState.errors.type ? "border-red-500 focus:ring-red-500" : ''
                                                             )}>
                                                                 <SelectValue placeholder="Select type" />
                                                             </SelectTrigger>
-                                                            <SelectContent>
-                                                                {propertyTypes.map((t) => (
-                                                                    <SelectItem key={t} value={t.toLowerCase()}>
-                                                                        {t}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {propertyTypes.map((t) => (
+                                                                <SelectItem key={t} value={t.toLowerCase()}>
+                                                                    {t}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                     <FormMessage className='absolute bottom-0' />
                                                 </FormItem>
                                             )}
                                         />
-                                        {/* Purpose */}
-                                        <FormField
-                                            control={form.control}
-                                            name='purpose'
-                                            render={({ field }) => (
-                                                <FormItem className='relative pb-6'>
-                                                    <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Purpose</FormLabel>
-                                                    <FormControl>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={field.onChange}
-                                                        >
-                                                            <SelectTrigger className={cn(
-                                                                "w-full",
-                                                                form.formState.errors.purpose ? "border-red-500 focus:ring-red-500" : ''
-                                                            )}>
-                                                                <SelectValue placeholder="Select purpose" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem key={'sale'} value='sale'>Sale</SelectItem>
-                                                                <SelectItem key={'rent'} value='rent'>Rent</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormControl>
-                                                    <FormMessage className='absolute bottom-0' />
-                                                </FormItem>
-                                            )}
-                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="mb-8">
+                                <CardHeader><CardTitle>Information</CardTitle></CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="flex items-center">
+                                        <p className="text-sm font-medium">Quickly create titles and descriptions with AI</p>
+                                        <Button
+                                            variant="outline"
+                                            type='button'
+                                            className="
+                                                ml-auto
+                                                w-fit
+                                                rounded-full
+                                                border-black
+                                                px-6 py-5
+                                                text-base font-medium
+                                                flex items-center gap-2
+                                                hover:bg-black/5
+                                              "
+                                        >
+                                            <Sparkles className="h-5 w-5 text-purple-500" />
+                                            Regenerate with AI
+                                        </Button>
+
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <div className="grid gap-2">
+                                            <FormField
+                                                control={form.control}
+                                                name='title'
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Title</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                placeholder="3-bedroom townhouse with garden"
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <FormField
+                                                control={form.control}
+                                                name='description'
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="after:content-['*'] after:text-red-500 after:ml-0.1">Description</FormLabel>
+                                                        <FormControl>
+                                                            <Textarea
+                                                                placeholder="Write your description..."
+                                                                className={"h-30"}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -1255,219 +1578,163 @@ export default function AddPropertyWizard() {
                         </div>
                     )}
 
-                    {/* STEP 2: Verify Documents */}
+                    {/* STEP 2: Agent & Payment */}
                     {step === 2 && (
-                        <div className="min-h-screen">
-                            <Card className="mb-8">
-                                <CardHeader><CardTitle>Verify documents</CardTitle></CardHeader>
-                                <CardContent className="grid gap-6 md:grid-cols-2">
-                                    {/* House Docs Upload */}
-                                    <div className="rounded-lg border border-dashed p-6">
-                                        <Label htmlFor="house-docs" className="mb-2 block">
-                                            House ownership papers (PDF/JPG/PNG)
-                                        </Label>
-                                        <Input
-                                            id="house-docs"
-                                            type="file"
-                                            accept=".pdf,image/*"
-                                            multiple
-                                            onChange={(e) => handleDocsChange("house", e.target.files)}
-                                            key={houseDocs.length} // Force re-render input to clear selection on change
-                                        />
-                                        <p className="mt-2 text-xs text-muted-foreground">
-                                            Upload clear scans or photos of the property documents.
-                                        </p>
-                                        {houseDocs.length > 0 && (
-                                            <div className="mt-2 text-sm text-muted-foreground">
-                                                {houseDocs.length} file(s) selected
-                                            </div>
-                                        )}
-                                    </div>
+                        <div>
+                            <Card className="mb-6">
+                                <CardHeader><CardTitle>Select Listing Plan</CardTitle></CardHeader>
+                                <CardContent>
+                                    <div className="w-full mx-auto">
+                                        <div className="grid grid-cols-3 gap-8 items-start">
+                                            {listingTiers.map((tier) => {
+                                                const isSelected = selectedTier === tier._id;
+                                                const currentDuration = selectedDuration?.days;
+                                                const currentPrice = tier.durations.find(d => d.days === currentDuration)?.price || tier.durations[0].price;
 
-                                    {/* ID Docs Upload */}
-                                    <div className="rounded-lg border border-dashed p-6">
-                                        <Label htmlFor="id-docs" className="mb-2 block">
-                                            Owner ID card (front/back) (PDF/JPG/PNG)
-                                        </Label>
-                                        <Input
-                                            id="id-docs"
-                                            type="file"
-                                            accept=".pdf,image/*"
-                                            multiple
-                                            onChange={(e) => handleDocsChange("id", e.target.files)}
-                                            key={idDocs.length} // Force re-render input to clear selection on change
-                                        />
-                                        <p className="mt-2 text-xs text-muted-foreground">
-                                            Upload a valid identification document.
-                                        </p>
-                                        {idDocs.length > 0 && (
-                                            <div className="mt-2 text-sm text-muted-foreground">
-                                                {idDocs.length} file(s) selected
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                                <CardContent className="space-y-4 border-t pt-6">
-                                    {/* AI Verification Control */}
-                                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium">AI verification status</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Gemini Vision sẽ đối chiếu CCCD và giấy tờ nhà với dữ liệu bạn nhập ở bước trước.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            onClick={handleVerifyDocuments}
-                                            disabled={!docsUploaded || isVerifyingDocs}
-                                        >
-                                            {isVerifyingDocs
-                                                ? "Verifying..."
-                                                : docsValid
-                                                    ? "Re-run verification"
-                                                    : "Verify documents"}
-                                        </Button>
-                                    </div>
+                                                return (
+                                                    <div key={tier._id} className="flex flex-col h-full">
+                                                        <Card
+                                                            onClick={() => handleSelectTier(tier)}
+                                                            className={`p-0 overflow-hidden transition-all duration-500 hover:scale-105 cursor-pointer flex flex-col h-full ${isSelected ? 'border border-primary scale-105 border-3' : 'shadow-lg'
+                                                                }`}
+                                                        >
+                                                            {/* Header */}
+                                                            <div
+                                                                className={`min-h-[10rem] bg-gradient-to-r ${tier.color} text-white px-6 py-4 flex flex-col gap-2 rounded-t-lg`}
+                                                            >
+                                                                <h3 className="text-3xl font-bold">
+                                                                    {tier.displayName.en}
+                                                                </h3>
+                                                                <p className="text-sm opacity-90 pt-2">
+                                                                    {tier.description}
+                                                                </p>
+                                                            </div>
 
-                                    {/* Verification Results */}
-                                    <div className="grid gap-3 md:grid-cols-2">
-                                        <div className="rounded-lg border p-3">
-                                            <p className="text-xs uppercase tracking-wide text-muted-foreground">ID Card (CCCD)</p>
-                                            <p className={cn(
-                                                "text-sm font-semibold",
-                                                docsVerificationResult?.cccdVerified ? "text-green-600" : "text-amber-600"
-                                            )}>
-                                                {docsVerificationResult?.cccdVerified ? "Verified" : docsVerificationResult ? "Verification Failed" : "Pending verification"}
-                                            </p>
-                                            {docsVerificationResult?.cccd?.verificationResult?.mismatchDetails && (
-                                                <p className="mt-1 text-xs text-red-600">
-                                                    {docsVerificationResult.cccd.verificationResult.mismatchDetails}
-                                                </p>
-                                            )}
+                                                            <CardContent className="p-6 bg-white flex flex-col flex-grow">
+                                                                <p className="text-md font-bold text-orange-500 mb-4">Features</p>
+                                                                <div className="space-y-2.5 mb-6 flex-grow">
+                                                                    {tier.highlights.map((highlight, idx) => (
+                                                                        <div key={idx} className="flex items-start gap-2.5">
+                                                                            {highlight.enabled ? (
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                                    <Check className="w-2.5 h-2.5 text-white" strokeWidth={2} />
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                                                    <X className="w-2.5 h-2.5 text-white" strokeWidth={2} />
+                                                                                </div>
+                                                                            )}
+                                                                            <span
+                                                                                className={`text-sm leading-snug ${highlight.enabled ? 'text-gray-800' : 'text-gray-400'
+                                                                                    } ${highlight.color === 'orange' ? 'text-orange-600 font-medium' : ''}`}
+                                                                            >
+                                                                                {highlight.text}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                        <div className="rounded-lg border p-3">
-                                            <p className="text-xs uppercase tracking-wide text-muted-foreground">House document</p>
-                                            <p className={cn(
-                                                "text-sm font-semibold",
-                                                docsVerificationResult?.houseDocVerified ? "text-green-600" : "text-amber-600"
-                                            )}>
-                                                {docsVerificationResult?.houseDocVerified ? "Verified" : docsVerificationResult ? "Verification Failed" : "Pending verification"}
-                                            </p>
-                                            {docsVerificationResult?.houseDoc?.verificationResult?.mismatchDetails && (
-                                                <p className="mt-1 text-xs text-red-600">
-                                                    {docsVerificationResult.houseDoc.verificationResult.mismatchDetails}
-                                                </p>
-                                            )}
-                                        </div>
+
+                                        {/* Timeline Section */}
+                                        {(() => {
+                                            const tierSelected = listingTiers.find(
+                                                (t) => t._id === selectedTier
+                                            )
+                                            return (
+                                                <div className="mt-8">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <h3 className="font-bold text-gray-800">Display duration</h3>
+                                                        <Button onClick={() => { setDurationDialog((v) => !v) }} variant="outline" size="sm" className="font-semibold">Replace</Button>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                        <div className="flex items-center justify-center w-14 h-14 bg-red-50 rounded-lg border-2 border-red-200">
+                                                            <div className="text-center">
+                                                                <div className="text-lg font-bold text-red-600 leading-none">{selectedDuration.days}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold text-gray-900">{tierSelected?.displayName?.en}</span>
+                                                            <span className="text-gray-400">|</span>
+                                                            <span className="text-gray-600">{selectedDuration.days} days</span>
+                                                        </div>
+                                                        <div className="ml-auto text-lg font-bold text-gray-900">
+                                                            {formatPrice(selectedDuration.price)} đ
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
                                     </div>
-                                    {!docsValid && docsVerificationResult && (
-                                        <p className="text-xs text-amber-600">
-                                            Tải đủ giấy tờ và chạy xác thực AI để mở khóa bước tiếp theo.
-                                        </p>
-                                    )}
                                 </CardContent>
                             </Card>
 
                             <div className="flex items-center justify-between">
                                 <Button variant="outline" type="button" onClick={() => setStep(1)}>Back</Button>
-                                <Button onClick={handleContinueFromStep2} disabled={!docsValid || isVerifyingDocs}>
-                                    Continue
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* STEP 3: Agent & Payment */}
-                    {step === 3 && (
-                        <div className="min-h-screen">
-                            <Card className="mb-6">
-                                <CardHeader><CardTitle>Select Listing Plan</CardTitle></CardHeader>
-                                <CardContent className="grid gap-4 md:grid-cols-3">
-                                    {(['basic', 'standard', 'premium']).map(p => {
-                                        const info = planInfo[p];
-                                        const isDefault = p === membershipLevel;
-                                        const isSelected = p === selectedPlan;
-                                        const v = Number(priceValue || 0);
-                                        const base = computeBase(v, purposeValue === 'rent');
-                                        const fee = Math.round(base * (1 - (discounts[p] || 0) / 100));
-                                        const expiryDays = purposeValue === 'rent' ? info.expiryRent : info.expirySale;
-
-                                        // Kiểm tra xem người dùng có thể chọn plan này không (không cho chọn plan cao hơn membership hiện tại)
-                                        const isPlanSelectable = planOrder[p] <= planOrder[membershipLevel];
-
-                                        return (
-                                            <div
-                                                key={p}
-                                                className={cn(
-                                                    `border rounded p-4`,
-                                                    isPlanSelectable ? 'cursor-pointer hover:shadow-lg transition-shadow' : 'cursor-not-allowed opacity-60',
-                                                    isSelected ? 'border-orange-500 ring-2 ring-orange-500' : 'border-muted'
-                                                )}
-                                                onClick={() => isPlanSelectable && handleSelectPlan(p)}
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div className="font-semibold">{info.label}</div>
-                                                    {isDefault && <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Your Current Plan</span>}
-                                                </div>
-                                                <div className="mt-2 text-2xl font-bold">{currency(fee)}</div>
-                                                <div className="mt-1 text-xs text-muted-foreground">
-                                                    Base: {currency(base)} • Discount: {discounts[p]}%
-                                                </div>
-                                                <div className="mt-3 text-sm">
-                                                    <div>Expiry: **{expiryDays} days**</div>
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        {info.label.includes('Premium') && 'Top placement, boosted visibility.'}
-                                                        {info.label.includes('Standard') && 'Longer visibility, better placement.'}
-                                                        {info.label.includes('Basic') && 'Standard placement.'}
-                                                    </div>
-                                                </div>
-                                                {!isPlanSelectable && (
-                                                    <div className="mt-2 text-xs text-red-600 font-medium">
-                                                        Upgrade required to select this plan.
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </CardContent>
-                            </Card>
-
-                            <Card className="mb-8">
-                                <CardHeader><CardTitle>Payment Summary</CardTitle></CardHeader>
-                                <CardContent className="space-y-2">
-                                    <div className="text-sm text-muted-foreground">
-                                        Current membership: **{membershipLevel}** • Selected listing plan: **{selectedPlan}** • Purpose: **{purposeValue}**
-                                    </div>
-                                    <div className="text-2xl font-semibold">Total Fee: {currency(listingFee)}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                        Phí niêm yết được tính dựa trên **giá trị tài sản** và **gói niêm yết** đã chọn.
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <div className="flex items-center justify-between">
-                                <Button variant="outline" type="button" onClick={() => setStep(2)}>Back</Button>
                                 <Button
-                                  type="button"
-                                  disabled={form.formState.isSubmitting || planOrder[selectedPlan] > planOrder[membershipLevel]}
-                                  onClick={() => {
-                                    console.log('[Publish] Attempting submit');
-                                    form.handleSubmit(onSubmit, (errors) => {
-                                      console.log('[Publish] Validation errors:', errors);
-                                      toast.error('Validation failed. Please review required fields.');
-                                      // Optionally jump back to step 1 if address invalid:
-                                      if (errors?.['address.province'] || errors?.['address.district'] || errors?.['address.ward']) setStep(1);
-                                    })();
-                                  }}
+                                    type="button"
+                                    disabled={form.formState.isSubmitting}
+                                    onClick={() => {
+                                        form.handleSubmit(onSubmit, (errors) => {
+                                            toast.error('Validation failed. Please review required fields.');
+                                            if (errors?.address?.province || errors?.address?.district || errors?.address?.ward) setStep(1);
+                                        })();
+                                    }}
                                 >
-                                  {form.formState.isSubmitting ? "Publishing..." : "Publish listing"}
+                                    {form.formState.isSubmitting ? "Publishing..." : "Publish listing"}
                                 </Button>
                             </div>
                         </div>
                     )}
                 </form>
             </Form>
-            
+
+            <Dialog open={durationDialog} onOpenChange={setDurationDialog}>
+                <DialogContent className="max-w-md rounded-2xl p-0">
+                    <DialogHeader className="relative border-b px-6 py-4">
+                        <DialogTitle className="text-center text-lg font-semibold">
+                            Select display duration
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 p-6">
+                        {(() => {
+                            const tierSelected = listingTiers?.find(
+                                (t) => t._id === selectedTier
+                            )
+                            return tierSelected?.durations?.map((d) => (
+                                <div
+                                    key={d._id}
+                                    onClick={() => {
+                                        setSelectedDuration(d)
+                                        setDurationDialog(false)
+                                    }}
+                                    className={`flex items-center justify-between rounded-xl border px-4 py-3 cursor-pointer transition
+                                        ${d.days === selectedDuration.days ? "border-primary border-2" : "border-gray-200"}
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                                            <span className="font-bold text-gray-700">{d.days}</span>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-900">
+                                                {tierSelected.displayName.en} <span className="text-gray-500 font-normal">| {d.days} days</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p className="font-semibold text-gray-900">{formatPrice(d.price)} ₫</p>
+                                </div>
+                            ))
+                        })()}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* 🚨 DIALOG XỬ LÝ LỖI THANH TOÁN (HTTP 402) */}
             <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
                 <DialogContent>
@@ -1486,7 +1753,6 @@ export default function AddPropertyWizard() {
                         <Button
                             variant="outline"
                             onClick={() => {
-                                // Tự động chọn plan thấp nhất có thể (chỉ chọn Basic)
                                 setSelectedPlan('basic');
                                 setDepositDialogOpen(false);
                                 toast.info("Switched to Basic plan. Review the new fee and try publishing again.");
@@ -1497,8 +1763,7 @@ export default function AddPropertyWizard() {
                         <Button
                             onClick={() => {
                                 setDepositDialogOpen(false);
-                                toast.warn(`Redirecting to Deposit...`);
-                                navigate("/dashboard/deposit"); // Giả định có route này
+                                navigate("/dashboard/deposit");
                             }}
                         >
                             Deposit now
