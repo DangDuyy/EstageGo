@@ -356,12 +356,56 @@ export const getConversationByIdAPI = async (conversationId) => {
 
 // ========== MESSAGE APIs ==========
 
-// Send message
-export const sendMessageAPI = async (conversationId, text) => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages`, {
-    conversationId,
-    text
+// Send message (supports text-only or text + files)
+export const sendMessageAPI = async (conversationId, payload, isFormData = false) => {
+  // Backwards compatible: payload can be a plain text string
+  if (!isFormData && (typeof payload === 'string' || typeof payload?.text === 'string')) {
+    const text = typeof payload === 'string' ? payload : payload.text
+    const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages`, {
+      conversationId,
+      text
+    })
+    return response.data
+  }
+
+  // Multipart/form-data with optional text + files
+  const formData = payload instanceof FormData ? payload : new FormData()
+
+  if (!(payload instanceof FormData)) {
+    formData.append('conversationId', conversationId)
+    if (payload?.text) formData.append('text', payload.text)
+    if (Array.isArray(payload?.files)) {
+      payload.files.forEach((file) => {
+        if (file) formData.append('files', file)
+      })
+    }
+  }
+
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
+  return response.data
+}
+
+// Toggle reaction on a message
+export const toggleReactionAPI = async (messageId, emoji) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages/${messageId}/reactions`, {
+    emoji
+  })
+  return response.data
+}
+
+// Delete message for current user
+export const deleteMessageForMeAPI = async (messageId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/messages/${messageId}`)
+  return response.data
+}
+
+// Recall message for everyone
+export const recallMessageAPI = async (messageId) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/messages/${messageId}/recall`)
   return response.data
 }
 

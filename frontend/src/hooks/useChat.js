@@ -14,6 +14,7 @@ export const useChat = (conversationId) => {
     hasMore: false,
     total: 0
   })
+  const [recalledMap, setRecalledMap] = useState({})
 
   // Load initial messages
   const loadMessages = useCallback(async () => {
@@ -60,13 +61,24 @@ export const useChat = (conversationId) => {
     }
   }, [conversationId, pagination.page, pagination.hasMore, loadingMore])
 
-  // Send message
-  const sendMessage = useCallback(async (text) => {
-    if (!conversationId || !text.trim()) return
+  // Send message: supports text-only or text + files
+  const sendMessage = useCallback(async ({ text = '', files = [] } = {}) => {
+    if (!conversationId) return
+    const trimmed = (text || '').trim()
+    const hasText = !!trimmed
+    const hasFiles = Array.isArray(files) && files.length > 0
+    if (!hasText && !hasFiles) return
 
     try {
       setSending(true)
-      const message = await sendMessageAPI(conversationId, text.trim())
+
+      if (hasFiles) {
+        const payload = { text: trimmed, files }
+        const message = await sendMessageAPI(conversationId, payload, true)
+        return message
+      }
+
+      const message = await sendMessageAPI(conversationId, trimmed)
       // Message will be added via socket event
       return message
     } catch (error) {
@@ -110,6 +122,29 @@ export const useChat = (conversationId) => {
         }
       }
 
+      // Listen for reactions update
+      const handleReactionUpdate = ({ messageId, reactions, conversationId: msgConvId }) => {
+        if (msgConvId !== conversationId) return
+        setMessages((prev) =>
+          prev.map((m) =>
+            String(m._id) === String(messageId)
+              ? { ...m, reactions }
+              : m
+          )
+        )
+      }
+
+      const handleRecalled = ({ messageId, conversationId: msgConvId }) => {
+        if (msgConvId !== conversationId) return
+        setMessages((prev) =>
+          prev.map((m) =>
+            String(m._id) === String(messageId)
+              ? { ...m, recalled: true }
+              : m
+          )
+        )
+      }
+
       // Listen for typing indicators
       const handleTypingStart = ({ userId, conversationId: typingConvId }) => {
         if (typingConvId === conversationId) {
@@ -126,12 +161,16 @@ export const useChat = (conversationId) => {
       socket.on('message:new', handleNewMessage)
       socket.on('typing:start', handleTypingStart)
       socket.on('typing:stop', handleTypingStop)
+      socket.on('message:reaction', handleReactionUpdate)
+      socket.on('message:recalled', handleRecalled)
 
       // Return cleanup function
       cleanupFn = () => {
         socket.off('message:new', handleNewMessage)
         socket.off('typing:start', handleTypingStart)
         socket.off('typing:stop', handleTypingStop)
+        socket.off('message:reaction', handleReactionUpdate)
+        socket.off('message:recalled', handleRecalled)
         leaveConversation(conversationId)
       }
     }
