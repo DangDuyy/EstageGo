@@ -191,12 +191,14 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                                 </h2>
                                 <div className="flex gap-2">
                                     <button
+                                        type="button"
                                         onClick={() => scroll('left')}
                                         className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow border"
                                     >
                                         <ChevronLeft size={20} />
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => scroll('right')}
                                         className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition-shadow border"
                                     >

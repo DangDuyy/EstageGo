@@ -962,7 +962,7 @@ export default function AddPropertyWizard() {
                             <Tabs defaultValue='photos'>
                                 <TabsList>
                                     <TabsTrigger value='photos'>Add Photos</TabsTrigger>
-                                    <TabsTrigger value='3D'>3D Tour</TabsTrigger>
+                                    {/* <TabsTrigger value='3D'>3D Tour</TabsTrigger> */}
                                 </TabsList>
                                 <TabsContent value="photos">
                                     <Controller
@@ -978,9 +978,9 @@ export default function AddPropertyWizard() {
                                         )}
                                     />
                                 </TabsContent>
-                                <TabsContent value="3D">
+                                {/* <TabsContent value="3D">
                                     <TourLinkModal form={form} className={"mb-8"} />
-                                </TabsContent>
+                                </TabsContent> */}
                             </Tabs>
 
                             {/* Information */}
@@ -1649,7 +1649,7 @@ export default function AddPropertyWizard() {
                                                 <div className="mt-8">
                                                     <div className="flex justify-between items-center mb-4">
                                                         <h3 className="font-bold text-gray-800">Display duration</h3>
-                                                        <Button onClick={() => { setDurationDialog((v) => !v) }} variant="outline" size="sm" className="font-semibold">Replace</Button>
+                                                        <Button type="button" onClick={() => { setDurationDialog((v) => !v) }} variant="outline" size="sm" className="font-semibold">Replace</Button>
                                                     </div>
 
                                                     <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -1750,7 +1750,7 @@ export default function AddPropertyWizard() {
                         </p>
                     </div>
                     <DialogFooter className="flex gap-2">
-                        <Button
+                        {/* <Button
                             variant="outline"
                             onClick={() => {
                                 setSelectedPlan('basic');
@@ -1759,7 +1759,7 @@ export default function AddPropertyWizard() {
                             }}
                         >
                             Choose Basic plan
-                        </Button>
+                        </Button> */}
                         <Button
                             onClick={() => {
                                 setDepositDialogOpen(false);

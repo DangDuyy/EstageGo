@@ -10,205 +10,232 @@ import { env } from "~/config/environment"
 import { StatusCodes } from "http-status-codes"
 import { propertyService } from "~/services/propertyService"
 import paymentService from "~/services/paymentService"
+import { ListingTierConfig } from "~/models/listingTierConfig"
 
 const safeParse = (v) => {
-  if (typeof v === 'string') {
-    try { return JSON.parse(v) } catch { return v }
-  }
-  return v
+    if (typeof v === 'string') {
+        try { return JSON.parse(v) } catch { return v }
+    }
+    return v
 }
 
 const computeSaleBase = (v) => {
-  if (v < 500_000_000) return 300_000
-  if (v <= 2_000_000_000) return 600_000
-  return 1_000_000
+    if (v < 500_000_000) return 300_000
+    if (v <= 2_000_000_000) return 600_000
+    return 1_000_000
 }
 const computeRentBase = (v) => {
-  if (v < 10_000_000) return 150_000
-  if (v <= 30_000_000) return 300_000
-  return 600_000
+    if (v < 10_000_000) return 150_000
+    if (v <= 30_000_000) return 300_000
+    return 600_000
 }
 
 const createProperty = async (req, res, next) => {
-  try {
-    // Normalize complex fields from multipart
-    const body = { ...req.body }
-    body.price = safeParse(body.price)
-    body.address = safeParse(body.address)
-    body.rooms = safeParse(body.rooms)
+    try {
+        // Normalize complex fields from multipart
+        const body = { ...req.body }
+        body.price = safeParse(body.price)
+        body.address = safeParse(body.address)
+        body.rooms = safeParse(body.rooms)
 
-    // res.status(StatusCodes.OK).json(body)
-    // return
+        // res.status(StatusCodes.OK).json(body)
+        // return
 
-    const owner = req.jwtDecoded?._id
-    if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
+        const owner = req.jwtDecoded?._id
+        if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
 
-    const user = await propertyService.getUserById(owner)
-    if (!user) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User not found" })
+        const user = await propertyService.getUserById(owner)
+        if (!user) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User not found" })
 
-    const membership = user.membershipLevel || 'basic'
-    const purpose = body.purpose === 'rent' ? 'rent' : 'sale'
-    const propertyPriceValue = Number(body?.price?.value || 0)
+        const membership = user.membershipLevel || 'basic'
+        const purpose = body.purpose === 'rent' ? 'rent' : 'sale'
+        const propertyPriceValue = Number(body?.price?.value || 0)
 
-    const baseFee = purpose === 'rent' ? computeRentBase(propertyPriceValue) : computeSaleBase(propertyPriceValue)
-    const discountPercent = membership === 'premium' ? 30 : membership === 'standard' ? 10 : 0
-    const feeAfterDiscount = Math.round(baseFee * (1 - discountPercent / 100))
+        const baseFee = purpose === 'rent' ? computeRentBase(propertyPriceValue) : computeSaleBase(propertyPriceValue)
+        const discountPercent = membership === 'premium' ? 30 : membership === 'standard' ? 10 : 0
+        const feeAfterDiscount = Math.round(baseFee * (1 - discountPercent / 100))
 
-    let postType = 'normal'
-    let expireDays
-    if (membership === 'premium') { postType = 'vip'; expireDays = 15 }
-    else if (membership === 'standard') { expireDays = purpose === 'rent' ? 14 : 7 }
-    else { expireDays = purpose === 'rent' ? 7 : 3 }
-    const expireAt = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000)
+        let postType = 'normal'
+        let expireDays
+        if (membership === 'premium') { postType = 'vip'; expireDays = 15 }
+        else if (membership === 'standard') { expireDays = purpose === 'rent' ? 14 : 7 }
+        else { expireDays = purpose === 'rent' ? 7 : 3 }
+        // const expireAt = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000)
 
-    if (user.balance < feeAfterDiscount) {
-      return res.status(StatusCodes.PAYMENT_REQUIRED).json({
-        success: false,
-        message: "Insufficient balance to pay listing fee",
-        required: feeAfterDiscount,
-        currentBalance: user.balance
-      })
+        const tierConfig = await ListingTierConfig.findById(body.tier)
+
+        if (!tierConfig) {
+            throw new Error('Listing tier config not found')
+        }
+
+        let priority = tierConfig.priority
+
+        const duration = tierConfig.durations.find(
+            (d) => d._id.toString() === body.durationId
+        )
+
+        if (!duration) {
+            throw new Error('Invalid listing duration')
+        }
+
+        let expireAt = new Date(
+            Date.now() + duration.days * 24 * 60 * 60 * 1000
+        )
+
+        let listingFee = duration.price
+
+        let isFeatured = tierConfig.features.featuredListing
+
+        if (user.balance < listingFee) {
+            return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+                success: false,
+                message: "Insufficient balance to pay listing fee",
+                required: listingFee,
+                currentBalance: user.balance
+            })
+        }
+
+        const propertyData = {
+            ...body,
+            owner,
+            postType,
+            listingFee,
+            priority,
+            isFeatured,
+            expireAt,
+            visibility: 'public'
+        }
+
+        const newProperty = await propertyService.createProperty(propertyData)
+
+        await paymentService.deductBalance({
+            userId: owner,
+            amount: listingFee,
+            description: `Listing fee (${purpose}) - ${newProperty.title}`,
+            referenceId: newProperty._id.toString()
+        })
+
+        const files = req.files || []
+        let updateProperty = newProperty
+        if (files.length && mediaService?.uploadPropertyImage) {
+            const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
+            updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult.flat())
+        }
+
+        res.status(StatusCodes.CREATED).json({
+            success: true,
+            message: "Property created successfully",
+            data: updateProperty,
+            feeCharged: feeAfterDiscount,
+            discountPercent,
+            postType,
+            expireAt
+        })
+    } catch (error) {
+        console.error("Error createProperty:", error)
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: error?.message || "Internal Server Error"
+        })
     }
-
-    const propertyData = {
-      ...body,
-      owner,
-      postType,
-      listingFee: feeAfterDiscount,
-      expireAt,
-      visibility: 'public'
-    }
-
-    const newProperty = await propertyService.createProperty(propertyData)
-
-    await paymentService.deductBalance({
-      userId: owner,
-      amount: feeAfterDiscount,
-      description: `Listing fee (${purpose}) - ${newProperty.title}`,
-      referenceId: newProperty._id.toString()
-    })
-
-    const files = req.files || []
-    let updateProperty = newProperty
-    if (files.length && mediaService?.uploadPropertyImage) {
-      const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
-      updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult.flat())
-    }
-
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: "Property created successfully",
-      data: updateProperty,
-      feeCharged: feeAfterDiscount,
-      discountPercent,
-      postType,
-      expireAt
-    })
-  } catch (error) {
-    console.error("Error createProperty:", error)
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: error?.message || "Internal Server Error"
-    })
-  }
 }
 
 const verifyPropertyDocuments = async (req, res, next) => {
-  try {
-    const userId = req.jwtDecoded._id
-    const rawPropertyData = req.body?.propertyData
-    const idDocs = req.files?.idDocs || []
-    const houseDocs = req.files?.houseDocs || []
-
-    if (!rawPropertyData) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: "Property data is required for verification"
-      })
-    }
-
-    if (!idDocs.length || !houseDocs.length) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: "Both ID documents and house documents are required"
-      })
-    }
-
-    let propertyData
     try {
-      propertyData = typeof rawPropertyData === "string"
-        ? JSON.parse(rawPropertyData)
-        : rawPropertyData
-    } catch (parseError) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: "Property data payload is invalid JSON"
-      })
-    }
+        const userId = req.jwtDecoded._id
+        const rawPropertyData = req.body?.propertyData
+        const idDocs = req.files?.idDocs || []
+        const houseDocs = req.files?.houseDocs || []
 
-    const normalizedPropertyData = {
-      ...propertyData,
-      address: propertyData?.address || {}
-    }
-
-    const user = await propertyService.getUserById(userId)
-
-    if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: "User not found"
-      })
-    }
-
-    const userInfo = {
-      fullName: user.fullName || user.userName,
-      dob: user.dob
-    }
-
-    const cccdAnalysis = await documentVerificationService.verifyCCCD({
-      file: idDocs[0],
-      userInfo
-    })
-
-    if (!cccdAnalysis?.verificationResult?.isUserMatch || !cccdAnalysis?.verificationResult?.isFormatValid) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: cccdAnalysis?.verificationResult?.mismatchDetails || "CCCD verification failed",
-        data: {
-          cccd: cccdAnalysis
+        if (!rawPropertyData) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Property data is required for verification"
+            })
         }
-      })
-    }
 
-    const houseDocAnalysis = await documentVerificationService.verifyHouseDocument({
-      file: houseDocs[0],
-      propertyData: normalizedPropertyData
-    })
-
-    const verification = houseDocAnalysis?.verificationResult || {}
-    if (!verification.isFormatValid || !verification.isAddressMatch || !verification.isAreaMatch) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: verification.mismatchDetails || "House document does not match listing details",
-        data: {
-          cccd: cccdAnalysis,
-          houseDoc: houseDocAnalysis
+        if (!idDocs.length || !houseDocs.length) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Both ID documents and house documents are required"
+            })
         }
-      })
-    }
 
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Documents verified successfully",
-      data: {
-        cccd: cccdAnalysis,
-        houseDoc: houseDocAnalysis
-      }
-    })
-  } catch (error) {
-    console.error("Error verifying property documents:", error)
-    next(error)
-  }
+        let propertyData
+        try {
+            propertyData = typeof rawPropertyData === "string"
+                ? JSON.parse(rawPropertyData)
+                : rawPropertyData
+        } catch (parseError) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Property data payload is invalid JSON"
+            })
+        }
+
+        const normalizedPropertyData = {
+            ...propertyData,
+            address: propertyData?.address || {}
+        }
+
+        const user = await propertyService.getUserById(userId)
+
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "User not found"
+            })
+        }
+
+        const userInfo = {
+            fullName: user.fullName || user.userName,
+            dob: user.dob
+        }
+
+        const cccdAnalysis = await documentVerificationService.verifyCCCD({
+            file: idDocs[0],
+            userInfo
+        })
+
+        if (!cccdAnalysis?.verificationResult?.isUserMatch || !cccdAnalysis?.verificationResult?.isFormatValid) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: cccdAnalysis?.verificationResult?.mismatchDetails || "CCCD verification failed",
+                data: {
+                    cccd: cccdAnalysis
+                }
+            })
+        }
+
+        const houseDocAnalysis = await documentVerificationService.verifyHouseDocument({
+            file: houseDocs[0],
+            propertyData: normalizedPropertyData
+        })
+
+        const verification = houseDocAnalysis?.verificationResult || {}
+        if (!verification.isFormatValid || !verification.isAddressMatch || !verification.isAreaMatch) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: verification.mismatchDetails || "House document does not match listing details",
+                data: {
+                    cccd: cccdAnalysis,
+                    houseDoc: houseDocAnalysis
+                }
+            })
+        }
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Documents verified successfully",
+            data: {
+                cccd: cccdAnalysis,
+                houseDoc: houseDocAnalysis
+            }
+        })
+    } catch (error) {
+        console.error("Error verifying property documents:", error)
+        next(error)
+    }
 }
 
 const uploadPropertyMedia = async (req, res, next) => {
@@ -293,13 +320,13 @@ const getProperties = async (req, res, next) => {
         }
 
         const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
-        
+
         // Nếu không có kết quả và có search query, tìm suggestions
         let searchSuggestions = null
         if (result.totalProperties === 0 && queryFilter.q) {
             searchSuggestions = await searchSuggestionService.findSearchSuggestions(queryFilter.q)
         }
-        
+
         return res.status(StatusCodes.OK).json({
             ...result,
             ...(searchSuggestions && { searchSuggestions })
@@ -320,14 +347,14 @@ const getPropertyDetails = async (req, res, next) => {
 }
 
 const getPropertiesWithMap = async (req, res, next) => {
-    try{
+    try {
         const query = req.query
 
         const result = await propertyService.getPropertiesWithMap(query)
 
         return res.status(StatusCodes.OK).json(result)
     }
-    catch(error){
+    catch (error) {
         next(error)
     }
 }
@@ -374,7 +401,7 @@ const naturalLanguageSearch = async (req, res, next) => {
 
         // Khởi tạo Gemini client với model ổn định
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ 
+        const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash"
         });
 
@@ -505,10 +532,10 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
         let result;
         try {
             // Set timeout cho API call (10 giây)
-            const timeoutPromise = new Promise((_, reject) => 
+            const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('AI request timeout')), 10000)
             );
-            
+
             result = await Promise.race([
                 model.generateContent(prompt),
                 timeoutPromise
@@ -520,7 +547,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                 message: aiError.message,
                 cause: aiError.cause
             });
-            
+
             // Kiểm tra timeout
             if (aiError.message && aiError.message.includes('timeout')) {
                 return res.status(StatusCodes.REQUEST_TIMEOUT).json({
@@ -528,7 +555,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                     message: "AI service không phản hồi. Vui lòng thử lại."
                 });
             }
-            
+
             // Kiểm tra rate limit error
             if (aiError.message && (aiError.message.includes('quota') || aiError.message.includes('429'))) {
                 return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
@@ -536,7 +563,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                     message: "AI service đang bận. Vui lòng thử lại sau ít phút."
                 });
             }
-            
+
             // Kiểm tra retry delay
             if (aiError.message && aiError.message.includes('retryDelay')) {
                 return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
@@ -544,7 +571,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                     message: "AI service tạm thời quá tải. Vui lòng thử lại sau 1 phút."
                 });
             }
-            
+
             // Kiểm tra API key invalid
             if (aiError.message && (aiError.message.includes('API key') || aiError.message.includes('401') || aiError.message.includes('403'))) {
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -552,7 +579,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                     message: "Lỗi cấu hình AI service. Vui lòng liên hệ quản trị viên."
                 });
             }
-            
+
             // Kiểm tra network error
             if (aiError.name === 'GoogleGenerativeAIFetchError' || aiError.message.includes('fetch')) {
                 return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
@@ -560,7 +587,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                     message: "Không thể kết nối tới AI service. Vui lòng kiểm tra kết nối mạng và thử lại."
                 });
             }
-            
+
             // Lỗi khác
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
@@ -568,7 +595,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                 error: process.env.NODE_ENV === 'development' ? aiError.message : undefined
             });
         }
-        
+
         let responseText = result.response.text();
         console.log("AI Response (raw):", responseText);
 
@@ -580,7 +607,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
             if (responseText.startsWith('```')) {
                 responseText = responseText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
             }
-            
+
             filters = JSON.parse(responseText);
             console.log("AI Parsed Filters:", filters);
         } catch (parseError) {
@@ -595,7 +622,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
 
         // Loại bỏ các trường null/undefined/empty
         const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
-            if (value !== null && value !== undefined && 
+            if (value !== null && value !== undefined &&
                 !(typeof value === 'object' && Object.keys(value).length === 0)) {
                 acc[key] = value;
             }
@@ -615,10 +642,10 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
             try {
                 // Extract keywords từ query
                 const locationKeywords = searchSuggestionService.extractLocationKeywords(naturalLanguageQuery)
-                
+
                 // Tìm suggestions cho toàn bộ query hoặc từng keyword
                 const querySuggestions = await searchSuggestionService.findSearchSuggestions(naturalLanguageQuery)
-                
+
                 // Nếu có location keywords, tìm suggestions cho chúng
                 const keywordSuggestions = []
                 for (const keyword of locationKeywords.slice(0, 3)) { // Limit to 3 keywords
@@ -630,7 +657,7 @@ Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
                         })
                     }
                 }
-                
+
                 searchSuggestions = {
                     didYouMean: querySuggestions.didYouMean,
                     suggestions: querySuggestions.suggestions,
@@ -661,19 +688,19 @@ const analyzePropertyImage = async (req, res, next) => {
         const { propertyId, imageId } = req.params
         const { imageUrl } = req.query // Get imageUrl from query params as fallback
         const userId = req.jwtDecoded._id
-        
+
         // Get property using the same method as getUserPropertiesWithMedia
         // to ensure _id consistency
         const properties = await propertyService.getUserPropertiesWithMedia(userId)
         const property = properties.find(p => p._id.toString() === propertyId)
-        
+
         if (!property) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Property not found"
             })
         }
-        
+
         // Verify ownership (property.owner should exist since we queried by userId)
         if (!property.owner || property.owner.toString() !== userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
@@ -681,16 +708,16 @@ const analyzePropertyImage = async (req, res, next) => {
                 message: "You can only analyze images of your own properties"
             })
         }
-        
+
         // Find image in property media
         // Since _id changes on each query, we use URL as fallback
         let mediaItem = null
-        
+
         // First, try to find by _id (in case it matches)
         if (property.media && typeof property.media.id === 'function') {
             mediaItem = property.media.id(imageId)
         }
-        
+
         // If not found by _id, try .find()
         if (!mediaItem && property.media) {
             mediaItem = property.media.find(item => {
@@ -700,12 +727,12 @@ const analyzePropertyImage = async (req, res, next) => {
                 return false
             })
         }
-        
+
         // If still not found and imageUrl is provided, find by URL (most reliable)
         if (!mediaItem && imageUrl && property.media) {
             mediaItem = property.media.find(item => item.url === imageUrl)
         }
-        
+
         // If still not found, query property directly from database
         if (!mediaItem) {
             const dbProperty = await propertyService.getPropertyById(propertyId)
@@ -728,7 +755,7 @@ const analyzePropertyImage = async (req, res, next) => {
                 }
             }
         }
-        
+
         if (!mediaItem) {
             console.error('[Analyze] Image not found. PropertyId:', propertyId, 'ImageId:', imageId, 'ImageUrl:', imageUrl)
             console.error('[Analyze] Available media _ids:', property.media?.map(m => m._id?.toString()))
@@ -738,13 +765,13 @@ const analyzePropertyImage = async (req, res, next) => {
                 message: "Image not found"
             })
         }
-        
+
         // Analyze image with AI
         const analysis = await imageTaggingService.analyzeImageWithGemini(mediaItem.url)
-        
+
         // Update property with analysis results (pass imageUrl as fallback)
         const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, analysis, imageUrl || mediaItem.url)
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             message: "Image analyzed successfully",
@@ -764,31 +791,31 @@ const updatePropertyImageTags = async (req, res, next) => {
         const { propertyId, imageId } = req.params
         const userId = req.jwtDecoded._id
         const { tags, detectedObjects } = req.body
-        
+
         // Verify ownership
         const property = await propertyService.getPropertyById(propertyId)
-        
+
         if (!property) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Property not found"
             })
         }
-        
+
         if (property.owner.toString() !== userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: "You can only update tags of your own properties"
             })
         }
-        
+
         // Update tags
         const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, {
             tags,
             detectedObjects,
             analyzed: true
         })
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             message: "Tags updated successfully",
@@ -804,16 +831,16 @@ const searchPropertiesByTag = async (req, res, next) => {
     try {
         const { tag } = req.query
         const { page = 1, limit = 12 } = req.query
-        
+
         if (!tag) {
             return res.status(StatusCodes.BAD_REQUEST).json({
                 success: false,
                 message: "Tag parameter is required"
             })
         }
-        
+
         const result = await propertyService.searchPropertiesByImageTag(tag, parseInt(page), parseInt(limit))
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             data: result
@@ -827,9 +854,9 @@ const searchPropertiesByTag = async (req, res, next) => {
 const getUserPropertiesWithMedia = async (req, res, next) => {
     try {
         const userId = req.jwtDecoded._id
-        
+
         const properties = await propertyService.getUserPropertiesWithMedia(userId)
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             data: properties
@@ -843,9 +870,9 @@ const getUserPropertiesWithMedia = async (req, res, next) => {
 const getAllUserImageTags = async (req, res, next) => {
     try {
         const userId = req.jwtDecoded._id
-        
+
         const tags = await propertyService.getAllImageTags(userId)
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             data: tags
@@ -860,28 +887,28 @@ const bulkAnalyzeImages = async (req, res, next) => {
     try {
         const { propertyId } = req.params
         const userId = req.jwtDecoded._id
-        
+
         const property = await propertyService.getPropertyById(propertyId)
-        
+
         if (!property) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Property not found"
             })
         }
-        
+
         if (property.owner.toString() !== userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: "You can only analyze images of your own properties"
             })
         }
-        
+
         // Get all unanalyzed images
-        const unanalyzedImages = property.media.filter(media => 
+        const unanalyzedImages = property.media.filter(media =>
             media.type.startsWith('image') && !media.analyzed
         )
-        
+
         if (unanalyzedImages.length === 0) {
             return res.status(StatusCodes.OK).json({
                 success: true,
@@ -889,7 +916,7 @@ const bulkAnalyzeImages = async (req, res, next) => {
                 data: { analyzed: 0, total: property.media.length }
             })
         }
-        
+
         // Analyze each image
         const results = []
         for (const media of unanalyzedImages) {
@@ -901,7 +928,7 @@ const bulkAnalyzeImages = async (req, res, next) => {
                 results.push({ imageId: media._id, success: false, error: error.message })
             }
         }
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             message: `Analyzed ${results.filter(r => r.success).length} images`,
@@ -921,20 +948,20 @@ const analyzeTemporaryImage = async (req, res, next) => {
     try {
         // uploadFiles middleware uses array, so files are in req.files
         const files = req.files
-        
+
         if (!files || files.length === 0) {
             return res.status(StatusCodes.BAD_REQUEST).json({
                 success: false,
                 message: "No image file provided"
             })
         }
-        
+
         const file = files[0] // Get first file
-        
+
         // Upload to cloudinary temporarily
         console.log('[Upload] Uploading file to Cloudinary:', file.originalname)
         const uploadResult = await mediaService.uploadPropertyImage([file], 'temp')
-        
+
         if (!uploadResult || uploadResult.length === 0) {
             console.error('[Upload] Failed to upload to Cloudinary')
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -942,15 +969,15 @@ const analyzeTemporaryImage = async (req, res, next) => {
                 message: "Failed to upload image"
             })
         }
-        
+
         const imageUrl = uploadResult[0].url
         console.log('[Upload] Image uploaded successfully:', imageUrl)
-        
+
         // Analyze with AI
         console.log('[AI] Starting analysis with Gemini...')
         const analysis = await imageTaggingService.analyzeImageWithGemini(imageUrl)
         console.log('[AI] Analysis completed:', analysis)
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             message: "Image analyzed successfully",
@@ -969,31 +996,31 @@ const clearImageTags = async (req, res, next) => {
     try {
         const { propertyId, imageId } = req.params
         const userId = req.jwtDecoded._id
-        
+
         // Verify ownership
         const property = await propertyService.getPropertyById(propertyId)
-        
+
         if (!property) {
             return res.status(StatusCodes.NOT_FOUND).json({
                 success: false,
                 message: "Property not found"
             })
         }
-        
+
         if (property.owner.toString() !== userId) {
             return res.status(StatusCodes.FORBIDDEN).json({
                 success: false,
                 message: "You can only clear tags of your own properties"
             })
         }
-        
+
         // Clear all tags and objects
         const updatedProperty = await propertyService.updateImageTags(propertyId, imageId, {
             tags: [],
             detectedObjects: [],
             analyzed: false
         })
-        
+
         res.status(StatusCodes.OK).json({
             success: true,
             message: "Tags cleared successfully",
@@ -1006,80 +1033,80 @@ const clearImageTags = async (req, res, next) => {
 }
 
 const updateProperty = async (req, res, next) => {
-  try {
-    const { id: propertyId } = req.params
-    const userId = req.jwtDecoded._id
-    const updateData = req.body
+    try {
+        const { id: propertyId } = req.params
+        const userId = req.jwtDecoded._id
+        const updateData = req.body
 
-    const updatedProperty = await propertyService.updateProperty(propertyId, userId, updateData)
+        const updatedProperty = await propertyService.updateProperty(propertyId, userId, updateData)
 
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Property updated successfully",
-      data: updatedProperty
-    })
-  } catch (error) {
-    next(error)
-  }
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Property updated successfully",
+            data: updatedProperty
+        })
+    } catch (error) {
+        next(error)
+    }
 }
 
 const updatePropertyStatus = async (req, res, next) => {
-  try {
-    const { propertyId } = req.params
-    const userId = req.jwtDecoded._id
-    const { status } = req.body
+    try {
+        const { propertyId } = req.params
+        const userId = req.jwtDecoded._id
+        const { status } = req.body
 
-    const updatedProperty = await propertyService.updatePropertyStatus(propertyId, userId, status)
+        const updatedProperty = await propertyService.updatePropertyStatus(propertyId, userId, status)
 
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      data: updatedProperty
-    })
-  } catch (error) {
-    next(error)
-  }
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            data: updatedProperty
+        })
+    } catch (error) {
+        next(error)
+    }
 }
 
 const updatePropertyVisibility = async (req, res, next) => {
-  try {
-    const { propertyId } = req.params
-    const userId = req.jwtDecoded._id
-    const { visibility } = req.body
+    try {
+        const { propertyId } = req.params
+        const userId = req.jwtDecoded._id
+        const { visibility } = req.body
 
-    const updatedProperty = await propertyService.updatePropertyVisibility(propertyId, userId, visibility)
+        const updatedProperty = await propertyService.updatePropertyVisibility(propertyId, userId, visibility)
 
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      data: updatedProperty
-    })
-  } catch (error) {
-    next(error)
-  }
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            data: updatedProperty
+        })
+    } catch (error) {
+        next(error)
+    }
 }
 
 const deleteProperty = async (req, res, next) => {
-  try {
-    const { id: propertyId } = req.params
-    const userId = req.jwtDecoded._id
+    try {
+        const { id: propertyId } = req.params
+        const userId = req.jwtDecoded._id
 
-    await propertyService.deleteProperty(propertyId, userId)
+        await propertyService.deleteProperty(propertyId, userId)
 
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Property deleted successfully"
-    })
-  } catch (error) {
-    next(error)
-  }
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Property deleted successfully"
+        })
+    } catch (error) {
+        next(error)
+    }
 }
 
 const getPropertiesGroupedByProvince = async (req, res, next) => {
-  try {
-    const data = await propertyService.getPropertiesGroupedByProvince()
-    res.status(StatusCodes.OK).json({ data })
-  } catch (error) {
-    next(error)
-  }
+    try {
+        const data = await propertyService.getPropertiesGroupedByProvince()
+        res.status(StatusCodes.OK).json({ data })
+    } catch (error) {
+        next(error)
+    }
 }
 
 // Boost/Bump a property to top
@@ -1089,42 +1116,42 @@ const boostProperty = async (req, res, next) => {
         const userId = req.jwtDecoded?._id
 
         if (!userId) {
-            return res.status(StatusCodes.UNAUTHORIZED).json({ 
-                success: false, 
-                message: "Unauthorized" 
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized"
             })
         }
 
         // Get property and user
         const property = await propertyService.getPropertyById(propertyId)
         if (!property) {
-            return res.status(StatusCodes.NOT_FOUND).json({ 
-                success: false, 
-                message: "Property not found" 
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "Property not found"
             })
         }
 
         // Check ownership
         if (property.owner.toString() !== userId) {
-            return res.status(StatusCodes.FORBIDDEN).json({ 
-                success: false, 
-                message: "You can only boost your own properties" 
+            return res.status(StatusCodes.FORBIDDEN).json({
+                success: false,
+                message: "You can only boost your own properties"
             })
         }
 
         // Check if property is active
         if (property.status !== 'active') {
-            return res.status(StatusCodes.BAD_REQUEST).json({ 
-                success: false, 
-                message: "Only active properties can be boosted" 
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Only active properties can be boosted"
             })
         }
 
         const user = await propertyService.getUserById(userId)
         if (!user) {
-            return res.status(StatusCodes.NOT_FOUND).json({ 
-                success: false, 
-                message: "User not found" 
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "User not found"
             })
         }
 
@@ -1148,7 +1175,7 @@ const boostProperty = async (req, res, next) => {
         else if (boostDuration <= 48) durationMultiplier = 1.5
         else durationMultiplier = 2
         const boostFee = Math.round(base24hFee * durationMultiplier)
-        
+
         if (useCredits) {
             if ((user.boostCredits || 0) < creditsNeeded) {
                 return res.status(StatusCodes.PAYMENT_REQUIRED).json({
@@ -1184,7 +1211,7 @@ const boostProperty = async (req, res, next) => {
         // Update property with boost info
         const now = new Date()
         const expiresAt = new Date(now.getTime() + boostDuration * 60 * 60 * 1000)
-        const updatedProperty = await propertyService.updateProperty(propertyId,userId, {
+        const updatedProperty = await propertyService.updateProperty(propertyId, userId, {
             bumpedAt: now,
             boostExpiresAt: expiresAt,
             bumpCount: (property.bumpCount || 0) + 1,
@@ -1212,24 +1239,24 @@ const boostMultipleProperties = async (req, res, next) => {
         const userId = req.jwtDecoded?._id
 
         if (!userId) {
-            return res.status(StatusCodes.UNAUTHORIZED).json({ 
-                success: false, 
-                message: "Unauthorized" 
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized"
             })
         }
 
         if (!Array.isArray(propertyIds) || propertyIds.length === 0) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ 
-                success: false, 
-                message: "propertyIds must be a non-empty array" 
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "propertyIds must be a non-empty array"
             })
         }
 
         const user = await propertyService.getUserById(userId)
         if (!user) {
-            return res.status(StatusCodes.NOT_FOUND).json({ 
-                success: false, 
-                message: "User not found" 
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "User not found"
             })
         }
 
@@ -1239,14 +1266,14 @@ const boostMultipleProperties = async (req, res, next) => {
         )
 
         // Validate ownership and status
-        const invalidProperties = properties.filter(p => 
+        const invalidProperties = properties.filter(p =>
             !p || p.owner.toString() !== userId || p.status !== 'active'
         )
 
         if (invalidProperties.length > 0) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ 
-                success: false, 
-                message: "Some properties are invalid, not owned by you, or not active" 
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Some properties are invalid, not owned by you, or not active"
             })
         }
 
@@ -1282,7 +1309,7 @@ const boostMultipleProperties = async (req, res, next) => {
         })
 
         // Update all properties
-        const updatePromises = propertyIds.map(id => 
+        const updatePromises = propertyIds.map(id =>
             propertyService.updateProperty(id, {
                 bumpedAt: new Date(),
                 bumpCount: properties.find(p => p._id.toString() === id).bumpCount + 1,
@@ -1312,17 +1339,17 @@ const purchaseBoostPackage = async (req, res, next) => {
         const { packageType } = req.body // 'small', 'medium', 'large'
 
         if (!userId) {
-            return res.status(StatusCodes.UNAUTHORIZED).json({ 
-                success: false, 
-                message: "Unauthorized" 
+            return res.status(StatusCodes.UNAUTHORIZED).json({
+                success: false,
+                message: "Unauthorized"
             })
         }
 
         const user = await propertyService.getUserById(userId)
         if (!user) {
-            return res.status(StatusCodes.NOT_FOUND).json({ 
-                success: false, 
-                message: "User not found" 
+            return res.status(StatusCodes.NOT_FOUND).json({
+                success: false,
+                message: "User not found"
             })
         }
 
@@ -1335,9 +1362,9 @@ const purchaseBoostPackage = async (req, res, next) => {
 
         const selectedPackage = packages[packageType]
         if (!selectedPackage) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ 
-                success: false, 
-                message: "Invalid package type. Choose: small, medium, or large" 
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "Invalid package type. Choose: small, medium, or large"
             })
         }
 
@@ -1361,7 +1388,7 @@ const purchaseBoostPackage = async (req, res, next) => {
         await paymentService.deductBalance({
             userId: userId,
             amount: discountedPrice,
-            description: `Purchase boost package (${selectedPackage.credits} credits) - ${level} discount ${Math.round(discountRate*100)}%`,
+            description: `Purchase boost package (${selectedPackage.credits} credits) - ${level} discount ${Math.round(discountRate * 100)}%`,
             referenceId: userId
         })
 

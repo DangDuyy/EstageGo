@@ -33,31 +33,31 @@ const createProperty = async (propertyData) => {
 
     const newProperty = await propertyModel.create(propertyToCreate)
 
-    const tierConfig = await ListingTierConfig.findById(newProperty.tier)
+    // const tierConfig = await ListingTierConfig.findById(newProperty.tier)
 
-    if (!tierConfig) {
-      throw new Error('Listing tier config not found')
-    }
+    // if (!tierConfig) {
+    //   throw new Error('Listing tier config not found')
+    // }
 
-    newProperty.priority = tierConfig.priority
+    // newProperty.priority = tierConfig.priority
 
-    const duration = tierConfig.durations.find(
-      (d) => d._id.toString() === propertyData.durationId
-    )
+    // const duration = tierConfig.durations.find(
+    //   (d) => d._id.toString() === propertyData.durationId
+    // )
 
-    if (!duration) {
-      throw new Error('Invalid listing duration')
-    }
+    // if (!duration) {
+    //   throw new Error('Invalid listing duration')
+    // }
 
-    newProperty.expireAt = new Date(
-      Date.now() + duration.days * 24 * 60 * 60 * 1000
-    )
+    // newProperty.expireAt = new Date(
+    //   Date.now() + duration.days * 24 * 60 * 60 * 1000
+    // )
 
-    newProperty.listingFee = duration.price
+    // newProperty.listingFee = duration.price
 
-    newProperty.isFeatured = tierConfig.features.featuredListing
+    // newProperty.isFeatured = tierConfig.features.featuredListing
 
-    await newProperty.save()
+    // await newProperty.save()
 
     return newProperty
   }
