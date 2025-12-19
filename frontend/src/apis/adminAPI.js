@@ -1,5 +1,6 @@
 import authorizeAxiosInstance from '@/utils/authorizeAxios';
 import { API_ROOT } from '@/utils/constants';
+import { toast } from 'react-toastify';
 
 // ===== DASHBOARD =====
 export const getDashboardStatsAPI = async () => {
@@ -25,6 +26,7 @@ export const deletePropertyAPI = async (propertyId) => {
   const response = await authorizeAxiosInstance.delete(
     `${API_ROOT}/V1/admin/properties/${propertyId}`
   );
+  // toast.success("Delete property successfully")
   return response.data;
 };
 

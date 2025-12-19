@@ -825,6 +825,7 @@ const getUserPropertiesWithMedia = async (userId) => {
   try {
     const properties = await propertyModel.find({
       owner: userId,
+      _destroy: { $ne: true },
       'media.0': { $exists: true } // Only properties with at least one media
     })
       .select('_id title slug media createdAt owner')

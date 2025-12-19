@@ -5,6 +5,16 @@ import { env } from '~/config/environment'
 // ===== Notification helpers (non-breaking) =====
 let ioInstance = null
 
+// Track which users are viewing which conversations
+// Map<conversationId, Set<userId>>
+const activeConversations = new Map()
+
+// Check if a user is currently viewing a conversation
+export const isUserViewingConversation = (userId, conversationId) => {
+  const viewers = activeConversations.get(String(conversationId))
+  return viewers ? viewers.has(String(userId)) : false
+}
+
 // Emit a generic event to a specific user's personal room
 export const emitToUser = (userId, event, payload) => {
   if (!ioInstance || !userId) return
@@ -56,12 +66,29 @@ const registerChatEvents = (io) => {
       if (!conversationId) return
       socket.join(`conversation:${conversationId}`)
       console.log(`[Socket] User ${userId} joined conversation: ${conversationId}`)
+      
+      // Track that this user is viewing this conversation
+      const convId = String(conversationId)
+      if (!activeConversations.has(convId)) {
+        activeConversations.set(convId, new Set())
+      }
+      activeConversations.get(convId).add(String(userId))
     })
 
     socket.on('conversation:leave', ({ conversationId }) => {
       if (!conversationId) return
       socket.leave(`conversation:${conversationId}`)
       console.log(`[Socket] User ${userId} left conversation: ${conversationId}`)
+      
+      // Remove user from active viewers
+      const convId = String(conversationId)
+      const viewers = activeConversations.get(convId)
+      if (viewers) {
+        viewers.delete(String(userId))
+        if (viewers.size === 0) {
+          activeConversations.delete(convId)
+        }
+      }
     })
 
     socket.on('typing:start', ({ conversationId }) => {
@@ -89,6 +116,17 @@ const registerChatEvents = (io) => {
 
     socket.on('disconnect', () => {
       console.log(`[Socket] User disconnected: ${userId}`)
+      
+      // Clean up all active conversations for this user
+      if (userId) {
+        const uid = String(userId)
+        activeConversations.forEach((viewers, convId) => {
+          viewers.delete(uid)
+          if (viewers.size === 0) {
+            activeConversations.delete(convId)
+          }
+        })
+      }
     })
   })
 }

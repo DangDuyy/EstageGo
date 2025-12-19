@@ -19,6 +19,10 @@ const conversationSchema = new mongoose.Schema({
       default: null 
     },
     text: { type: String, default: '' },
+    attachments: { 
+      type: Array, 
+      default: [] 
+    },
     senderId: { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'User', 

@@ -80,6 +80,7 @@ function App() {
           <Route path="users" element={<UserProfileRedirect />} />
           <Route path="account" element={<Profile />} />
           <Route path="messages" element={<Message />} />
+          <Route path="messages/:conversationId" element={<Message />} />
           <Route path="posts">
             <Route index element={<Post />} />
             <Route path="new" element={
