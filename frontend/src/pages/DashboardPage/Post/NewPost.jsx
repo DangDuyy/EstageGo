@@ -384,7 +384,7 @@ export default function AddPropertyWizard() {
 
 
     const handleGeocodeSuccess = useCallback(
-        (results, { updateFullAddress = false } = {}) => {
+        (results, { updateFullAddress = false, updateAddressFields = true } = {}) => {
             if (!results || results.length === 0) return;
 
             const markers = results.map((r, index) => ({
@@ -404,7 +404,10 @@ export default function AddPropertyWizard() {
             setCenter({ lat, lng });
             form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
 
-            populateAddressFromComponents(primary.address_components, primary.formatted_address);
+            // 🚨 Chỉ update address fields khi từ place select/map click, không khi blur street
+            if (updateAddressFields) {
+                populateAddressFromComponents(primary.address_components, primary.formatted_address);
+            }
 
             if (updateFullAddress && primary.formatted_address) {
                 skipGeocodeRef.current = true;
@@ -448,6 +451,7 @@ export default function AddPropertyWizard() {
             },
         ]);
 
+        // 🚨 Từ place select, cập nhật address fields
         populateAddressFromComponents(place.address_components || [], formattedAddress);
         if (formattedAddress) {
             skipGeocodeRef.current = true;
@@ -494,7 +498,8 @@ export default function AddPropertyWizard() {
         const geocoder = new window.google.maps.Geocoder();
         geocoder.geocode({ address: fullAddress }, (results, status) => {
             if (status === "OK") {
-                handleGeocodeSuccess(results, { updateFullAddress: false });
+                // 🚨 Từ handleSearch (blur street) chỉ update coordinates, không update address fields
+                handleGeocodeSuccess(results, { updateFullAddress: false, updateAddressFields: false });
             }
             else {
                 console.error("Geocode failed: ", status);
@@ -713,11 +718,26 @@ export default function AddPropertyWizard() {
             return;
         }
 
+        // 🚨 TẠO fullAddress TỪ CÁC THÀNH PHẦN ĐỊA CHỈ
+        const { street, ward, district, province } = data.address;
+        const fullAddress = [street, ward, district, province]
+            .filter(Boolean)
+            .join(', ');
+        if (!fullAddress) {
+            toast.error("Please ensure all address fields are filled.");
+            setStep(1);
+            return;
+        }
+
         const formData = new FormData();
         for (const key in data) {
             if (key !== "files") {
                 const value = data[key];
-                if (Array.isArray(value)) {
+                if (key === "address") {
+                    // Thêm fullAddress vào address object
+                    const addressWithFullAddress = { ...value, fullAddress };
+                    formData.append(key, JSON.stringify(addressWithFullAddress));
+                } else if (Array.isArray(value)) {
                     value.forEach(v => formData.append(`${key}[]`, v))
                 } else if (typeof value === "object" && value !== null) {
                     formData.append(key, JSON.stringify(value))
