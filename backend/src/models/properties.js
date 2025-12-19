@@ -91,11 +91,13 @@ const propertySchema = new mongoose.Schema({
         },
         district: {
             type: String,
-            required: true
+            // Cho phép bỏ trống nếu người dùng chọn tọa độ trước
+            required: false
         },
         ward: {
             type: String,
-            required: true
+            // Cho phép bỏ trống nếu người dùng chọn tọa độ trước
+            required: false
         },
         street: {
             type: String,

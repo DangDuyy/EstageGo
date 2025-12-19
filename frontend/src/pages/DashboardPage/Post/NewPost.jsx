@@ -36,7 +36,7 @@ import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X } fro
 import { Checkbox } from "@/components/ui/checkbox";
 
 // ----- Mock data -----
-const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"];
+const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial","Office","Villa","Townhouse","Other"];
 const currencies = ['VND', 'USD', 'EUR']
 const period = ['month', 'year', 'other']
 
@@ -179,7 +179,7 @@ const propertyDefaultValue = {
         }
     },
     price: {
-        value: 0,
+        value: null,
         currency: 'VND',
         period: 'month'
     },
@@ -615,12 +615,14 @@ export default function AddPropertyWizard() {
 
     // Step continuation handlers
     const handleContinueFromStep1 = async () => {
-        const isValid = await form.trigger([
+        const coords = form.getValues("address.location.coordinates");
+        const hasValidCoords = Array.isArray(coords) && coords.length === 2 && !(coords[0] === 0 && coords[1] === 0);
+
+        // Nếu đã có tọa độ hợp lệ, không bắt buộc district/ward ở bước 1
+        const requiredFields = [
             "title",
             "description",
             "address.province",
-            "address.district",
-            "address.ward",
             "address.street",
             "price.value",
             "price.currency",
@@ -631,17 +633,39 @@ export default function AddPropertyWizard() {
             "rooms.bathrooms",
             "rooms.livingrooms",
             "rooms.kitchens",
-            "yearBuilt"
-        ]);
+            "yearBuilt",
+            // Media bắt buộc: cần ít nhất 1 ảnh
+            "files"
+        ];
+
+        if (!hasValidCoords) {
+            // Chưa có tọa độ: vẫn yêu cầu district/ward như cũ
+            requiredFields.push("address.district", "address.ward");
+        }
+
+        const isValid = await form.trigger(requiredFields);
 
         if (!isValid) {
             toast.error("Please complete the required fields and fix errors before continuing.");
             return;
         }
 
-        const coords = form.getValues("address.location.coordinates");
-        if (!coords || coords.length !== 2 || (coords[0] === 0 && coords[1] === 0)) {
+        if (!hasValidCoords) {
             toast.error("Please confirm the property location on the map.");
+            return;
+        }
+
+        // Extra guard: price phải > 0
+        const priceValue = form.getValues("price.value");
+        if (!priceValue || Number(priceValue) <= 0) {
+            toast.error("Please enter a valid price.");
+            return;
+        }
+
+        // Extra guard: ensure at least 1 media file before next step
+        const files = form.getValues("files") || [];
+        if (!files.length) {
+            toast.error("Please upload at least one image.");
             return;
         }
 
