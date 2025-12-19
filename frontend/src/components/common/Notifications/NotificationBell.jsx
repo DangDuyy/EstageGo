@@ -91,7 +91,7 @@ export default function NotificationBell() {
     }
     // Optional smart navigation
     if (n.meta?.propertyId) navigate(`/properties/${n.meta.propertyId}`)
-    else if (n.meta?.conversationId) navigate(`/messages/${n.meta.conversationId}`)
+    else if (n.meta?.conversationId) navigate(`/dashboard/messages/${n.meta.conversationId}`)
   }
 
   return (

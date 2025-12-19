@@ -12,7 +12,19 @@ export const useConversations = () => {
     try {
       setLoading(true)
       const data = await getConversationsAPI()
-      setConversations(data || [])
+      // Normalize attachments in lastMessage for preview
+      const normalized = (data || []).map((conv) => ({
+        ...conv,
+        lastMessage: conv.lastMessage ? {
+          ...conv.lastMessage,
+          attachments: Array.isArray(conv.lastMessage.attachments) 
+            ? conv.lastMessage.attachments 
+            : Array.isArray(conv.lastMessage.files)
+            ? conv.lastMessage.files
+            : []
+        } : null
+      }))
+      setConversations(normalized)
     } catch (error) {
       console.error('Error loading conversations:', error)
       toast.error('Failed to load conversations')
@@ -51,6 +63,7 @@ export const useConversations = () => {
             lastMessage: {
               messageId: message._id,
               text: message.text,
+              attachments: Array.isArray(message.attachments) ? message.attachments : [],
               senderId: message.senderId,
               createdAt: message.createdAt
             },

@@ -6,17 +6,17 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Send, Loader2, Search, Paperclip, Mic, MoreHorizontal } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '@/redux/user/userSlice'
-import { emitTypingStart, emitTypingStop } from '@/lib/socket'
+import { emitTypingStart, emitTypingStop, joinConversation, leaveConversation } from '@/lib/socket'
 import ReactionButton from '@/components/common/Chat/ReactionButton'
 import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
 import PropertyPreview from '@/components/common/Chat/PropertyPreview'
-import { parseMessageWithProperties } from '@/utils/propertyLinkDetector'
 import MessageContent from '@/components/common/Chat/MessageContent'
 import { getConversationPreviewText } from '@/utils/messagePreview'
 
@@ -70,6 +70,9 @@ export default function Message() {
   const [locallyDeletedIds, setLocallyDeletedIds] = useState(new Set())
   const [contextMenu, setContextMenu] = useState({ openForId: null, x: 0, y: 0 })
   const contextMenuRef = useRef(null)
+  // Image viewer state
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerImageUrl, setViewerImageUrl] = useState(null)
 
   const {
     messages,
@@ -98,6 +101,19 @@ export default function Message() {
       navigate(`/dashboard/messages/${selectedConversation._id}`, { replace: false })
     }
   }, [selectedConversation?._id, paramConversationId, navigate])
+
+  // Join/leave conversation rooms for presence tracking
+  useEffect(() => {
+    if (!selectedConversation?._id) return
+    
+    const conversationId = selectedConversation._id
+    joinConversation(conversationId)
+    
+    // Cleanup: leave room when switching conversations or unmounting
+    return () => {
+      leaveConversation(conversationId)
+    }
+  }, [selectedConversation?._id])
 
   // Auto scroll to bottom when conversation is selected or messages load
   useEffect(() => {
@@ -214,10 +230,11 @@ export default function Message() {
   const filteredConversations = conversations.filter((conv) => {
     const otherUser = getOtherUser(conv)
     const searchLower = searchQuery.toLowerCase()
+    const previewText = getConversationPreviewText(conv.lastMessage, 200).toLowerCase()
     return (
       otherUser?.fullName?.toLowerCase().includes(searchLower) ||
       otherUser?.userName?.toLowerCase().includes(searchLower) ||
-      conv.lastMessage?.text?.toLowerCase().includes(searchLower)
+      previewText.includes(searchLower)
     )
   })
 
@@ -429,7 +446,11 @@ export default function Message() {
                                                 key={key}
                                                 src={att.url}
                                                 alt={att.filename || 'attachment'}
-                                                className="max-w-xs rounded-lg border"
+                                                className="max-w-xs rounded-lg border cursor-zoom-in"
+                                                onClick={() => {
+                                                  setViewerImageUrl(att.url)
+                                                  setViewerOpen(true)
+                                                }}
                                               />
                                             )
                                           }
@@ -558,6 +579,22 @@ export default function Message() {
                   )}
                 </ScrollArea>
               </div>
+
+              {/* Image viewer dialog */}
+              <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+                <DialogContent className="bg-black p-2 sm:max-w-3xl">
+                  {viewerImageUrl && (
+                    <img
+                      src={viewerImageUrl}
+                      alt="preview"
+                      className="max-h-[80vh] w-auto object-contain mx-auto"
+                      onError={(e) => {
+                        e.currentTarget.alt = 'Image not available'
+                      }}
+                    />
+                  )}
+                </DialogContent>
+              </Dialog>
 
               {contextMenu.openForId && (
                 <div

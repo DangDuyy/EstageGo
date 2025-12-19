@@ -1,6 +1,8 @@
 import { StatusCodes } from "http-status-codes"
 import { messageService } from "~/services/messageService"
 import { createAndEmitNotification } from '~/services/notificationService'
+import { isUserViewingConversation } from '~/sockets'
+import userModel from '~/models/users'
 
 const sendMessage = async (req, res, next) => {
   try {
@@ -30,16 +32,24 @@ const sendMessage = async (req, res, next) => {
       (id) => String(id) !== String(senderId)
     )
 
+    // Get sender info for notification
+    const sender = await userModel.findById(senderId).select('fullName userName').lean()
+    const senderName = sender?.fullName || sender?.userName || 'Someone'
+
     if (recipients.length > 0) {
       await Promise.all(
-        recipients.map((recipientId) =>
-          createAndEmitNotification(String(recipientId), {
-            type: 'MESSAGE',
-            title: 'New message',
-            message: `${req.user?.fullName || 'Someone'} sent you a message`,
-            meta: { conversationId: message.conversationId, messageId: message._id }
-          })
-        )
+        recipients.map((recipientId) => {
+          // Only send notification if user is NOT currently viewing this conversation
+          if (!isUserViewingConversation(recipientId, conversationId)) {
+            return createAndEmitNotification(String(recipientId), {
+              type: 'MESSAGE',
+              title: 'New message',
+              message: `${senderName} sent you a message`,
+              meta: { conversationId: message.conversationId, messageId: message._id }
+            })
+          }
+          return Promise.resolve()
+        })
       )
     }
 
