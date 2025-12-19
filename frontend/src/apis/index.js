@@ -70,6 +70,17 @@ export const createProperty = async (formData) => {
   return response.data
 }
 
+export const generateTitleDescription = async (formData) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/generateTitleDescription`, formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    }
+  )
+  return response.data
+}
+
 export const verifyPropertyDocumentsAPI = async (formData) => {
   const response = await authorizeAxiosInstance.post(
     `${API_ROOT}/v1/properties/verify-documents`,

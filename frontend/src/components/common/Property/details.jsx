@@ -428,11 +428,14 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
             <div className="space-y-3">
               <p
-                className={`text-muted-foreground transition-all ${!showFullDesc && property?.description.length > 250 ? "line-clamp-3" : ""
+                className={`text-sm whitespace-pre-line transition-all ${!showFullDesc && property?.description?.length > 250
+                    ? "line-clamp-3"
+                    : ""
                   }`}
               >
                 {property?.description}
               </p>
+
 
               {property?.description.length > 250 && (
                 <button
@@ -507,7 +510,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
           )}
 
           {/* Loan Calculator */}
-          {property.purpose && property.purpose === 'sale' && <LoanCalculator propertyPrice={property.price.value}/> }
+          {property.purpose && property.purpose === 'sale' && <LoanCalculator propertyPrice={property.price.value} />}
         </div>
 
         {/* RIGHT */}
