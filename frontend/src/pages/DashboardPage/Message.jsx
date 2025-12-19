@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns'
 import PropertyPreview from '@/components/common/Chat/PropertyPreview'
 import { parseMessageWithProperties } from '@/utils/propertyLinkDetector'
 import MessageContent from '@/components/common/Chat/MessageContent'
+import { getConversationPreviewText } from '@/utils/messagePreview'
 
 const toDateKey = (date) => {
   const d = new Date(date || Date.now())
@@ -298,7 +299,7 @@ export default function Message() {
                           {otherUser?.fullName || otherUser?.userName || 'Unknown'}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {conv.lastMessage?.text || 'No messages yet'}
+                          {getConversationPreviewText(conv.lastMessage)}
                         </p>
                       </div>
                       {conv.lastMessage?.createdAt && (
