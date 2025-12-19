@@ -221,6 +221,8 @@ export default function AddPropertyWizard() {
     const [districts, setDistricts] = useState([]);
     const [wards, setWards] = useState([]);
     const skipGeocodeRef = useRef(false);
+    const pendingDistrictNameRef = useRef('');
+    const pendingWardNameRef = useRef('');
 
     // ----- Documents + Payment (Step 2 & 3) -----
     const [houseDocs, setHouseDocs] = useState([]);
@@ -365,10 +367,9 @@ export default function AddPropertyWizard() {
             const matchingProvince = provinces.find(p => normalizeName(p.name) === normalizedMapsProvince || p.name === mapsProvinceName);
             if (matchingProvince) {
                 newValues['address.province'] = matchingProvince.name;
-                // Khi có province hợp lệ, Google Maps cũng cung cấp District/Ward, 
-                // nhưng ta sẽ để useEffect xử lý việc load danh sách trước khi gán giá trị
-                if (mapsDistrictName) newValues['address.district'] = mapsDistrictName;
-                if (mapsWardName) newValues['address.ward'] = mapsWardName;
+                // Lưu tạm district/ward do Google trả về để auto-match sau khi danh sách được load
+                pendingDistrictNameRef.current = mapsDistrictName || '';
+                pendingWardNameRef.current = mapsWardName || '';
             }
         }
 
@@ -384,7 +385,7 @@ export default function AddPropertyWizard() {
 
 
     const handleGeocodeSuccess = useCallback(
-        (results, { updateFullAddress = false, updateAddressFields = true } = {}) => {
+        (results, { updateFullAddress = false, updateAddressFields = true, singleMarker = false } = {}) => {
             if (!results || results.length === 0) return;
 
             const markers = results.map((r, index) => ({
@@ -394,12 +395,18 @@ export default function AddPropertyWizard() {
                 address: r.formatted_address,
             }));
 
-            setResults(markers);
-
             const primary = results[0];
             const loc = primary.geometry.location;
             const lat = loc.lat();
             const lng = loc.lng();
+            const primaryMarker = {
+                id: primary.place_id || 0,
+                lat,
+                lng,
+                address: primary.formatted_address,
+            };
+
+            setResults(singleMarker ? [primaryMarker] : markers);
 
             setCenter({ lat, lng });
             form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
@@ -423,7 +430,7 @@ export default function AddPropertyWizard() {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
                 if (status === "OK") {
-                    handleGeocodeSuccess(results, { updateFullAddress: true });
+                    handleGeocodeSuccess(results, { updateFullAddress: true, updateAddressFields: true, singleMarker: true });
                 } else {
                     console.error("Reverse geocode failed:", status);
                     toast.error("Reverse geocode failed: " + status);
@@ -527,11 +534,22 @@ export default function AddPropertyWizard() {
                 const response = await getProvince(provinceId)
                 setDistricts(response.districts)
 
-                // Kiểm tra xem district hiện tại có nằm trong danh sách mới không
+                // Auto-match district từ dữ liệu Google (đã lưu tạm) hoặc từ giá trị hiện có
                 const currentDistrict = form.getValues('address.district');
-                if (currentDistrict && !response.find(d => d.name === currentDistrict)) {
-                    form.setValue('address.district', '');
-                    form.setValue('address.ward', '');
+                const pendingDistrictNormalized = normalizeName(pendingDistrictNameRef.current);
+
+                const matchedDistrict =
+                    response.districts?.find(d => normalizeName(d.name) === pendingDistrictNormalized) ||
+                    response.districts?.find(d => normalizeName(d.name) === normalizeName(currentDistrict));
+
+                if (matchedDistrict) {
+                    form.setValue('address.district', matchedDistrict.name);
+                } else {
+                    // Nếu giá trị hiện tại không nằm trong danh sách mới, reset về rỗng
+                    if (currentDistrict && !response.districts?.find(d => d.name === currentDistrict)) {
+                        form.setValue('address.district', '');
+                        form.setValue('address.ward', '');
+                    }
                 }
             } catch (error) {
                 toast.error("Failed to load districts.");
@@ -570,6 +588,18 @@ export default function AddPropertyWizard() {
         }
 
         setWards(districtSelected.wards)
+
+        // Auto-match ward từ dữ liệu Google (đã lưu tạm) hoặc từ giá trị hiện có
+        const currentWard = form.getValues('address.ward');
+        const pendingWardNormalized = normalizeName(pendingWardNameRef.current);
+
+        const matchedWard =
+            districtSelected.wards?.find(w => normalizeName(w.name) === pendingWardNormalized) ||
+            districtSelected.wards?.find(w => normalizeName(w.name) === normalizeName(currentWard));
+
+        if (matchedWard) {
+            form.setValue('address.ward', matchedWard.name);
+        }
         // handleSelectDistrict(districtSelected.id)
     }, [district, districts, form])
 
