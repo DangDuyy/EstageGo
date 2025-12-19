@@ -1,8 +1,8 @@
-import { getNotificationsAPI, markAllNotificationsReadAPI, markNotificationReadAPI } from '@/apis'
+import { getNotificationsAPI, markAllNotificationsReadAPI, markNotificationReadAPI, deleteNotificationAPI, deleteAllNotificationsAPI } from '@/apis'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { selectCurrentUser } from '@/redux/user/userSlice'
-import { Bell } from 'lucide-react'
+import { Bell, X, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
@@ -94,6 +94,17 @@ export default function NotificationBell() {
     else if (n.meta?.conversationId) navigate(`/dashboard/messages/${n.meta.conversationId}`)
   }
 
+  const deleteNotification = async (e, notificationId) => {
+    e.stopPropagation() // Prevent triggering onItemClick
+    await deleteNotificationAPI(notificationId)
+    setItems(prev => prev.filter(i => i._id !== notificationId))
+  }
+
+  const deleteAllNotifications = async () => {
+    await deleteAllNotificationsAPI()
+    setItems([])
+  }
+
   return (
     <div className="relative" ref={containerRef}>
       <Button
@@ -116,11 +127,18 @@ export default function NotificationBell() {
           <Card className="p-0 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2 border-b">
               <div className="font-semibold">Notifications</div>
-              {unreadCount > 0 && (
-                <Button size="sm" variant="outline" onClick={markAllRead}>
-                  Mark all as read
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {unreadCount > 0 && (
+                  <Button size="sm" variant="outline" onClick={markAllRead}>
+                    Mark all as read
+                  </Button>
+                )}
+                {items.length > 0 && (
+                  <Button size="sm" variant="ghost" onClick={deleteAllNotifications} title="Delete all">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="max-h-96 overflow-auto mb-2">
@@ -128,19 +146,26 @@ export default function NotificationBell() {
                 <div className="p-4 text-sm text-muted-foreground">No notifications</div>
               )}
               {items.map(n => (
-                <button
+                <div
                   key={n._id}
-                  onClick={() => onItemClick(n)}
-                  className={`w-full text-left px-4 py-3 border-b hover:bg-muted transition ${
+                  className={`relative group w-full text-left px-4 py-3 border-b hover:bg-muted transition cursor-pointer ${
                     n.read ? 'opacity-70' : 'bg-primary/5'
                   }`}
+                  onClick={() => onItemClick(n)}
                 >
-                  {n.title && <div className="text-sm font-medium">{n.title}</div>}
-                  <div className="text-sm">{n.message}</div>
+                  <button
+                    onClick={(e) => deleteNotification(e, n._id)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10"
+                    title="Delete notification"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                  </button>
+                  {n.title && <div className="text-sm font-medium pr-6">{n.title}</div>}
+                  <div className="text-sm pr-6">{n.message}</div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     {new Date(n.createdAt).toLocaleString()}
                   </div>
-                </button>
+                </div>
               ))}
               {hasMore && (
                 <div className="p-2 flex justify-center">

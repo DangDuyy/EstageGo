@@ -1,4 +1,5 @@
 import { boostPropertyAPI } from "@/apis"
+import { deletePropertyAPI } from "@/apis/adminAPI"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -68,6 +69,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     const [boostDialogOpen, setBoostDialogOpen] = useState(false)
     const [selectedProperty, setSelectedProperty] = useState(null)
     const [boosting, setBoosting] = useState(false)
+    const [deletedIds, setDeletedIds] = useState(new Set())
     const navigate = useNavigate()
     const currentUser = useSelector(selectCurrentUser)
 
@@ -143,8 +145,8 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     const filteredProperties = allProperties.filter((p) => (
         p?.owner === currentUser?._id || p?.owner?._id === currentUser?._id
     ))
-
-    const effectiveTotal = filteredProperties.length
+    const displayProperties = filteredProperties.filter((p) => !deletedIds.has(p?._id))
+    const effectiveTotal = displayProperties.length
 
     const columns = [
         {
@@ -354,7 +356,10 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                     Chỉnh sửa
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
+                                <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => handleDeleteProps(row.original._id)}
+                                >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Xóa
                                 </DropdownMenuItem>
@@ -368,7 +373,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     ]
 
     const table = useReactTable({
-        data: filteredProperties,
+        data: displayProperties,
         columns,
         state: {
             rowSelection,
@@ -396,6 +401,31 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     const handlePageChange = (newPage) => {
         if (onPageChange) {
             onPageChange(newPage)
+        }
+    }
+    const handleDeleteProps = async (propertyId) => {
+        if (!propertyId) {
+            toast.error("Invalid property id")
+            return
+        }
+        if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) return
+
+        try {
+            await deletePropertyAPI(propertyId)
+            // Optimistically hide the deleted row
+            setDeletedIds((prev) => {
+                const next = new Set(prev)
+                next.add(propertyId)
+                return next
+            })
+            // Ask parent to refresh current page if provided
+            if (typeof onPageChange === 'function') {
+                onPageChange(data?.page || 1)
+            }
+            toast.success("Property deleted successfully")
+        } catch (error) {
+            const msg = error?.response?.data?.message || "Failed to delete property"
+            toast.error(msg)
         }
     }
 
@@ -494,7 +524,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                     {/* Pagination Controls */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="text-sm text-muted-foreground">
-                            {Object.keys(rowSelection).length} of {filteredProperties.length || 0} row(s) selected
+                            {Object.keys(rowSelection).length} of {displayProperties.length || 0} row(s) selected
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4">

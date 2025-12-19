@@ -624,6 +624,16 @@ export const markAllNotificationsReadAPI = async () => {
   return response.data
 }
 
+export const deleteNotificationAPI = async (id) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/notifications/${id}`)
+  return response.data
+}
+
+export const deleteAllNotificationsAPI = async () => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/notifications/all/clear`)
+  return response.data
+}
+
 // ========== AGENT REVIEW APIs ==========
 
 // Get all recent reviews for homepage
@@ -751,13 +761,6 @@ export const updatePropertyStatusAPI = async (propertyId, status) => {
 // Update property visibility (public/private)
 export const updatePropertyVisibilityAPI = async (propertyId, visibility) => {
   const response = await authorizeAxiosInstance.patch(`${API_ROOT}/v1/properties/${propertyId}/visibility`, { visibility })
-  return response.data
-}
-
-// Delete property
-export const deletePropertyAPI = async (propertyId) => {
-  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}`)
-  toast.success('Property deleted successfully!')
   return response.data
 }
 // ========== BOOST/BUMP APIs ==========

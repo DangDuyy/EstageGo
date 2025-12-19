@@ -30,12 +30,13 @@ import TourLinkModal from "@/components/common/Upload/tour-link-modal"
 import { 
     updatePropertyAPI, 
     updatePropertyStatusAPI, 
-    updatePropertyVisibilityAPI, 
-    deletePropertyAPI 
+    updatePropertyVisibilityAPI,
+    getAllProvinces,
+    getProvince
 } from '@/apis'
-import { getAllProvinces, getProvince } from '@/apis'
 import { propertySchema } from "@/schemas/property.schema"
 import { API_ROOT } from '@/utils/constants'
+import { deletePropertyAPI } from '@/apis/adminAPI'
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "Villa", "Studio", "Office", "Townhouse"]
