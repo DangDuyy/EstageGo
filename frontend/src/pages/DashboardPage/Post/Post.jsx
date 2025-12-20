@@ -19,6 +19,10 @@ export default function Post() {
   const navigate = useNavigate()
   const currentUser = useSelector(selectCurrentUser)
 
+  const searchParams = new URLSearchParams(location.search)
+  const currentPage = Number(searchParams.get('page')) || 1
+  const currentPageSize = Number(searchParams.get('itemsPerPage')) || 9
+
   const createHref = useMemo(() => {
     const base = pathname.replace(/\/$/, '')
     return `${base}/new`
@@ -31,7 +35,9 @@ export default function Post() {
       
       const searchParams = new URLSearchParams(location.search)
       searchParams.set('owner', currentUser._id)
-      
+      if (!searchParams.get('page')) searchParams.set('page', `${currentPage}`)
+      if (!searchParams.get('itemsPerPage')) searchParams.set('itemsPerPage', `${currentPageSize}`)
+
       const queryString = searchParams.toString() ? `?${searchParams.toString()}` : ''
       const data = await fetchAllPropertiesAPI(queryString)
       setPropertiesData(data)
@@ -58,6 +64,21 @@ export default function Post() {
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSearch()
+  }
+
+  const handlePageChange = (newPage) => {
+    const params = new URLSearchParams(location.search)
+    params.set('page', `${Math.max(1, newPage)}`)
+    const query = params.toString() ? `?${params.toString()}` : ""
+    navigate(`${pathname}${query}`)
+  }
+
+  const handlePageSizeChange = (newSize) => {
+    const params = new URLSearchParams(location.search)
+    params.set('itemsPerPage', `${newSize}`)
+    params.set('page', '1')
+    const query = params.toString() ? `?${params.toString()}` : ""
+    navigate(`${pathname}${query}`)
   }
 
   return (
@@ -112,7 +133,13 @@ export default function Post() {
 
       {/* Nội dung tab */}
       <div className="mt-6">
-        {activeTab === "all" && <PropertyTable data={propertiesData} />}
+        {activeTab === "all" && (
+          <PropertyTable
+            data={propertiesData}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        )}
         {activeTab === "drafts" && <p>Danh sách các bài viết nháp ở đây...</p>}
         {activeTab === "published" && <p>Danh sách các bài viết đã xuất bản ở đây...</p>}
         {activeTab === "archived" && <p>Danh sách các bài viết đã lưu trữ ở đây...</p>}

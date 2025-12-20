@@ -1320,7 +1320,21 @@ const boostProperty = async (req, res, next) => {
 
         // Update property with boost info
         const now = new Date()
-        const expiresAt = new Date(now.getTime() + boostDuration * 60 * 60 * 1000)
+        
+        // Check if boost is currently active
+        const currentBoostExpiry = property.boostExpiresAt ? new Date(property.boostExpiresAt) : null
+        const isBoostActive = currentBoostExpiry && currentBoostExpiry > now
+        
+        // If boost is active, add to existing time. Otherwise, start fresh
+        let expiresAt
+        if (isBoostActive) {
+            // Add duration to current expiry time (accumulate)
+            expiresAt = new Date(currentBoostExpiry.getTime() + boostDuration * 60 * 60 * 1000)
+        } else {
+            // Start fresh boost from now
+            expiresAt = new Date(now.getTime() + boostDuration * 60 * 60 * 1000)
+        }
+        
         const updatedProperty = await propertyService.updateProperty(propertyId, userId, {
             bumpedAt: now,
             boostExpiresAt: expiresAt,

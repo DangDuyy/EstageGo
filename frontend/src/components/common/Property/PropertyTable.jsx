@@ -10,7 +10,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -68,6 +67,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     const [columnVisibility, setColumnVisibility] = useState({})
     const [boostDialogOpen, setBoostDialogOpen] = useState(false)
     const [selectedProperty, setSelectedProperty] = useState(null)
+    const [selectedDuration, setSelectedDuration] = useState(24)
     const [boosting, setBoosting] = useState(false)
     const [deletedIds, setDeletedIds] = useState(new Set())
     const navigate = useNavigate()
@@ -82,15 +82,22 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         }).format(value)
     }
 
-    const getBoostPrice = () => {
+    const getBoostPrice = (durationHours = 24) => {
         const membership = currentUser?.membershipLevel || 'basic'
-        if (membership === 'premium') return 50000
-        if (membership === 'standard') return 75000
-        return 100000
+        let basePrice = 100000 // basic
+        if (membership === 'premium') basePrice = 50000
+        else if (membership === 'standard') basePrice = 75000
+        
+        // Pricing based on duration
+        if (durationHours === 24) return basePrice
+        if (durationHours === 48) return Math.floor(basePrice * 1.8) // 80% more
+        if (durationHours === 72) return Math.floor(basePrice * 2.5) // 150% more
+        return basePrice
     }
 
     const handleBoostClick = (property) => {
         setSelectedProperty(property)
+        setSelectedDuration(24) // Reset to 24h default
         setBoostDialogOpen(true)
     }
 
@@ -100,11 +107,11 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         try {
             setBoosting(true)
             const useCredits = currentUser?.boostCredits > 0
-            await boostPropertyAPI(selectedProperty._id, useCredits)
+            await boostPropertyAPI(selectedProperty._id, useCredits, selectedDuration)
             
             setBoostDialogOpen(false)
             setSelectedProperty(null)
-            toast.success("Property boosted successfully!")
+            toast.success(`Property boosted for ${selectedDuration} hours successfully!`)
 
             // Reload data after boost (A more robust solution might be to update the local state)
             setTimeout(() => {
@@ -139,6 +146,26 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         return 'Just now'
     }
 
+    const getTimeRemaining = (expiresAt) => {
+        if (!expiresAt) return null
+        const now = new Date()
+        const end = new Date(expiresAt)
+        const diffMs = end - now
+        if (diffMs <= 0) return null
+        const totalMinutes = Math.floor(diffMs / (1000 * 60))
+        const days = Math.floor(totalMinutes / (60 * 24))
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
+        const minutes = totalMinutes % 60
+        if (days > 0) return `${days}d ${hours}h`
+        if (hours > 0) return `${hours}h ${minutes}m`
+        return `${minutes}m`
+    }
+
+    const isBoostActive = (property) => {
+        if (!property?.boostExpiresAt) return false
+        return new Date(property.boostExpiresAt) > new Date()
+    }
+
     // Dashboard (non-admin area): always show only current user's posts
     // This logic seems fine for a user's dashboard view.
     const allProperties = data?.properties || []
@@ -146,7 +173,8 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         p?.owner === currentUser?._id || p?.owner?._id === currentUser?._id
     ))
     const displayProperties = filteredProperties.filter((p) => !deletedIds.has(p?._id))
-    const effectiveTotal = displayProperties.length
+    const totalFromApi = data?.totalProperties ?? data?.pagination?.total ?? displayProperties.length
+    const effectiveTotal = Math.max(0, totalFromApi - deletedIds.size)
 
     const columns = [
         {
@@ -323,17 +351,27 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                 return (
                     <div className="flex items-center gap-2">
                         {/* Boost Button - Only for owner and active status */}
-                        {isOwner && row.original.status === 'active' && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleBoostClick(row.original)}
-                                className="gap-1 bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 whitespace-nowrap"
-                            >
-                                <Zap className="h-3 w-3" />
-                                Đẩy tin
-                            </Button>
-                        )}
+                        {isOwner && row.original.status === 'active' && (() => {
+                            const hasBeenBoosted = row.original.bumpedAt
+                            
+                            return (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleBoostClick(row.original)}
+                                    className={`gap-1 whitespace-nowrap ${
+                                        hasBeenBoosted
+                                            ? 'bg-green-50 hover:bg-green-100 text-green-600 border-green-200'
+                                            : 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'
+                                    }`}
+                                >
+                                    <Zap className="h-3 w-3" />
+                                    <span className="flex items-center gap-1">
+                                        {hasBeenBoosted ? 'Đẩy thêm' : 'Đẩy tin'}
+                                    </span>
+                                </Button>
+                            )
+                        })()}
                         
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -372,6 +410,10 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         },
     ]
 
+    const pageSize = Math.max(1, Number(data?.itemsPerPage ?? data?.pagination?.limit ?? 10))
+    const currentPage = Number(data?.page ?? data?.pagination?.page ?? 1)
+    const totalPages = Math.max(1, Math.ceil((effectiveTotal || 0) / pageSize))
+
     const table = useReactTable({
         data: displayProperties,
         columns,
@@ -380,7 +422,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             columnVisibility,
         },
         manualPagination: true,
-        pageCount: Math.ceil((effectiveTotal || 0) / (data?.itemsPerPage || 10)),
+        pageCount: totalPages,
         enableRowSelection: true,
         onRowSelectionChange: setRowSelection,
         onColumnVisibilityChange: setColumnVisibility,
@@ -388,19 +430,17 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         getRowId: (row) => row._id,
     })
 
-    const currentPage = data?.page || 1
-    const pageSize = data?.itemsPerPage || 10
-    const totalPages = Math.ceil((effectiveTotal || 0) / pageSize)
-
     const handlePageSizeChange = (newSize) => {
-        if (onPageSizeChange) {
-            onPageSizeChange(Number(newSize))
+        const sizeNumber = Number(newSize)
+        if (onPageSizeChange && !Number.isNaN(sizeNumber)) {
+            onPageSizeChange(sizeNumber)
         }
     }
 
     const handlePageChange = (newPage) => {
         if (onPageChange) {
-            onPageChange(newPage)
+            const targetPage = Math.max(1, Math.min(newPage, totalPages || 1))
+            onPageChange(targetPage)
         }
     }
     const handleDeleteProps = async (propertyId) => {
@@ -615,38 +655,90 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 text-sm">
+                                <div className="space-y-3 text-sm">
                                     <p className="text-foreground">
-                                        Boosting will push this property to the top of search results for maximum visibility.
+                                        {isBoostActive(selectedProperty) 
+                                            ? 'Tin này đang được boost. Chọn thời gian để đẩy thêm:'
+                                            : 'Chọn thời gian đẩy tin để tăng độ hiển thị:'}
                                     </p>
                                     
-                                    {selectedProperty.bumpedAt ? (
-                                        <div className="flex items-center gap-2 text-muted-foreground">
-                                            <span>Last boosted:</span>
-                                            <span className="font-medium">
+                                    {selectedProperty.bumpedAt && (
+                                        <div className="flex items-center justify-between text-xs bg-blue-50 p-2 rounded">
+                                            <span className="text-muted-foreground">Lần đẩy gần nhất:</span>
+                                            <span className="font-medium text-foreground">
                                                 {getTimeSinceBoost(selectedProperty.bumpedAt)}
                                             </span>
                                         </div>
-                                    ) : null}
+                                    )}
 
-                                    <div className="pt-2 border-t space-y-1">
+                                    {isBoostActive(selectedProperty) && (
+                                        <div className="flex items-center justify-between text-xs bg-green-50 p-2 rounded">
+                                            <span className="text-muted-foreground">Thời gian còn lại:</span>
+                                            <span className="font-semibold text-green-600">
+                                                {getTimeRemaining(selectedProperty.boostExpiresAt)}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Duration Selection */}
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-foreground">Chọn thời gian:</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[24, 48, 72].map((hours) => (
+                                                <button
+                                                    key={hours}
+                                                    type="button"
+                                                    onClick={() => setSelectedDuration(hours)}
+                                                    className={`p-3 rounded-lg border-2 transition-all ${
+                                                        selectedDuration === hours
+                                                            ? 'border-orange-500 bg-orange-50 shadow-sm'
+                                                            : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <div className="font-bold text-foreground">{hours}h</div>
+                                                    {!currentUser?.boostCredits && (
+                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                            {formatPrice(getBoostPrice(hours), 'VND')}
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2 border-t space-y-2">
                                         {currentUser?.boostCredits > 0 ? (
-                                            <div className="space-y-1">
+                                            <div className="space-y-1 bg-purple-50 p-3 rounded-lg">
                                                 <div className="flex justify-between text-foreground">
-                                                    <span className="font-medium">Using Boost Credit:</span>
+                                                    <span className="font-medium">Sử dụng Boost Credit:</span>
                                                     <span className="font-semibold">1 credit</span>
                                                 </div>
                                                 <div className="flex justify-between text-xs">
-                                                    <span>Remaining credits:</span>
-                                                    <span>{currentUser.boostCredits - 1}</span>
+                                                    <span>Credits còn lại:</span>
+                                                    <span className="font-medium">{currentUser.boostCredits - 1}</span>
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    (Áp dụng cho {selectedDuration}h)
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="flex justify-between text-foreground">
-                                                <span className="font-medium">Boost Fee:</span>
-                                                <span className="font-semibold">
-                                                    {formatPrice(getBoostPrice(), 'VND')}
+                                            <div className="flex justify-between text-foreground bg-orange-50 p-3 rounded-lg">
+                                                <div>
+                                                    <div className="font-medium">Phí đẩy tin ({selectedDuration}h):</div>
+                                                    {selectedDuration > 24 && (
+                                                        <div className="text-xs text-green-600 mt-1">
+                                                            Tiết kiệm {Math.round(((getBoostPrice(24) * (selectedDuration/24)) - getBoostPrice(selectedDuration)) / 1000)}k!
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="font-bold text-lg">
+                                                    {formatPrice(getBoostPrice(selectedDuration), 'VND')}
                                                 </span>
+                                            </div>
+                                        )}
+                                        {isBoostActive(selectedProperty) && (
+                                            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                                                ℹ️ Thời gian sẽ được cộng thêm vào thời gian boost hiện tại
                                             </div>
                                         )}
                                     </div>
@@ -665,12 +757,12 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                         {boosting ? (
                             <>
                                 <Zap className="mr-2 h-4 w-4 animate-pulse" />
-                                Boosting...
+                                Đang đẩy...
                             </>
                         ) : (
                             <>
                                 <Zap className="mr-2 h-4 w-4" />
-                                Confirm Boost
+                                Xác nhận đẩy {selectedDuration}h
                             </>
                         )}
                     </AlertDialogAction>

@@ -77,11 +77,17 @@ export default function PropertyDetail() {
     }).format(value);
   };
 
-  const getBoostPrice = () => {
+  const getBoostPrice = (durationHours = 24) => {
     const membership = currentUser?.membershipLevel || 'basic';
-    if (membership === 'premium') return 50000;
-    if (membership === 'standard') return 75000;
-    return 100000;
+    let basePrice = 100000; // basic
+    if (membership === 'premium') basePrice = 50000;
+    else if (membership === 'standard') basePrice = 75000;
+    
+    // Pricing based on duration
+    if (durationHours === 24) return basePrice;
+    if (durationHours === 48) return Math.floor(basePrice * 1.8); // 80% more
+    if (durationHours === 72) return Math.floor(basePrice * 2.5); // 150% more
+    return basePrice;
   };
 
   const getTimeSinceBoost = (bumpedAt) => {
@@ -112,6 +118,29 @@ export default function PropertyDetail() {
     return `${minutes} phút`;
   };
 
+  const isBoostActive = () => {
+    if (!property?.boostExpiresAt) return false;
+    return new Date(property.boostExpiresAt) > new Date();
+  };
+
+  const getRemainingHours = () => {
+    if (!property?.boostExpiresAt) return 0;
+    const now = new Date();
+    const end = new Date(property.boostExpiresAt);
+    const diffMs = end - now;
+    if (diffMs <= 0) return 0;
+    return Math.ceil(diffMs / (1000 * 60 * 60)); // Convert to hours
+  };
+
+  const getNewTotalTime = () => {
+    const remaining = getRemainingHours();
+    const total = remaining + boostHours;
+    const days = Math.floor(total / 24);
+    const hours = total % 24;
+    if (days > 0) return `${days} ngày ${hours} giờ`;
+    return `${hours} giờ`;
+  };
+
   const handleBoostClick = () => {
     setBoostDialogOpen(true);
   };
@@ -123,16 +152,18 @@ export default function PropertyDetail() {
       const useCredits = (currentUser?.boostCredits || 0) >= creditsNeeded;
       await boostPropertyAPI(propertyId, useCredits, boostHours);
       
-      setBoostDialogOpen(false);
+      // Fetch updated property data from server
+      const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}`);
+      setProperty(response.data?.data || response.data || null);
       
-      // Reload property data
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      setBoostDialogOpen(false);
+      toast.success(`Đã đẩy tin thành công thêm ${boostHours} giờ!`);
     } catch (error) {
       console.error('Boost error:', error);
       if (error.response?.status === 402) {
         toast.error('Số dư không đủ. Vui lòng nạp tiền hoặc mua gói boost credits.');
+      } else {
+        toast.error(error.response?.data?.message || 'Lỗi khi đẩy tin');
       }
     } finally {
       setBoosting(false);
@@ -209,17 +240,27 @@ export default function PropertyDetail() {
                   )}
                   
                   {/* Badges */}
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <Badge className="bg-white/90 text-foreground">
-                      {property.purpose === 'sale' ? 'Bán' : 'Cho thuê'}
-                    </Badge>
-                    {property.postType === 'vip' && (
-                      <Badge className="bg-orange-500">VIP</Badge>
-                    )}
-                    {property.bumpedAt && (
-                      <Badge className="bg-green-500">
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Badge className="bg-white/90 text-foreground">
+                        {property.purpose === 'sale' ? 'Bán' : 'Cho thuê'}
+                      </Badge>
+                      {property.postType === 'vip' && (
+                        <Badge className="bg-orange-500">VIP</Badge>
+                      )}
+                    </div>
+                    
+                    {/* Boost Status Badge with Remaining Time */}
+                    {property.bumpedAt && property.boostExpiresAt && new Date(property.boostExpiresAt) > new Date() && (
+                      <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg animate-pulse">
                         <Zap className="h-3 w-3 mr-1" />
-                        Đã đẩy
+                        Boost còn: {getTimeRemaining(property.boostExpiresAt)}
+                      </Badge>
+                    )}
+                    {property.bumpedAt && (!property.boostExpiresAt || new Date(property.boostExpiresAt) <= new Date()) && (
+                      <Badge className="bg-gray-500">
+                        <Zap className="h-3 w-3 mr-1" />
+                        Boost đã hết hạn
                       </Badge>
                     )}
                   </div>
@@ -317,21 +358,83 @@ export default function PropertyDetail() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {property.bumpedAt && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Đẩy lần cuối:</span>
-                        <span className="font-medium">{getTimeSinceBoost(property.bumpedAt)}</span>
+                    {/* Boost Status Highlight */}
+                    {property.boostExpiresAt && new Date(property.boostExpiresAt) > new Date() ? (
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse" />
+                            <span className="font-semibold text-green-700">Boost đang hoạt động</span>
+                          </div>
+                          <Clock className="h-5 w-5 text-green-600" />
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-green-700">Thời gian còn lại:</span>
+                            <span className="font-bold text-lg text-green-600">
+                              {getTimeRemaining(property.boostExpiresAt)}
+                            </span>
+                          </div>
+                          
+                          {/* Visual Progress Bar */}
+                          {(() => {
+                            const now = new Date();
+                            const start = new Date(property.bumpedAt || property.createdAt);
+                            const end = new Date(property.boostExpiresAt);
+                            const total = end - start;
+                            const elapsed = now - start;
+                            const remaining = Math.max(0, end - now);
+                            const percent = Math.max(0, Math.min(100, (remaining / total) * 100));
+                            
+                            return (
+                              <div className="space-y-1">
+                                <div className="w-full bg-green-200 rounded-full h-2 overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500"
+                                    style={{ width: `${percent}%` }}
+                                  />
+                                </div>
+                                <div className="text-xs text-green-600 text-right">
+                                  {Math.round(percent)}% thời gian còn lại
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        
+                        <div className="text-xs text-green-600 flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          Tin của bạn đang được ưu tiên hiển thị
+                        </div>
                       </div>
-                    )}
-                    {property.boostExpiresAt && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Hiệu lực boost còn:</span>
-                        <span className="font-medium">{getTimeRemaining(property.boostExpiresAt)}</span>
+                    ) : property.bumpedAt ? (
+                      <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 bg-gray-400 rounded-full" />
+                            <span className="font-semibold text-gray-600">Boost đã hết hạn</span>
+                          </div>
+                          <Clock className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <div className="text-sm text-gray-500 mt-2">
+                          Đẩy lần cuối: {getTimeSinceBoost(property.bumpedAt)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-5 w-5 text-orange-500" />
+                          <span className="font-semibold text-orange-700">Chưa từng đẩy tin</span>
+                        </div>
+                        <div className="text-sm text-orange-600 mt-2">
+                          Đẩy tin để tăng khả năng hiển thị!
+                        </div>
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Số lần đã đẩy:</span>
+                    <div className="flex items-center justify-between text-sm pt-2">
+                      <span className="text-muted-foreground">Tổng số lần đã đẩy:</span>
                       <span className="font-medium">{property.bumpCount || 0} lần</span>
                     </div>
 
@@ -475,13 +578,15 @@ export default function PropertyDetail() {
             <AlertDialogDescription asChild>
               <div className="space-y-4 mt-4">
                 <p className="text-foreground">
-                  Bạn có chắc chắn muốn đẩy tin <strong>{property.title}</strong> lên top không?
+                  {isBoostActive() 
+                    ? `Tin này đang được boost. Chọn thời gian để đẩy thêm:`
+                    : `Bạn có chắc chắn muốn đẩy tin lên top không?`}
                 </p>
                 
                 <div className="p-4 bg-muted rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Tin đăng:</span>
-                    <span className="font-medium">{property.title}</span>
+                    <span className="font-medium truncate ml-2">{property.title}</span>
                   </div>
                   
                   {property.bumpedAt && (
@@ -490,59 +595,95 @@ export default function PropertyDetail() {
                       <span className="font-medium">{getTimeSinceBoost(property.bumpedAt)}</span>
                     </div>
                   )}
-                  {property.boostExpiresAt && (
-                    <div className="flex justify-between text-sm">
-                      <span>Hiệu lực còn:</span>
-                      <span className="font-medium">{getTimeRemaining(property.boostExpiresAt)}</span>
+                  
+                  {isBoostActive() && (
+                    <div className="flex justify-between text-sm bg-green-50 p-2 rounded">
+                      <span className="text-green-700">Thời gian còn lại:</span>
+                      <span className="font-semibold text-green-600">{getTimeRemaining(property.boostExpiresAt)}</span>
                     </div>
                   )}
 
                   <Separator />
 
                   <div className="space-y-2">
-                    <div className="text-sm font-medium">Chọn thời lượng boost</div>
-                    <div className="flex gap-2">
+                    <div className="text-sm font-medium">Chọn thời lượng {isBoostActive() ? 'cộng thêm' : 'boost'}:</div>
+                    <div className="grid grid-cols-3 gap-2">
                       {[24, 48, 72].map(h => (
-                        <Button key={h} variant={boostHours === h ? 'default' : 'outline'} size="sm" onClick={() => setBoostHours(h)}>
-                          {h} giờ
-                        </Button>
+                        <button
+                          key={h}
+                          type="button"
+                          onClick={() => setBoostHours(h)}
+                          className={`p-3 rounded-lg border-2 transition-all ${
+                            boostHours === h
+                              ? 'border-orange-500 bg-orange-50 shadow-sm'
+                              : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="font-bold text-foreground">{h}h</div>
+                          {!(currentUser?.boostCredits >= Math.max(1, Math.ceil(h/24))) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {formatPrice(getBoostPrice(h), 'VND')}
+                            </div>
+                          )}
+                        </button>
                       ))}
                     </div>
                   </div>
 
+                  {isBoostActive() && (
+                    <div className="bg-blue-50 border border-blue-200 rounded p-3 space-y-1">
+                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                        <span className="font-medium">ℹ️ Tổng thời gian sau khi đẩy:</span>
+                      </div>
+                      <div className="text-lg font-bold text-blue-600">
+                        {getNewTotalTime()}
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        ({getRemainingHours()}h còn lại + {boostHours}h mới = {getRemainingHours() + boostHours}h)
+                      </div>
+                    </div>
+                  )}
+
                   {(currentUser?.boostCredits || 0) >= Math.max(1, Math.ceil((boostHours || 24)/24)) ? (
-                    <>
+                    <div className="bg-purple-50 p-3 rounded-lg space-y-1">
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">Sử dụng:</span>
-                        <span className="font-semibold text-orange-600">{Math.max(1, Math.ceil((boostHours || 24)/24))} Boost Credits</span>
+                        <span className="font-semibold text-purple-600">{Math.max(1, Math.ceil((boostHours || 24)/24))} Boost Credits</span>
                       </div>
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Credits còn lại:</span>
                         <span>{currentUser.boostCredits - Math.max(1, Math.ceil((boostHours || 24)/24))}</span>
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">Chi phí:</span>
-                      <span className="font-semibold text-orange-600">
-                        {(() => {
-                          const base = getBoostPrice();
-                          const h = boostHours || 24;
-                          const mult = h <= 24 ? 1 : (h <= 48 ? 1.5 : 2);
-                          return formatPrice(Math.round(base * mult), 'VND');
-                        })()}
-                      </span>
+                    <div className="bg-orange-50 p-3 rounded-lg">
+                      <div className="flex justify-between text-sm">
+                        <div>
+                          <div className="font-medium">Phí đẩy tin ({boostHours}h):</div>
+                          {boostHours > 24 && (
+                            <div className="text-xs text-green-600 mt-1">
+                              Tiết kiệm {Math.round(((getBoostPrice(24) * (boostHours/24)) - getBoostPrice(boostHours)) / 1000)}k!
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-bold text-lg text-orange-600">
+                          {formatPrice(getBoostPrice(boostHours), 'VND')}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
 
                 <div className="text-sm text-muted-foreground">
-                  <p>✨ Tin của bạn sẽ:</p>
+                  <p>✨ {isBoostActive() ? 'Sau khi đẩy thêm' : 'Tin của bạn sẽ'}:</p>
                   <ul className="list-disc list-inside mt-2 space-y-1 ml-2">
                     <li>Xuất hiện ở vị trí đầu tiên</li>
                     <li>Được ưu tiên hiển thị</li>
                     <li>Tăng cơ hội được người mua xem</li>
-                    <li>Hiệu lực trong {boostHours} giờ</li>
+                    {isBoostActive() 
+                      ? <li className="font-medium text-blue-600">Thời gian sẽ được cộng thêm {boostHours}h</li>
+                      : <li>Hiệu lực trong {boostHours} giờ</li>
+                    }
                   </ul>
                 </div>
               </div>
@@ -563,7 +704,7 @@ export default function PropertyDetail() {
               ) : (
                 <>
                   <Zap className="mr-2 h-4 w-4" />
-                  Xác nhận đẩy tin
+                  {isBoostActive() ? `Đẩy thêm ${boostHours}h` : `Xác nhận đẩy ${boostHours}h`}
                 </>
               )}
             </AlertDialogAction>

@@ -197,7 +197,7 @@ const propertySchema = new mongoose.Schema({
     tier: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ListingTierConfig',
-        required: true
+        required: false
     },
     priority: {
         type: Number,
