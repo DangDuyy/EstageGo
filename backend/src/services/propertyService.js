@@ -876,21 +876,15 @@ const getAllImageTags = async (userId) => {
 
 const updateProperty = async (propertyId, userId, updateData) => {
   try {
-    const property = await propertyModel.findOne({ _id: propertyId, owner: userId })
+    // First check if property exists and user is owner
+    const existingProperty = await propertyModel.findOne({ _id: propertyId, owner: userId })
 
-    if (!property) {
+    if (!existingProperty) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
     }
 
-    // Update fields
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key] !== undefined) {
-        property[key] = updateData[key]
-      }
-    })
-
-    // Update slug if title changed
-    if (updateData.title && updateData.title !== property.title) {
+    // Handle slug update if title changed
+    if (updateData.title && updateData.title !== existingProperty.title) {
       const baseSlug = slugify(updateData.title, { lower: true, strict: true, locale: "vi" })
       let slug = baseSlug
       let counter = 1
@@ -898,10 +892,16 @@ const updateProperty = async (propertyId, userId, updateData) => {
         slug = `${baseSlug}-${counter}`
         counter++
       }
-      property.slug = slug
+      updateData.slug = slug
     }
 
-    await property.save()
+    // Use findByIdAndUpdate to avoid triggering full validation (for legacy properties without tier)
+    const property = await propertyModel.findByIdAndUpdate(
+      propertyId,
+      { $set: updateData },
+      { new: true, runValidators: false }
+    )
+
     return property
   } catch (error) {
     throw error
