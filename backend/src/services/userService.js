@@ -355,9 +355,34 @@ const updateProfile = async (userId, updateData) => {
     // Remove fields that should not be updated
     const { password, email, phone, userName, role, isActive, verifyToken, ...allowedUpdates } = updateData
 
+    // Build $set object with dot-notation for nested brokerPage to avoid replacing the whole subdocument
+    const setData = {}
+
+    // Copy top-level allowed fields except brokerPage (handled below)
+    Object.keys(allowedUpdates).forEach((key) => {
+      if (key !== 'brokerPage') {
+        setData[key] = allowedUpdates[key]
+      }
+    })
+
+    // Handle brokerPage partial updates safely
+    if (allowedUpdates.brokerPage && typeof allowedUpdates.brokerPage === 'object') {
+      const bp = allowedUpdates.brokerPage
+      // Only set provided brokerPage fields; do NOT overwrite the entire object
+      if (bp.agentTitle !== undefined) setData['brokerPage.agentTitle'] = bp.agentTitle
+      if (bp.yearsOfExperience !== undefined) setData['brokerPage.yearsOfExperience'] = bp.yearsOfExperience
+      if (bp.supportServices !== undefined) setData['brokerPage.supportServices'] = bp.supportServices
+      if (bp.operatingAreas !== undefined) setData['brokerPage.operatingAreas'] = bp.operatingAreas
+      // Preserve expireAt unless explicitly provided
+      if (bp.expireAt !== undefined) setData['brokerPage.expireAt'] = bp.expireAt
+      if (bp.slug !== undefined) setData['brokerPage.slug'] = bp.slug
+      if (bp.bio !== undefined) setData['brokerPage.bio'] = bp.bio
+      if (bp.coverImage !== undefined) setData['brokerPage.coverImage'] = bp.coverImage
+    }
+
     const updatedUser = await userModel.findByIdAndUpdate(
       userId,
-      { $set: allowedUpdates },
+      { $set: setData },
       { new: true, runValidators: true }
     )
 

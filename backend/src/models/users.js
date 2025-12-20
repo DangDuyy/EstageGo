@@ -11,6 +11,18 @@ const USER_GENDER = {
     FEMALE: 'female',
     OTHER: 'other'
 }
+const SUPPORT_SERVICES = {
+    FINANCIAL_CONSULTING: 'Tư vấn tài chính',
+    LOAN_SUPPORT: 'Hỗ trợ vay vốn',
+    LAND_DIVISION: 'Hỗ trợ phân lô, tách thửa',
+    NOTARY_SUPPORT: 'Hỗ trợ công chứng ba bên',
+    DOCUMENTATION_SUPPORT: 'Hỗ trợ hoàn thiện hồ sơ đăng bộ',
+    DOCUMENT_PREPARATION: 'Hỗ trợ làm giấy tờ, hồ sơ nhà đất',
+    PROPERTY_CONSIGNMENT: 'Nhận kí gửi bất động sản',
+    CONSTRUCTION_PERMIT: 'Xin phép xây dựng',
+    INTERIOR_FINISHING: 'Hỗ trợ hoàn thiện nội thất',
+    PROPERTY_LEGALIZATION: 'Hỗ trợ hợp thức hoá nhà đất'
+}
 
 const userSchema = new mongoose.Schema({
     email: {
@@ -97,29 +109,37 @@ const userSchema = new mongoose.Schema({
         trim: true,
         maxlength: 200
     },
-    agentTitle: {
-        type: String,
-        default: null,
-        trim: true,
-        maxlength: 200
-    },
     bio: {
         type: String,
         default: null,
         maxlength: 2000
     },
-    specializations: [{
-        type: String,
-        trim: true
-    }],
-    areasServed: [{
-        type: String,
-        trim: true
-    }],
     experience: {
         type: Number,
         default: null,
         min: 0
+    },
+    // Trang môi giới (chỉ có khi có gói Boosted/Advanced)
+    brokerPage: {
+        agentTitle: {
+            type: String,
+            default: null,
+            trim: true,
+            maxlength: 200
+        },
+        expireAt: {
+            type: Date,
+            default: () => new Date(Date.now() - 24 * 60 * 60 * 1000)
+        },
+        slug: { type: String, unique: true, sparse: true },
+        bio: String,
+        coverImage: String,
+        yearsOfExperience: Number,
+        supportServices: [{
+            type: String,
+            enum: Object.values(SUPPORT_SERVICES),
+        }],
+        operatingAreas: [String]
     },
     licenseNumber: {
         type: String,
@@ -167,30 +187,30 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 // Validate: phải có ít nhất email HOẶC phone
-userSchema.pre('save', function(next) {
-  if (!this.email && !this.phone) {
-    next(new Error('User must have either email or phone number'))
-  } else {
-    next()
-  }
+userSchema.pre('save', function (next) {
+    if (!this.email && !this.phone) {
+        next(new Error('User must have either email or phone number'))
+    } else {
+        next()
+    }
 })
 
 // Tạo index
 userSchema.index({ userName: 1 }, { unique: true })
 
 // Middleware để loại bỏ các field không được phép update
-userSchema.pre('findOneAndUpdate', function() {
-  const INVALID_UPDATE_VALUES = ['_id', 'userName', 'createdAt', 'email']
-  const update = this.getUpdate()
-  
-  if (update.$set) {
-    INVALID_UPDATE_VALUES.forEach(field => {
-      delete update.$set[field]
-    })
-  }
-  
-  if (!update.$set) update.$set = {}
-  update.$set.updatedAt = new Date()
+userSchema.pre('findOneAndUpdate', function () {
+    const INVALID_UPDATE_VALUES = ['_id', 'userName', 'createdAt', 'email']
+    const update = this.getUpdate()
+
+    if (update.$set) {
+        INVALID_UPDATE_VALUES.forEach(field => {
+            delete update.$set[field]
+        })
+    }
+
+    if (!update.$set) update.$set = {}
+    update.$set.updatedAt = new Date()
 })
 
 const userModel = mongoose.model('User', userSchema)

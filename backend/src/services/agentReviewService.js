@@ -119,17 +119,6 @@ const createReview = async (reviewerId, agentId, { rating, comment, media = [] }
       throw new Error('Agent not found')
     }
 
-    // Check if user already reviewed this agent
-    const existingReview = await agentReviewModel.findOne({
-      reviewer: reviewerId,
-      agent: agentId,
-      _destroy: false
-    })
-
-    if (existingReview) {
-      throw new Error('You have already reviewed this agent')
-    }
-
     const review = await agentReviewModel.create({
       reviewer: reviewerId,
       agent: agentId,
