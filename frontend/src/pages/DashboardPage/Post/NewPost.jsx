@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI } from "@/apis";
+import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -36,7 +36,7 @@ import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X } fro
 import { Checkbox } from "@/components/ui/checkbox";
 
 // ----- Mock data -----
-const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial","Office","Villa","Townhouse","Other"];
+const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial", "Office", "Villa", "Townhouse", "Other"];
 const currencies = ['VND', 'USD', 'EUR']
 const period = ['month', 'year', 'other']
 
@@ -791,6 +791,8 @@ export default function AddPropertyWizard() {
                     // Thêm fullAddress vào address object
                     const addressWithFullAddress = { ...value, fullAddress };
                     formData.append(key, JSON.stringify(addressWithFullAddress));
+                } else if (key === "description" || key === "title") {
+                    formData.append(key, value);
                 } else if (Array.isArray(value)) {
                     value.forEach(v => formData.append(`${key}[]`, v))
                 } else if (typeof value === "object" && value !== null) {
@@ -835,6 +837,68 @@ export default function AddPropertyWizard() {
         }
     };
 
+    const [isLoading, setIsLoading] = useState(false)
+
+    const onSubmitGenerate = async () => {
+        const data = form.getValues()
+        console.log('[onSubmit] data snapshot (generate title and description):', data);
+
+        // 🚨 TẠO fullAddress TỪ CÁC THÀNH PHẦN ĐỊA CHỈ
+        const { street, ward, district, province } = data.address;
+        const fullAddress = [street, ward, district, province]
+            .filter(Boolean)
+            .join(', ');
+
+        const formData = new FormData();
+        for (const key in data) {
+            if (key !== "files") {
+                const value = data[key];
+                if (key === "address") {
+                    // Thêm fullAddress vào address object
+                    const addressWithFullAddress = { ...value, fullAddress };
+                    formData.append(key, JSON.stringify(addressWithFullAddress));
+                } else if (Array.isArray(value)) {
+                    value.forEach(v => formData.append(`${key}[]`, v))
+                } else if (typeof value === "object" && value !== null) {
+                    formData.append(key, JSON.stringify(value))
+                } else {
+                    formData.append(key, value)
+                }
+            }
+        }
+
+        formData.append('tier', selectedTier)
+        formData.append('durationId', selectedDuration._id)
+
+        // ONLY listing images
+        if (Array.isArray(data.files)) data.files.forEach(f => formData.append("files", f));
+
+        // Note: houseDocs and idDocs files are handled separately in verification and should be excluded from final post unless backend explicitly needs them here again.
+
+        try {
+            console.log('[onSubmit] Sending FormData to API');
+            setIsLoading(true)
+            const response = await generateTitleDescription(formData);
+            console.log(response)
+            setIsLoading(false)
+
+            if (response) {
+                form.setValue("title", response.title)
+                form.setValue("description", response.description)
+            }
+            // console.log('[onSubmit] Success');
+            // toast.success("Listing published.");
+            // navigate("/dashboard/posts");
+        } catch (error) {
+            console.error('[onSubmit] API error:', error);
+            const status = error?.response?.status;
+            const payload = error?.response?.data;
+
+            setIsLoading(false)
+
+            toast.error(payload?.message || "Failed to generate.");
+        }
+    }
 
     // Listing Tier new
     const [listingTiers, setListingTiers] = useState()
@@ -1494,9 +1558,12 @@ export default function AddPropertyWizard() {
                                                 flex items-center gap-2
                                                 hover:bg-black/5
                                               "
+                                            disabled={isLoading}
+                                            onClick={onSubmitGenerate}
                                         >
+                                            {isLoading && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-l-2 bỏder-primary"></div>}
                                             <Sparkles className="h-5 w-5 text-purple-500" />
-                                            Regenerate with AI
+                                            {!isLoading ? "Regenerate with AI" : "Generating..."}
                                         </Button>
 
                                     </div>
@@ -1529,7 +1596,7 @@ export default function AddPropertyWizard() {
                                                         <FormControl>
                                                             <Textarea
                                                                 placeholder="Write your description..."
-                                                                className={"h-30"}
+                                                                className={"min-h-90 h-30"}
                                                                 {...field}
                                                             />
                                                         </FormControl>

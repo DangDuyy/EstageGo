@@ -34,7 +34,10 @@ export default function PropertyCard({ item, variant = "grid", className }) {
   const inWishlist = isInWishlist(propertyId);
 
   const imageUrl = item.image || item.media?.[0]?.url || "/images/placeholder.jpg";
-  const locationText = item.location || item.address?.fullAddress;
+  const locationText = item.address?.fullAddress ||
+                        [item.address?.street, item.address?.ward, item.address?.district, item.address?.province]
+                        .filter(Boolean)
+                        .join(", ");
 
   const beds = item.beds ?? item.rooms?.bedrooms;
   const baths = item.baths ?? item.rooms?.bathrooms;
@@ -63,8 +66,8 @@ export default function PropertyCard({ item, variant = "grid", className }) {
   };
 
   const badges = [];
-  if (item.postType === "vip") badges.push("VIP");
-  badges.push("Featured");
+  // if (item.postType === "vip") badges.push("VIP");
+  if (item.isFeatured) badges.push("Featured");
   const purposeLabel = mapPurpose(item.purpose);
   if (purposeLabel) badges.push(purposeLabel);
 
@@ -102,55 +105,56 @@ export default function PropertyCard({ item, variant = "grid", className }) {
         }
       >
         {/* <Link to={item.href ?? `/properties/${item._id}`} className="block"> */}
-        {/* <div className="relative aspect-[16/9] w-full overflow-hidden">
-            <img
-              src={imageUrl}
-              alt={item.title}
-              className="absolute inset-0 w-full h-full object-cover object-center"
-            />
-          </div> */}
+        {!item.isFeatured ? (<div className="relative aspect-[16/9] w-full overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={item.title}
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+        </div>)
+          :
 
-        <div className="relative">
-          <Carousel setApi={setApi} className="w-full relative group">
-            <CarouselContent>
-              {item.media.map((media, index) => (
-                <CarouselItem key={index}>
-                  <div className="relative aspect-[16/9] w-full overflow-hidden">
-                    <img
-                      src={media.url}
-                      alt={item.title}
-                      className="absolute inset-0 w-full h-full object-cover object-center"
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+          <div className="relative">
+            <Carousel setApi={setApi} className="w-full relative group">
+              <CarouselContent>
+                {item.media.map((media, index) => (
+                  <CarouselItem key={index}>
+                    <div className="relative aspect-[16/9] w-full overflow-hidden">
+                      <img
+                        src={media.url}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover object-center"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
 
-            {/* Prev button */}
-            {item.media.length > 1 && (
-              <CarouselPrevious
-                className="
+              {/* Prev button */}
+              {item.media.length > 1 && (
+                <CarouselPrevious
+                  className="
         absolute left-2 top-1/2 -translate-y-1/2
         !opacity-0 group-hover:!opacity-100
         transition duration-300
       "
-              />
-            )}
+                />
+              )}
 
-            {/* Next button */}
-            {item.media.length > 1 && (
-              <CarouselNext
-                className="
+              {/* Next button */}
+              {item.media.length > 1 && (
+                <CarouselNext
+                  className="
         absolute right-2 top-1/2 -translate-y-1/2
         !opacity-0 group-hover:!opacity-100
         transition duration-300
       "
-              />
-            )}
-          </Carousel>
+                />
+              )}
+            </Carousel>
 
-          {/* DOTS */}
-          {/* {item.media.length > 1 && <div className="flex items-center justify-center p-0.5 px-1 m-0 gap-1.5 bg-black/40 rounded-full absolute bottom-2 left-1/2 -translate-x-1/2 z-10">
+            {/* DOTS */}
+            {/* {item.media.length > 1 && <div className="flex items-center justify-center p-0.5 px-1 m-0 gap-1.5 bg-black/40 rounded-full absolute bottom-2 left-1/2 -translate-x-1/2 z-10">
             {item.media.map((_, i) => (
               <div
                 key={i}
@@ -161,10 +165,11 @@ export default function PropertyCard({ item, variant = "grid", className }) {
           </div>
           } */}
 
-          {item.media.length > 1 && 
-            <CarouselDots total = {item.media.length} current = {current - 1} />
-          }
-        </div>
+            {item.media.length > 1 &&
+              <CarouselDots total={item.media.length} current={current - 1} />
+            }
+          </div>
+        }
 
 
 
@@ -181,7 +186,8 @@ export default function PropertyCard({ item, variant = "grid", className }) {
                   t === "VIP"
                     ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold"
                     : t === "Featured"
-                      ? "bg-blue-600 text-white"
+                      // ? "bg-blue-600 text-white"
+                      ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold"
                       : "bg-gray-700 text-white"
                 )}
               >

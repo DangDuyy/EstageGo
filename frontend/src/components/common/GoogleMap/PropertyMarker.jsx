@@ -4,6 +4,7 @@ import { OverlayView } from "@react-google-maps/api";
 import PropertyCard from "../Property/FeatureCard/PropertyCard";
 import { useState } from "react";
 import { fetchPropertyDetail } from "@/apis";
+import { Sparkles } from "lucide-react";
 
 function PropertyMarker({ property }) {
     const position = { lat: property.address?.location?.coordinates[1], lng: property.address?.location?.coordinates[0] }
@@ -23,19 +24,30 @@ function PropertyMarker({ property }) {
             <div className="relative pointer-events-auto">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <div onClick={getPropertyDetail}
-                            className="
-                        w-3.5 h-3.5 bg-red-700 rounded-full border-2 border-white
-                        shadow-xl -translate-x-1/2 -translate-y-1/2
-                        hover:bg-green-700
-                    "
-                        />
+                        <div
+                            onClick={getPropertyDetail}
+                            className={`
+                            absolute
+                            flex items-center justify-center
+                            ${!property.isFeatured ? "w-4 h-4" : "w-5 h-5"}
+                            ${!property.isFeatured ? "" : "z-50"}
+                            bg-red-700
+                            rounded-full
+                            border-2 border-white
+                            shadow-md
+                            cursor-pointer
+                            -translate-x-1/2 -translate-y-1/2
+                            hover:bg-green-700
+                          `}
+                        >
+                            {property.isFeatured && <Sparkles className="w-2 h-2 text-white fill-white" />}
+                        </div>
                     </DropdownMenuTrigger>
 
                     <DropdownMenuContent
                         className="m-0 p-0 border-0"
                     >
-                        {propertyDetail && <PropertyCard item={propertyDetail} /> }
+                        {propertyDetail && <PropertyCard item={propertyDetail} />}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

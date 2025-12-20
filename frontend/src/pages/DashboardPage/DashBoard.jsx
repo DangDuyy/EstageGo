@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAgentDashboardStatsAPI, fetchAllPropertiesAPI } from "@/apis";
+import { getAgentDashboardStatsAPI } from "@/apis";
 import {
   Card,
   CardContent,
@@ -12,10 +12,8 @@ import {
   Home,
   Users,
   Star,
-  CheckCircle,
-  Clock,
-  XCircle,
   UserCircle,
+  Eye,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -42,9 +40,7 @@ export default function DashboardPage() {
 
   const [stats, setStats] = useState({
     totalProperties: 0,
-    activeListings: 0,
-    draftProperties: 0,
-    hiddenProperties: 0,
+    totalViews: 0,
     followersCount: 0,
     averageRating: 0,
     totalReviews: 0,
@@ -65,60 +61,23 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
-      // Fetch all properties first
-      const propertiesData = await fetchAllPropertiesAPI(
-        `?owner=${currentUser._id}&itemsPerPage=1000`
-      );
+      // ✅ Chỉ gọi 1 API duy nhất
+      const data = await getAgentDashboardStatsAPI();
+      console.log("📊 Dashboard data:", data);
 
-      const properties = propertiesData.properties || [];
-      console.log("📋 All properties:", properties);
+      const properties = data.properties || [];
       setAllProperties(properties);
 
-      // Try to fetch stats from dedicated API
-      try {
-        const statsData = await getAgentDashboardStatsAPI();
-        console.log("📊 Dashboard stats from API:", statsData);
-
-        setStats({
-          totalProperties: statsData.totalProperties || properties.length,
-          activeListings:
-            statsData.activeListings ||
-            properties.filter((p) => p.status === "active").length,
-          draftProperties:
-            statsData.draftProperties ||
-            properties.filter((p) => p.status === "draft").length,
-          hiddenProperties:
-            statsData.hiddenProperties ||
-            properties.filter((p) => p.status === "hidden").length,
-          followersCount: statsData.followersCount || 0,
-          averageRating: statsData.averageRating || 0,
-          totalReviews: statsData.totalReviews || 0,
-        });
-      } catch (apiError) {
-        console.warn(
-          "⚠️ Dashboard API not available, calculating from properties:",
-          apiError
-        );
-
-        // Fallback: Calculate stats from properties
-        setStats({
-          totalProperties: properties.length,
-          activeListings: properties.filter((p) => p.status === "active")
-            .length,
-          draftProperties: properties.filter((p) => p.status === "draft")
-            .length,
-          hiddenProperties: properties.filter((p) => p.status === "hidden")
-            .length,
-          followersCount: 0,
-          averageRating: 0,
-          totalReviews: 0,
-        });
-      }
+      setStats({
+        totalProperties: data.totalProperties || 0,
+        totalViews: data.totalViews || 0,
+        followersCount: data.followersCount || 0,
+        averageRating: data.averageRating || 0,
+        totalReviews: data.totalReviews || 0,
+      });
 
       // Get recent 5 properties
-      const recent = properties
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5);
+      const recent = properties.slice(0, 5); // Already sorted by createdAt in backend
 
       setRecentProperties(recent);
     } catch (error) {
@@ -235,28 +194,12 @@ export default function DashboardPage() {
       bgColor: "bg-blue-50",
     },
     {
-      title: "Active Listings",
-      value: stats.activeListings,
-      icon: CheckCircle,
-      description: "Currently active",
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-    },
-    {
-      title: "Draft",
-      value: stats.draftProperties,
-      icon: Clock,
-      description: "Not published yet",
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-    },
-    {
-      title: "Hidden",
-      value: stats.hiddenProperties,
-      icon: XCircle,
-      description: "Not visible",
-      color: "text-gray-600",
-      bgColor: "bg-gray-50",
+      title: "Total Views",
+      value: stats.totalViews.toLocaleString(),
+      icon: Eye,
+      description: "Across all properties",
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
     },
     {
       title: "Followers",
@@ -300,8 +243,8 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Stats Grid - Now 4 cards in 2x2 grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {statCards.map((stat, index) => (
             <Card key={index} className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

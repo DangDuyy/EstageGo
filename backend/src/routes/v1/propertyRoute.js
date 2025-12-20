@@ -10,6 +10,9 @@ router.route('/')
   .get(propertyController.getProperties, propertyValidation.getProperties)
   .post(authMiddleware.isAuthorized, uploadFiles, propertyController.createProperty)
 
+router.route('/generateTitleDescription')
+  .post(authMiddleware.isAuthorized, uploadFiles, propertyController.generateTitleDescription)
+
 router.route('/verify-documents')
   .post(authMiddleware.isAuthorized, uploadVerificationDocs, propertyController.verifyPropertyDocuments)
 

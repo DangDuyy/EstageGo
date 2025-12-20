@@ -1,7 +1,6 @@
-import { date } from "joi"
 import { mediaService } from "~/services/mediaService"
 import { toArr, toNum, toStr } from "~/utils/formatter"
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"
 import { searchSuggestionService } from "~/services/searchSuggestionService"
 import { propertyKnowledgeService } from "~/services/propertyKnowledgeService"
 import { imageTaggingService } from "~/services/imageTaggingService"
@@ -34,6 +33,7 @@ const createProperty = async (req, res, next) => {
     try {
         // Normalize complex fields from multipart
         const body = { ...req.body }
+        console.log(body)
         body.price = safeParse(body.price)
         body.address = safeParse(body.address)
         body.rooms = safeParse(body.rooms)
@@ -137,6 +137,116 @@ const createProperty = async (req, res, next) => {
             success: false,
             message: error?.message || "Internal Server Error"
         })
+    }
+}
+
+function buildPrompt(property, tone) {
+    const rooms = JSON.parse(property.rooms || "{}");
+    const address = JSON.parse(property.address || "{}");
+    const price = JSON.parse(property.price || "{}");
+
+    const toneText =
+        tone === "youthful"
+            ? "Giọng văn trẻ trung, thân thiện, thu hút người thuê."
+            : "Giọng văn lịch sự, chuyên nghiệp, phù hợp đăng tin chính thống.";
+
+    return `
+Bạn là chuyên gia viết tin bất động sản tại Việt Nam.
+
+${toneText}
+
+Yêu cầu bắt buộc:
+- Chỉ mô tả thông tin có trong dữ liệu hoặc nhìn thấy từ ảnh
+- Không suy đoán pháp lý
+- Không thêm emoji
+- Viết tiếng Việt
+- Không viết paragraph dài
+- Trình bày rõ hàng mạch lạc ngắt dòng ngắt hàng dễ nhìn
+- Lưu ý thêm các \\n để xuống hàng
+
+Hãy trả về JSON hợp lệ theo schema được yêu cầu.
+
+THÔNG TIN BẤT ĐỘNG SẢN:
+- Mục đích: ${property.purpose === "rent" ? "Cho thuê" : "Bán"}
+- Loại hình: ${property.type}
+- Diện tích: ${property.area} m²
+- Năm xây dựng: ${property.yearBuilt}
+- Giá: ${price.value?.toLocaleString()} ${price.currency} / ${price.period}
+- Địa chỉ: ${address.fullAddress}
+- Phòng ngủ: ${rooms.bedrooms}
+- WC: ${rooms.bathrooms}
+- Phòng khách: ${rooms.livingrooms}
+- Bếp: ${rooms.kitchens}
+- Tiện ích: ${(property.amenities || []).join(", ")}
+`;
+}
+
+function fileToGenerativePart(file) {
+    return {
+        inlineData: {
+            data: file.buffer.toString("base64"),
+            mimeType: file.mimetype
+        }
+    };
+}
+
+function getGeminiModel() {
+    const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+
+    const schema = {
+        type: SchemaType.OBJECT,
+        properties: {
+            title: {
+                type: SchemaType.STRING,
+                description: "Tiêu đề tin (30–99 ký tự)"
+            },
+            description: {
+                type: SchemaType.STRING,
+                description: "Mô tả chi tiết (tối đa 3000 ký tự)"
+            }
+        },
+        required: ["title", "description"]
+    };
+
+    return genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: schema,
+            temperature: 0.7
+        }
+    });
+}
+
+const generateTitleDescription = async (req, res, next) => {
+    try {
+        const property = { ...req.body };
+        const tone = req.body.tone || "formal";
+        const files = req.files || [];
+
+        const prompt = buildPrompt(property, tone);
+        const imageParts = files.map(fileToGenerativePart);
+
+        const model = getGeminiModel();
+
+        const result = await model.generateContent([
+            prompt,
+            ...imageParts
+        ]);
+
+        const text = result.response.text();
+        const { title, description } = JSON.parse(text);
+
+        return res.json({
+            title,
+            description
+        });
+    } catch (err) {
+        console.error(err);
+        next(err)
+        // return res.status(500).json({
+        //     message: "AI generation failed"
+        // });
     }
 }
 
@@ -1426,6 +1536,7 @@ const purchaseBoostPackage = async (req, res, next) => {
 
 export const propertyController = {
     createProperty,
+    generateTitleDescription,
     uploadPropertyMedia,
     verifyPropertyDocuments,
     getProperties,
