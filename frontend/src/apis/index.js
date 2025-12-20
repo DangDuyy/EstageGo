@@ -280,8 +280,7 @@ export const clearAllWishlistAPI = async () => {
 // Update user profile
 export const updateUserProfileAPI = async (profileData) => {
   const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/users/profile`, profileData)
-  toast.success('Profile updated successfully!')
-  return response.data
+  return response.data.user
 }
 
 // Change password
