@@ -17,6 +17,7 @@ import { agentReviewRoute } from './agentReviewRoute'
 import { agentFollowRoute } from './agentFollowRoute'
 import { listingTierRoutes } from './listingTierRoute'
 import { addressRoutes } from './addressRoute'
+import { membershipConfigRoute } from './membershipConfig.route'
 
 const Router = express.Router()
 
@@ -57,5 +58,7 @@ Router.use('/agent-follows', agentFollowRoute)
 Router.use('/listingTier', listingTierRoutes)
 
 Router.use('/api.vn', addressRoutes)
+
+Router.use('/membershipConfig', membershipConfigRoute)
 
 export const APIs_V1 = Router
