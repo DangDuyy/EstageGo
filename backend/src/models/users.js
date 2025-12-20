@@ -121,6 +121,26 @@ const userSchema = new mongoose.Schema({
         default: null,
         min: 0
     },
+    // Trang môi giới (chỉ có khi có gói Boosted/Advanced)
+    brokerPage: {
+        agentTitle: {
+            type: String,
+            default: null,
+            trim: true,
+            maxlength: 200
+        },
+        // isEnabled: { type: Boolean, default: false },
+        exprieAt: {
+            type: Date,
+            default: () => new Date(Date.now() - 24 * 60 * 60 * 1000)
+        },
+        slug: { type: String, unique: true, sparse: true },
+        bio: String,
+        coverImage: String,
+        yearsOfExperience: Number,
+        support: [String],
+        operatingAreas: [String]
+    },
     licenseNumber: {
         type: String,
         default: null,
@@ -167,30 +187,30 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 // Validate: phải có ít nhất email HOẶC phone
-userSchema.pre('save', function(next) {
-  if (!this.email && !this.phone) {
-    next(new Error('User must have either email or phone number'))
-  } else {
-    next()
-  }
+userSchema.pre('save', function (next) {
+    if (!this.email && !this.phone) {
+        next(new Error('User must have either email or phone number'))
+    } else {
+        next()
+    }
 })
 
 // Tạo index
 userSchema.index({ userName: 1 }, { unique: true })
 
 // Middleware để loại bỏ các field không được phép update
-userSchema.pre('findOneAndUpdate', function() {
-  const INVALID_UPDATE_VALUES = ['_id', 'userName', 'createdAt', 'email']
-  const update = this.getUpdate()
-  
-  if (update.$set) {
-    INVALID_UPDATE_VALUES.forEach(field => {
-      delete update.$set[field]
-    })
-  }
-  
-  if (!update.$set) update.$set = {}
-  update.$set.updatedAt = new Date()
+userSchema.pre('findOneAndUpdate', function () {
+    const INVALID_UPDATE_VALUES = ['_id', 'userName', 'createdAt', 'email']
+    const update = this.getUpdate()
+
+    if (update.$set) {
+        INVALID_UPDATE_VALUES.forEach(field => {
+            delete update.$set[field]
+        })
+    }
+
+    if (!update.$set) update.$set = {}
+    update.$set.updatedAt = new Date()
 })
 
 const userModel = mongoose.model('User', userSchema)
