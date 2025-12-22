@@ -77,11 +77,11 @@ export default function AgentBrokerPage({
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-amber-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-blue-50 to-white">
       {/* Cover & Avatar Section */}
       <div className="relative">
         {/* Cover Image */}
-        <div className="h-64 bg-linear-to-r from-amber-400 via-orange-400 to-amber-500">
+        <div className="h-64 bg-linear-to-r from-blue-400 via-blue-500 to-blue-600">
           {user?.brokerPage?.coverImage && (
             <img 
               src={user.brokerPage.coverImage} 
@@ -96,7 +96,7 @@ export default function AgentBrokerPage({
           <div className="relative -mt-20 mb-8">
             <Avatar className="h-40 w-40 border-8 border-white shadow-lg">
               <AvatarImage src={user?.avatar} alt={user?.fullName} />
-              <AvatarFallback className="text-4xl bg-orange-200">
+              <AvatarFallback className="text-4xl bg-blue-200">
                 {user?.fullName?.charAt(0) || user?.userName?.charAt(0)}
               </AvatarFallback>
             </Avatar>
@@ -114,7 +114,7 @@ export default function AgentBrokerPage({
                 {user?.fullName || user?.userName}
               </h1>
               {user?.brokerPage?.agentTitle && (
-                <p className="text-xl text-orange-600 font-semibold mb-4">
+                <p className="text-xl text-blue-600 font-semibold mb-4">
                   {user.brokerPage.agentTitle}
                 </p>
               )}
@@ -134,7 +134,7 @@ export default function AgentBrokerPage({
               <Card>
                 <CardContent className="p-4">
                   <div className="text-center">
-                    <Award className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                    <Award className="h-6 w-6 text-blue-500 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-gray-900">
                       {user?.brokerPage?.yearsOfExperience ?? user?.experience}
                     </div>
@@ -180,7 +180,7 @@ export default function AgentBrokerPage({
                   <Button 
                     onClick={onStartChat}
                     disabled={isChatLoading}
-                    className="bg-orange-500 hover:bg-orange-600 w-full"
+                    className="bg-blue-500 hover:bg-blue-600 w-full"
                     size="lg"
                   >
                     {isChatLoading ? (
@@ -223,7 +223,7 @@ export default function AgentBrokerPage({
                 <div className="space-y-3">
                   {user?.phone && (
                     <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-orange-500" />
+                      <Phone className="h-5 w-5 text-blue-500" />
                       <a href={`tel:${user.phone}`} className="text-blue-600 hover:underline">
                         {user.phone}
                       </a>
@@ -231,7 +231,7 @@ export default function AgentBrokerPage({
                   )}
                   {user?.email && (
                     <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-orange-500" />
+                      <Mail className="h-5 w-5 text-blue-500" />
                       <a href={`mailto:${user.email}`} className="text-blue-600 hover:underline">
                         {user.email}
                       </a>
@@ -239,13 +239,13 @@ export default function AgentBrokerPage({
                   )}
                   {user?.address && (
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-orange-500" />
+                      <MapPin className="h-5 w-5 text-blue-500" />
                       <span>{user.address}</span>
                     </div>
                   )}
                   {user?.website && (
                     <div className="flex items-center gap-3">
-                      <Globe className="h-5 w-5 text-orange-500" />
+                      <Globe className="h-5 w-5 text-blue-500" />
                       <a 
                         href={user.website} 
                         target="_blank" 
@@ -378,7 +378,7 @@ export default function AgentBrokerPage({
                             </div>
                           ))}
                           {reviewImagePreviews.length < 5 && (
-                            <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:border-orange-500 bg-white">
+                            <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:border-blue-500 bg-white">
                               <Upload className="h-6 w-6 text-gray-400" />
                               <Input
                                 type="file"
@@ -394,7 +394,7 @@ export default function AgentBrokerPage({
                       <div className="flex gap-2">
                         <Button
                           onClick={editingReviewId ? handleSubmitWithId : () => onSubmitReview()}
-                          className="flex-1 bg-orange-500 hover:bg-orange-600"
+                          className="flex-1 bg-blue-500 hover:bg-blue-600"
                         >
                           {editingReviewId ? 'Update Review' : 'Submit Review'}
                         </Button>

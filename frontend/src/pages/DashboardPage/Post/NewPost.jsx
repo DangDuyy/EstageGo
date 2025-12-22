@@ -17,10 +17,11 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI } from "@/apis";
+import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI, analyzeTemporaryImageAPI, updateImageTagsAPI, getUserPropertiesWithMediaAPI, searchPropertiesByTagAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -32,7 +33,7 @@ import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
-import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X } from "lucide-react";
+import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X, Trash2, Tag, Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // ----- Mock data -----
@@ -214,6 +215,11 @@ export default function AddPropertyWizard() {
 
     // ----- Listing info (Step 1) -----
     const [visibility, setVisibility] = useState("public");
+
+    // Image Tagging (local, pre-submit)
+    const [localImages, setLocalImages] = useState([]);
+    const [analyzingImages, setAnalyzingImages] = useState(false);
+    const [newTagInputs, setNewTagInputs] = useState({});
 
     const [searchValue, setSearchValue] = useState("");
     const [fullAddress, setFullAddress] = useState("");
@@ -815,8 +821,46 @@ export default function AddPropertyWizard() {
 
         try {
             console.log('[onSubmit] Sending FormData to API');
-            await createProperty(formData);
-            console.log('[onSubmit] Success');
+            const created = await createProperty(formData);
+            console.log('[onSubmit] Success', created);
+
+            // Attempt to attach local tags to created media
+            try {
+                const titleSnap = data?.title;
+                // Resolve created property and media
+                const createdProperty = created?.property || created?.data || created;
+                const propertyId = createdProperty?._id || createdProperty?.id;
+                let media = Array.isArray(createdProperty?.media) ? createdProperty.media : [];
+
+                // Fallback: fetch user's properties with media if response doesn't include media
+                if (!propertyId || media.length === 0) {
+                    const propsWithMedia = await getUserPropertiesWithMediaAPI();
+                    const list = propsWithMedia?.data || [];
+                    const candidate = list.find(p => p.title === titleSnap) || list[0];
+                    if (candidate) {
+                        media = candidate.media || [];
+                    }
+                }
+
+                if (Array.isArray(media) && media.length > 0) {
+                    // Match by filename
+                    for (const img of localImages) {
+                        if (!img?.tags || img.tags.length === 0) continue;
+                        const match = media.find(m => (m?.metadata?.filename || '').toLowerCase() === (img.filename || '').toLowerCase());
+                        if (match && (propertyId || match.propertyId)) {
+                            const pid = propertyId || match.propertyId;
+                            try {
+                                await updateImageTagsAPI(pid, match._id, img.tags, img.detectedObjects || []);
+                            } catch (e) {
+                                console.warn('Failed to attach tags for image', match?._id, e);
+                            }
+                        }
+                    }
+                }
+            } catch (attachErr) {
+                console.warn('Post-create tag attachment encountered issues:', attachErr);
+            }
+
             toast.success("Listing published.");
             // navigate("/dashboard/posts");
         } catch (error) {
@@ -1037,7 +1081,20 @@ export default function AddPropertyWizard() {
                                                 className={"mb-8"}
                                                 form={form}
                                                 files={field.value}
-                                                onChange={field.onChange}
+                                                onChange={(files) => {
+                                                    field.onChange(files);
+                                                    const arr = Array.isArray(files) ? files : Array.from(files || []);
+                                                    const mapped = arr.map((file) => ({
+                                                        id: `${file.name}_${file.size}_${file.lastModified}`,
+                                                        file,
+                                                        url: URL.createObjectURL(file),
+                                                        tags: [],
+                                                        detectedObjects: [],
+                                                        analyzed: false,
+                                                        filename: file.name,
+                                                    }));
+                                                    setLocalImages(mapped);
+                                                }}
                                             />
                                         )}
                                     />
@@ -1046,6 +1103,198 @@ export default function AddPropertyWizard() {
                                     <TourLinkModal form={form} className={"mb-8"} />
                                 </TabsContent> */}
                             </Tabs>
+
+                            {/* Image Tagging */}
+                            <Card className="mb-8">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Tag className="h-5 w-5" />
+                                            Image Tags for Uploaded Photos
+                                        </CardTitle>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={async () => {
+                                                if (!localImages.length) return;
+                                                try {
+                                                    setAnalyzingImages(true);
+                                                    const updated = [];
+                                                    for (let i = 0; i < localImages.length; i++) {
+                                                        const img = localImages[i];
+                                                        try {
+                                                            const result = await analyzeTemporaryImageAPI(img.file);
+                                                            updated.push({
+                                                                ...img,
+                                                                tags: result?.data?.tags || img.tags || [],
+                                                                detectedObjects: result?.data?.detectedObjects || img.detectedObjects || [],
+                                                                analyzed: true,
+                                                            });
+                                                        } catch (e) {
+                                                            updated.push(img);
+                                                        }
+                                                    }
+                                                    setLocalImages(updated);
+                                                    toast.success('Analyzed all images successfully');
+                                                } catch (e) {
+                                                    console.error('Bulk analyze error:', e);
+                                                    toast.error('Failed to analyze all images');
+                                                } finally {
+                                                    setAnalyzingImages(false);
+                                                }
+                                            }}
+                                            disabled={analyzingImages || !localImages.length}
+                                        >
+                                            <Sparkles className="h-4 w-4 mr-2" />
+                                            Analyze All
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {localImages.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">Upload photos above to tag and analyze.</p>
+                                    ) : (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {localImages.map((image, idx) => (
+                                                <div key={image.id} className="relative group">
+                                                    <img src={image.url} alt={image.filename} className="w-full h-48 object-cover rounded-lg" />
+                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2 flex-col">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="secondary"
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    setAnalyzingImages(true);
+                                                                    const result = await analyzeTemporaryImageAPI(image.file);
+                                                                    setLocalImages((prev) => prev.map((im, i) => i === idx ? {
+                                                                        ...im,
+                                                                        tags: result?.data?.tags || im.tags || [],
+                                                                        detectedObjects: result?.data?.detectedObjects || im.detectedObjects || [],
+                                                                        analyzed: true,
+                                                                    } : im));
+                                                                    toast.success('Image analyzed');
+                                                                } catch (error) {
+                                                                    console.error('Analyze error:', error);
+                                                                    toast.error('Failed to analyze image');
+                                                                } finally {
+                                                                    setAnalyzingImages(false);
+                                                                }
+                                                            }}
+                                                            disabled={analyzingImages}
+                                                        >
+                                                            <Sparkles className="h-4 w-4 mr-2" />
+                                                            {image.analyzed ? 'Re-analyze' : 'Analyze'}
+                                                        </Button>
+                                                        {image.tags && image.tags.length > 0 && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setLocalImages((prev) => prev.map((im, i) => i === idx ? { ...im, tags: [], detectedObjects: [], analyzed: false } : im));
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                Clear Tags
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    {image.analyzed && (
+                                                        <Badge className="absolute top-2 right-2" variant="default">✓ Analyzed</Badge>
+                                                    )}
+                                                    {image.tags && image.tags.length > 0 && (
+                                                        <div className="absolute bottom-2 left-2 right-2">
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {image.tags.slice(0, 3).map((tag, tIdx) => (
+                                                                    <Badge
+                                                                        key={`${image.id}_tag_${tIdx}`}
+                                                                        variant={tag.source === 'ai' ? 'default' : 'secondary'}
+                                                                        className="text-xs flex items-center gap-1 cursor-pointer"
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                const result = await searchPropertiesByTagAPI(tag.label, 1, 50);
+                                                                                if (result.success && result.data?.properties) {
+                                                                                    navigate('/listing/grid', {
+                                                                                        state: {
+                                                                                            properties: result.data.properties,
+                                                                                            query: tag.label,
+                                                                                            filters: { tag: tag.label },
+                                                                                            isAISearch: true,
+                                                                                            isTagSearch: true
+                                                                                        }
+                                                                                    });
+                                                                                } else {
+                                                                                    toast.error('Không tìm thấy bất động sản với tag này');
+                                                                                }
+                                                                            } catch (error) {
+                                                                                console.error('Error searching by tag:', error);
+                                                                                toast.error('Lỗi khi tìm kiếm theo tag');
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        {tag.label}
+                                                                        {tag.source === 'ai' && <span className="text-xs">🤖</span>}
+                                                                        <X
+                                                                            className="h-3 w-3 cursor-pointer hover:text-destructive"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setLocalImages((prev) => prev.map((im, i) => {
+                                                                                    if (i !== idx) return im;
+                                                                                    const newTags = (im.tags || []).filter((_, j) => j !== tIdx);
+                                                                                    return { ...im, tags: newTags };
+                                                                                }));
+                                                                            }}
+                                                                        />
+                                                                    </Badge>
+                                                                ))}
+                                                                {image.tags.length > 3 && (
+                                                                    <Badge variant="secondary" className="text-xs">+{image.tags.length - 3}</Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {/* Add tag input */}
+                                                    <div className="mt-2 flex gap-2">
+                                                        <Input
+                                                            placeholder="Add tag..."
+                                                            value={newTagInputs[idx] || ''}
+                                                            onChange={(e) => setNewTagInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    const label = (newTagInputs[idx] || '').trim();
+                                                                    if (!label) return;
+                                                                    setLocalImages((prev) => prev.map((im, i) => i === idx ? {
+                                                                        ...im,
+                                                                        tags: [ ...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' } ]
+                                                                    } : im));
+                                                                    setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
+                                                                }
+                                                            }}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const label = (newTagInputs[idx] || '').trim();
+                                                                if (!label) return;
+                                                                setLocalImages((prev) => prev.map((im, i) => i === idx ? {
+                                                                    ...im,
+                                                                    tags: [ ...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' } ]
+                                                                } : im));
+                                                                setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
+                                                            }}
+                                                        >
+                                                            <Plus className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
 
                             {/* Information */}
                             <Card className="mb-8">
