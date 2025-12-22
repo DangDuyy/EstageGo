@@ -16,16 +16,16 @@ const userMembershipSchema = new mongoose.Schema({
   },
   // Số lượng tin tặng kèm
   includedListings: {
-    tier: String,
+    tierType: String,
     total: Number,
     used: { type: Number, default: 0 },
     remaining: { type: Number }
   },
-  status: {
-    type: String,
-    enum: ['active', 'expired', 'cancelled'],
-    default: 'active'
-  },
+  // status: {
+  //   type: String,
+  //   enum: ['active', 'expired', 'cancelled'],
+  //   default: 'active'
+  // },
   startDate: {
     type: Date,
     required: true
@@ -35,16 +35,16 @@ const userMembershipSchema = new mongoose.Schema({
     required: true
   },
   // Thông tin thanh toán
-  payment: {
-    amount: Number,
-    method: String,
-    transactionId: String,
-    paidAt: Date
-  },
-  autoRenew: {
-    type: Boolean,
-    default: false
-  },
+  // payment: {
+  //   amount: Number,
+  //   method: String,
+  //   transactionId: String,
+  //   paidAt: Date
+  // },
+  // autoRenew: {
+  //   type: Boolean,
+  //   default: false
+  // },
   createdAt: { type: Date, default: Date.now }
 }, {
   timestamps: true
