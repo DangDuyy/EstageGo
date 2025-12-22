@@ -809,3 +809,24 @@ export const getListingTiers = async () => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/listingTier`)
   return response.data
 }
+
+// ==================================
+// Membership Config
+// ==================================
+export const getMembershipConfigs = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/membershipConfig`)
+  return response.data
+}
+
+// ==================================
+// User Membership
+// ==================================
+export const subscribe = async (membershipType) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/membership/subscribe`, { membershipType })
+  return response.data
+}
+
+export const getActiveMembership = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/membership/active`)
+  return response.data
+}
