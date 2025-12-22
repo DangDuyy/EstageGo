@@ -5,7 +5,13 @@ export const pickUser = (user) => {
   return pick(user, [
     '_id', 'email', 'userName', 'fullName', 'avatar', 'phone', 'gender', 'address', 'dob', 'role', 'isActive', 'createdAt', 'updatedAt',
     // Agent fields
-    'companyName', 'agentTitle', 'bio', 'specializations', 'areasServed', 'experience', 'licenseNumber', 'website', 'socialLinks', 'agentRequestStatus','membershipLevel', 'balance'
+    'companyName', 'agentTitle', 'bio', 'experience', 'supportServices', 'operatingAreas', 'licenseNumber', 'website', 'socialLinks', 
+    // Broker page
+    'brokerPage',
+    // Membership fields
+    'agentRequestStatus', 'membershipLevel', 'membershipExpireAt', 'membershipBillingCycle', 
+    // Account fields
+    'balance', 'boostCredits', 'isEmailVerified', 'isPhoneVerified'
   ])
 }
 

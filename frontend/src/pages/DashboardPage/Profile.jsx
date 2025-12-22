@@ -20,7 +20,22 @@ export default function Profile() {
   const user = useSelector(selectCurrentUser)
   const [files, setFiles] = useState()
   const [loading, setLoading] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
   
+  // Support services list
+  const SUPPORT_SERVICES = [
+    'Tư vấn tài chính',
+    'Hỗ trợ vay vốn',
+    'Hỗ trợ phân lô, tách thửa',
+    'Hỗ trợ công chứng ba bên',
+    'Hỗ trợ hoàn thiện hồ sơ đăng bộ',
+    'Hỗ trợ làm giấy tờ, hồ sơ nhà đất',
+    'Nhận kí gửi bất động sản',
+    'Xin phép xây dựng',
+    'Hỗ trợ hoàn thiện nội thất',
+    'Hỗ trợ hợp thức hoá nhà đất'
+  ]
+
   // Profile form state
   const [profileData, setProfileData] = useState({
     fullName: '',
@@ -28,10 +43,7 @@ export default function Profile() {
     address: '',
     // Agent fields
     companyName: '',
-    agentTitle: '',
     bio: '',
-    specializations: [],
-    areasServed: [],
     experience: '',
     licenseNumber: '',
     website: '',
@@ -39,11 +51,16 @@ export default function Profile() {
       facebook: '',
       linkedin: '',
       twitter: ''
+    },
+    brokerPage: {
+      agentTitle: '',
+      yearsOfExperience: '',
+      supportServices: [],
+      operatingAreas: []
     }
   })
 
-  // Temporary input states for array fields
-  const [newSpecialization, setNewSpecialization] = useState('')
+  // Temporary input state for operating areas
   const [newArea, setNewArea] = useState('')
 
   // Password form state
@@ -61,10 +78,7 @@ export default function Profile() {
         gender: user.gender || 'male',
         address: user.address || '',
         companyName: user.companyName || '',
-        agentTitle: user.agentTitle || '',
         bio: user.bio || '',
-        specializations: user.specializations || [],
-        areasServed: user.areasServed || [],
         experience: user.experience || '',
         licenseNumber: user.licenseNumber || '',
         website: user.website || '',
@@ -72,6 +86,12 @@ export default function Profile() {
           facebook: user.socialLinks?.facebook || '',
           linkedin: user.socialLinks?.linkedin || '',
           twitter: user.socialLinks?.twitter || ''
+        },
+        brokerPage: {
+          agentTitle: user.brokerPage?.agentTitle || '',
+          yearsOfExperience: user.brokerPage?.yearsOfExperience ?? '',
+          supportServices: user.brokerPage?.supportServices || [],
+          operatingAreas: user.brokerPage?.operatingAreas || []
         }
       })
     }
@@ -82,8 +102,8 @@ export default function Profile() {
     const pollUserData = async () => {
       try {
         const updatedUser = await getCurrentUserAPI()
-        // Only update Redux if data actually changed
-        if (updatedUser && JSON.stringify(updatedUser) !== JSON.stringify(user)) {
+        // Only update Redux if data actually changed AND form is not being edited
+        if (updatedUser && !isDirty && JSON.stringify(updatedUser) !== JSON.stringify(user)) {
           dispatch(updateUser(updatedUser))
         }
       } catch (error) {
@@ -91,9 +111,9 @@ export default function Profile() {
       }
     }
 
-    const interval = setInterval(pollUserData, 1000)
+    const interval = setInterval(pollUserData, 5000) // Changed from 1000ms to 5000ms
     return () => clearInterval(interval)
-  }, [user, dispatch])
+  }, [user, dispatch, isDirty])
 
   const handleDrop = (files) => {
     console.log(files)
@@ -107,11 +127,17 @@ export default function Profile() {
       setLoading(true)
       const updatedUser = await updateUserProfileAPI(profileData)
       
-      // Update Redux store
-      dispatch(updateUser(updatedUser))
+      // Update Redux store with the new user data
+      if (updatedUser) {
+        dispatch(updateUser(updatedUser))
+        // Reset dirty flag after successful save
+        setIsDirty(false)
+        toast.success('Profile updated successfully')
+      }
     } catch (error) {
       console.error('Update profile error:', error)
-      toast.error(error.response?.data?.message || 'Failed to update profile')
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -182,38 +208,39 @@ export default function Profile() {
     }
   }
 
-  const addSpecialization = () => {
-    if (newSpecialization.trim() && !profileData.specializations.includes(newSpecialization.trim())) {
-      setProfileData({
-        ...profileData,
-        specializations: [...profileData.specializations, newSpecialization.trim()]
-      })
-      setNewSpecialization('')
-    }
-  }
-
-  const removeSpecialization = (index) => {
+  const toggleSupportService = (service) => {
+    const current = profileData.brokerPage?.supportServices || []
+    const next = current.includes(service)
+      ? current.filter(s => s !== service)
+      : [...current, service]
     setProfileData({
       ...profileData,
-      specializations: profileData.specializations.filter((_, i) => i !== index)
+      brokerPage: { ...profileData.brokerPage, supportServices: next }
     })
+    setIsDirty(true)
   }
 
   const addArea = () => {
-    if (newArea.trim() && !profileData.areasServed.includes(newArea.trim())) {
+    const val = newArea.trim()
+    const current = profileData.brokerPage?.operatingAreas || []
+    if (val && !current.includes(val)) {
       setProfileData({
         ...profileData,
-        areasServed: [...profileData.areasServed, newArea.trim()]
+        brokerPage: { ...profileData.brokerPage, operatingAreas: [...current, val] }
       })
       setNewArea('')
+      setIsDirty(true)
     }
   }
 
   const removeArea = (index) => {
+    const current = profileData.brokerPage?.operatingAreas || []
+    const next = current.filter((_, i) => i !== index)
     setProfileData({
       ...profileData,
-      areasServed: profileData.areasServed.filter((_, i) => i !== index)
+      brokerPage: { ...profileData.brokerPage, operatingAreas: next }
     })
+    setIsDirty(true)
   }
 
   return (
@@ -224,12 +251,12 @@ export default function Profile() {
         <p className="font-semibold text-xl">Agent Account</p>
         
         {user?.role === 'admin' ? (
-          <p className='border-1 bg-[#d4edda] text-[#155724] p-4 rounded-2xl'>
+          <p className='border bg-[#d4edda] text-[#155724] p-4 rounded-2xl'>
             You are an <strong>administrator</strong> with full system access. You can manage all properties, users, and agent requests through the admin dashboard.
           </p>
         ) : user?.role === 'agent' ? (
           <>
-            <p className='border-1 bg-[#fff3cd] text-black p-4 rounded-2xl'>
+            <p className='border bg-[#fff3cd] text-black p-4 rounded-2xl'>
               Your current account type is set to <strong>agent</strong>. If you want to remove your agent account and return to normal account, you must click the button below.
             </p>
             <Button 
@@ -242,12 +269,12 @@ export default function Profile() {
             </Button>
           </>
         ) : user?.agentRequestStatus === 'pending' ? (
-          <p className='border-1 bg-[#d1ecf1] text-[#0c5460] p-4 rounded-2xl'>
+          <p className='border bg-[#d1ecf1] text-[#0c5460] p-4 rounded-2xl'>
             Your agent request is currently <strong>pending approval</strong>. Please wait for admin review.
           </p>
         ) : (
           <>
-            <p className='border-1 bg-[#d1ecf1] text-[#0c5460] p-4 rounded-2xl'>
+            <p className='border bg-[#d1ecf1] text-[#0c5460] p-4 rounded-2xl'>
               You are currently a <strong>normal user</strong>. If you want to become an agent to list and manage properties professionally, please submit an agent request for approval.
             </p>
             <Button 
@@ -376,12 +403,18 @@ export default function Profile() {
                   </span>
 
                   <span>
-                    <p>Agent Title / Position:</p>
+                    <p>Agent Title / Position (Broker Page):</p>
                     <Input 
                       type="text" 
                       placeholder="e.g., Senior Real Estate Agent, Team Leader..."
-                      value={profileData.agentTitle}
-                      onChange={(e) => setProfileData({ ...profileData, agentTitle: e.target.value })}
+                      value={profileData.brokerPage.agentTitle}
+                      onChange={(e) => {
+                        setProfileData({ 
+                          ...profileData, 
+                          brokerPage: { ...profileData.brokerPage, agentTitle: e.target.value }
+                        })
+                        setIsDirty(true)
+                      }}
                     />
                   </span>
 
@@ -397,13 +430,20 @@ export default function Profile() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <span>
-                      <p>Years of Experience:</p>
+                      <p>Years of Experience (Broker Page):</p>
                       <Input 
                         type="number" 
                         placeholder="0"
                         min="0"
-                        value={profileData.experience}
-                        onChange={(e) => setProfileData({ ...profileData, experience: e.target.value })}
+                        value={profileData.brokerPage.yearsOfExperience}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setProfileData({ 
+                            ...profileData, 
+                            brokerPage: { ...profileData.brokerPage, yearsOfExperience: val }
+                          })
+                          setIsDirty(true)
+                        }}
                       />
                     </span>
 
@@ -419,36 +459,41 @@ export default function Profile() {
                   </div>
 
                   <span>
-                    <p>Specializations:</p>
-                    <div className="flex gap-2 mb-2">
-                      <Input 
-                        type="text" 
-                        placeholder="e.g., Residential, Commercial, Luxury..."
-                        value={newSpecialization}
-                        onChange={(e) => setNewSpecialization(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialization())}
-                      />
-                      <Button type="button" onClick={addSpecialization}>Add</Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {profileData.specializations.map((spec, idx) => (
-                        <Badge key={idx} variant="secondary" className="flex items-center gap-1">
-                          {spec}
-                          <X 
-                            className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                            onClick={() => removeSpecialization(idx)}
+                    <p>Services Provided:</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      {SUPPORT_SERVICES.map((service) => (
+                        <label key={service} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={profileData.brokerPage.supportServices.includes(service)}
+                            onChange={() => toggleSupportService(service)}
+                            className="w-4 h-4 rounded border-gray-300"
                           />
-                        </Badge>
+                          <span className="text-sm">{service}</span>
+                        </label>
                       ))}
                     </div>
+                    {profileData.brokerPage.supportServices.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {profileData.brokerPage.supportServices.map((service) => (
+                          <Badge key={service} variant="secondary" className="flex items-center gap-1">
+                            {service}
+                            <X 
+                              className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                              onClick={() => toggleSupportService(service)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </span>
 
                   <span>
-                    <p>Areas Served:</p>
+                    <p>Operating Areas:</p>
                     <div className="flex gap-2 mb-2">
                       <Input 
                         type="text" 
-                        placeholder="e.g., District 1, District 2, Binh Thanh..."
+                        placeholder="e.g., Quận 1, Quận 2, Quận Tân Bình..."
                         value={newArea}
                         onChange={(e) => setNewArea(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addArea())}
@@ -456,7 +501,7 @@ export default function Profile() {
                       <Button type="button" onClick={addArea}>Add</Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {profileData.areasServed.map((area, idx) => (
+                      {profileData.brokerPage.operatingAreas.map((area, idx) => (
                         <Badge key={idx} variant="secondary" className="flex items-center gap-1">
                           {area}
                           <X 
