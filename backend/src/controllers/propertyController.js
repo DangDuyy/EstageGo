@@ -583,26 +583,92 @@ Quy tắc chuyển đổi:
      - Quận/huyện -> address.district (regex)
      - Từ "gần" + địa điểm -> address.fullAddress (regex)
 
-6. Phòng:
+6. Tags (Image Tags):
+   - **QUAN TRỌNG**: Nếu người dùng tìm kiếm với TỪ KHÓA MÔ TẢ ĐẶC ĐIỂM (như "ban công rộng", "phòng bếp hiện đại", "view đẹp", "có sân vườn", etc.),
+     PHẢI TẠO QUERY TÌM TRONG TRƯỜNG media.tags
+   
+   - Các từ khóa thường gặp cho tags:
+     * Về không gian: "ban công", "balcony", "phòng bếp", "kitchen", "phòng khách", "living room", "sân vườn", "garden"
+     * Về view: "view đẹp", "view sông", "view thành phố", "city view", "river view", "hướng biển"
+     * Về đặc điểm: "rộng rãi", "spacious", "hiện đại", "modern", "sang trọng", "luxury", "thoáng mát"
+     * Về tiện ích đặc biệt: "có hồ bơi riêng", "bồn tắm lớn", "nội thất đầy đủ", "fully furnished"
+   
+   - Ví dụ TÌM TAG:
+     "ban công rộng" -> {
+       "media.tags": {
+         "$elemMatch": {
+           "label": {"$regex": "ban.*cong|rong|spacious|balcony", "$options": "i"}
+         }
+       }
+     }
+   
+   - Ví dụ TAG + LOẠI:
+     "căn hộ có view đẹp" -> {
+       "type": "apartment",
+       "media.tags": {
+         "$elemMatch": {
+           "label": {"$regex": "view|dep|beautiful|scenic", "$options": "i"}
+         }
+       }
+     }
+   
+   - Ví dụ NHIỀU TAG:
+     "phòng bếp hiện đại và ban công rộng" -> {
+       "media.tags": {
+         "$elemMatch": {
+           "label": {"$regex": "phong.*bep|kitchen|hien.*dai|modern|ban.*cong|balcony|rong|spacious", "$options": "i"}
+         }
+       }
+     }
+
+7. Phòng:
    - "3BR", "3 bedrooms", "3 phòng ngủ" -> rooms.bedrooms
    - "2 phòng tắm", "2 bathrooms" -> rooms.bathrooms
 
-7. Tiện ích (amenities):
+8. Tiện ích (amenities):
    - "bể bơi", "swimming pool" -> amenities: { $in: ["swimming pool"] }
    - "gym", "phòng gym" -> amenities: { $in: ["gym"] }
    - Danh sách: "pool, gym, parking" -> amenities: { $in: ["swimming pool", "gym", "parking"] }
 
-8. Status:
+9. Status:
    - Mặc định không cần truyền (backend sẽ lấy active)
    - Nếu có từ "đã bán", "sold" -> status: "sold"
    - Nếu có từ "đã cho thuê", "rented" -> status: "rented"
+
+**LƯU Ý ƯU TIÊN**: 
+- Nếu query có chứa từ khóa mô tả ĐẶC ĐIỂM/KHÔNG GIAN (ban công, phòng bếp, view, sân vườn, v.v.), ƯU TIÊN dùng media.tags trước
+- Tags giúp tìm kiếm chính xác hơn dựa vào hình ảnh thực tế của bất động sản
 
 **CHỈ** trả về JSON object tuân thủ schema. Không giải thích, không thêm văn bản.
 Nếu không có thông tin về một trường nào đó, bỏ qua trường đó (nullable).
 
 Ví dụ output hợp lệ:
 
-Ví dụ 1 - Tìm theo TÊN TÒA NHÀ (search trong title, description, fullAddress):
+Ví dụ 1 - Tìm theo TAG (đặc điểm từ hình ảnh):
+{
+  "type": "apartment",
+  "purpose": "sale",
+  "media.tags": {
+    "$elemMatch": {
+      "label": {"$regex": "ban.*cong|balcony|rong|spacious", "$options": "i"}
+    }
+  }
+}
+
+Ví dụ 2 - Tìm theo TAG + Nhiều tiêu chí:
+{
+  "type": "apartment",
+  "purpose": "rent",
+  "rooms.bedrooms": { "$gte": 2 },
+  "price.value": { "$lte": 20000000 },
+  "media.tags": {
+    "$elemMatch": {
+      "label": {"$regex": "view|dep|beautiful|city.*view|river.*view", "$options": "i"}
+    }
+  }
+}
+
+Ví dụ 3 - Tìm theo TÊN TÒA NHÀ (search trong title, description, fullAddress):
 {
   "type": "apartment",
   "purpose": "sale",
@@ -613,7 +679,7 @@ Ví dụ 1 - Tìm theo TÊN TÒA NHÀ (search trong title, description, fullAddr
   ]
 }
 
-Ví dụ 2 - Tên tòa nhà + Nhiều tiêu chí:
+Ví dụ 4 - Tên tòa nhà + Nhiều tiêu chí:
 {
   "type": "apartment",
   "purpose": "sale",
@@ -626,13 +692,13 @@ Ví dụ 2 - Tên tòa nhà + Nhiều tiêu chí:
   ]
 }
 
-Ví dụ 3 - Tìm theo quận (VỊ TRÍ HÀNH CHÍNH, không dùng $or):
+Ví dụ 5 - Tìm theo quận (VỊ TRÍ HÀNH CHÍNH, không dùng $or):
 {
   "type": "apartment",
   "address.district": { "$regex": "quận 1", "$options": "i" }
 }
 
-Ví dụ 4 - Tìm theo địa điểm gần (dùng fullAddress):
+Ví dụ 6 - Tìm theo địa điểm gần (dùng fullAddress):
 {
   "address.fullAddress": { "$regex": "gần trường", "$options": "i" }
 }
