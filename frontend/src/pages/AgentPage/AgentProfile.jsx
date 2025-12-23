@@ -406,7 +406,7 @@ export default function AgentProfile() {
   }
 
   // Render broker page or default profile
-  const showBrokerPage = isAgent && isBrokerPageActive()
+  const showBrokerPage = isBrokerPageActive()
 
   return (
     <>
@@ -439,6 +439,8 @@ export default function AgentProfile() {
           onSubmitReview={handleSubmitReview}
           onDeleteReview={handleDeleteReview}
           currentUser={currentUser}
+          enableFollow={isAgent}
+          enableReviews={isAgent}
         />
       ) : (
         // Default Profile View
