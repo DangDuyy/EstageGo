@@ -43,7 +43,9 @@ export default function AgentBrokerPage({
   onRemoveReviewImage,
   onSubmitReview,
   onDeleteReview,
-  currentUser
+  currentUser,
+  enableFollow = true,
+  enableReviews = true
 }) {
   const isOwnProfile = currentUserId === user?._id
   const [editingReviewId, setEditingReviewId] = useState(null)
@@ -190,22 +192,24 @@ export default function AgentBrokerPage({
                     )}
                     Message
                   </Button>
-                  <Button 
-                    variant={isFollowing ? "outline" : "default"}
-                    onClick={onToggleFollow}
-                    disabled={isFollowLoading}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isFollowLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    ) : isFollowing ? (
-                      <HeartOff className="h-5 w-5 mr-2" />
-                    ) : (
-                      <Heart className="h-5 w-5 mr-2" />
-                    )}
-                    {isFollowing ? 'Unfollow' : 'Follow'}
-                  </Button>
+                  {enableFollow && (
+                    <Button 
+                      variant={isFollowing ? "outline" : "default"}
+                      onClick={onToggleFollow}
+                      disabled={isFollowLoading}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {isFollowLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      ) : isFollowing ? (
+                        <HeartOff className="h-5 w-5 mr-2" />
+                      ) : (
+                        <Heart className="h-5 w-5 mr-2" />
+                      )}
+                      {isFollowing ? 'Unfollow' : 'Follow'}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -309,6 +313,7 @@ export default function AgentBrokerPage({
           </div>
 
           {/* Right: Reviews */}
+          {enableReviews && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -481,6 +486,7 @@ export default function AgentBrokerPage({
               </CardContent>
             </Card>
           </div>
+          )}
         </div>
 
         {/* Listings Section */}
