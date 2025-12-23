@@ -491,8 +491,9 @@ const getAllAgents = async (searchQuery = '', page = 1, limit = 12) => {
   try {
     const skip = (page - 1) * limit
     
+    // Include both agents and regular users so the directory shows everyone
     const query = {
-      role: 'agent',
+      role: { $in: ['agent', 'user'] },
       isActive: true
     }
 

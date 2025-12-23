@@ -53,9 +53,9 @@ export default function AgentListPage() {
         <div className="container mx-auto px-4 lg:px-8 xl:px-12 max-w-7xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-4">Find Real Estate Agents</h1>
+            <h1 className="text-4xl font-bold mb-4">Find People: Agents & Users</h1>
             <p className="text-muted-foreground text-lg">
-              Connect with professional agents to help you buy, sell, or rent properties
+              Connect with agents and active users who can help you buy, sell, or rent properties
             </p>
           </div>
 
