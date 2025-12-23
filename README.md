@@ -32,11 +32,11 @@ EstageGo is a full-stack web application designed to connect buyers, sellers, an
 
 ## 👨‍💻 Development Team
 
-| # | Student ID | Name | GitHub |
-|---|-----------|------|--------|
-| 1 | 22110295 | Đặng Đăng Duy | [DangDuyy](https://github.com/DangDuyy) |
-| 2 | 22110296 | Phan Tất Duy | TBD |
-| 3 | 22110450 | Võ Văn Tuấn | TBD |
+| # | Student ID | Name |
+|---|-----------|------|
+| 1 | 22110295 | Đặng Đăng Duy |
+| 2 | 22110338 | Nguyễn Văn Hùng |
+| 3 | 22110450 | Võ Văn Tuấn |
 
 ---
 
