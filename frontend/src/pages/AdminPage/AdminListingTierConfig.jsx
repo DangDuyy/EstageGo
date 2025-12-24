@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Edit, Home, CheckCircle, XCircle } from 'lucide-react';
-import { getListingTiers, getListingTierUsageStats, updateListingTierPricing } from '@/apis';
+import { Loader2, Edit, Home, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { getListingTiers, getListingTierUsageStats, updateListingTierPricing, getListingTierProperties } from '@/apis';
 
 export default function AdminListingTierConfig() {
   const [tiers, setTiers] = useState([]);
@@ -17,6 +18,9 @@ export default function AdminListingTierConfig() {
   const [selectedTier, setSelectedTier] = useState(null);
   const [editingDuration, setEditingDuration] = useState({ days: 30, price: 0 });
   const [saving, setSaving] = useState(false);
+  const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
+  const [propertyList, setPropertyList] = useState([]);
+  const [loadingProps, setLoadingProps] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -96,6 +100,21 @@ export default function AdminListingTierConfig() {
     }
   };
 
+  const handleViewProperties = async (tier) => {
+    try {
+      setLoadingProps(true);
+      setSelectedTier(tier);
+      const res = await getListingTierProperties(tier.tierName);
+      setPropertyList(res.data || []);
+      setPropertyDialogOpen(true);
+    } catch (error) {
+      toast.error('Failed to load properties');
+      console.error(error);
+    } finally {
+      setLoadingProps(false);
+    }
+  };
+
   const getStatsForTier = (tierName) => {
     return usageStats.find(s => s.tierName === tierName) || {
       activeListings: 0,
@@ -164,6 +183,10 @@ export default function AdminListingTierConfig() {
                     <div className="text-xl font-bold text-red-600">{stats.expiredListings}</div>
                   </div>
                 </div>
+
+                <Button variant="outline" size="sm" className="w-full" onClick={() => handleViewProperties(tier)}>
+                  <Eye className="h-4 w-4 mr-2" /> View posts
+                </Button>
 
                 {/* Duration Pricing */}
                 <div className="space-y-3">
@@ -254,6 +277,63 @@ export default function AdminListingTierConfig() {
                 'Save Changes'
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Properties Dialog */}
+      <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Listings in {selectedTier?.displayName?.en}</DialogTitle>
+            <DialogDescription>Bài post đang gán tier này</DialogDescription>
+          </DialogHeader>
+
+          {loadingProps ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <div className="max-h-[520px] overflow-y-auto space-y-3">
+              {propertyList.length === 0 && (
+                <p className="text-sm text-muted-foreground">Chưa có bài post nào</p>
+              )}
+              {propertyList.map((p) => (
+                <div key={p._id} className="border rounded-lg p-3 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-16 h-16 rounded-md overflow-hidden bg-muted">
+                      {p.media?.[0]?.url ? (
+                        <img src={p.media[0].url} alt={p.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">No image</div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Link to={`/properties/${p._id}`} className="font-semibold hover:underline" target="_blank" rel="noreferrer">
+                        {p.title}
+                      </Link>
+                      <div className="text-sm text-muted-foreground">Status: {p.status}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Expire: {p.expireAt ? new Date(p.expireAt).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  {p.owner && (
+                    <div className="text-right text-sm text-muted-foreground">
+                      <Link to={`/agents/${p.owner._id}`} className="font-medium hover:underline" target="_blank" rel="noreferrer">
+                        {p.owner.fullName}
+                      </Link>
+                      <div>{p.owner.email}</div>
+                      <div>{p.owner.phone}</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPropertyDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

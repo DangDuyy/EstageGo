@@ -161,6 +161,27 @@ const getUsageStats = async () => {
     return stats;
 };
 
+/**
+ * Lấy danh sách properties theo tier
+ */
+const getPropertiesByTier = async (tierName) => {
+    const tier = await ListingTierConfig.findOne({ tierName });
+    if (!tier) {
+        throw new Error(`Không tìm thấy tier "${tierName}"`);
+    }
+
+    const Property = (await import('~/models/properties.js')).default;
+
+    const properties = await Property.find({ tier: tier._id })
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .select('title status expireAt owner tier createdAt media')
+        .populate({ path: 'owner', select: 'fullName email phone avatar' })
+        .lean();
+
+    return properties;
+};
+
 export const listingTierService = {
     getAllListingTiers,
     getListingTierByName,
@@ -170,5 +191,6 @@ export const listingTierService = {
     activateListingTier,
     getTierPriceByDuration,
     updateTierPricing,
-    getUsageStats
+    getUsageStats,
+    getPropertiesByTier
 }

@@ -184,6 +184,25 @@ class MembershipConfigController {
       });
     }
   }
+
+  // GET /api/membership-configs/:type/users - danh sách user của gói
+  async getUsersByType(req, res) {
+    try {
+      const { type } = req.params;
+      const users = await membershipConfigService.getUsersByType(type);
+
+      res.status(200).json({
+        success: true,
+        data: users,
+        count: users.length
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
 }
 
 export default new MembershipConfigController();

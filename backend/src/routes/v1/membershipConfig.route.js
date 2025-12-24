@@ -9,6 +9,9 @@ router.get('/stats/usage', membershipConfigController.getUsageStats);
 // Lấy tất cả cấu hình
 router.get('/', membershipConfigController.getAllConfigs);
 
+// Lấy user theo gói
+router.get('/:type/users', membershipConfigController.getUsersByType);
+
 // Lấy cấu hình theo loại
 router.get('/:type', membershipConfigController.getConfigByType);
 

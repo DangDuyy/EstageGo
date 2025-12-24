@@ -95,6 +95,21 @@ const getUsageStats = async (req, res, next) => {
     }
 }
 
+const getPropertiesByTier = async (req, res, next) => {
+    try {
+        const { tierName } = req.params
+        const properties = await listingTierService.getPropertiesByTier(tierName)
+        res.status(StatusCodes.OK).json({
+            success: true,
+            data: properties,
+            count: properties.length
+        })
+    }
+    catch (e) {
+        next(e)
+    }
+}
+
 export const listingTierController = {
     getTiers,
     createTier,
@@ -102,5 +117,6 @@ export const listingTierController = {
     updateTierPricing,
     deactivateTier,
     activateTier,
-    getUsageStats
+    getUsageStats,
+    getPropertiesByTier
 }

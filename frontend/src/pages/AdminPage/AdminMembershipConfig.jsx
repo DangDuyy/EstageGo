@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Edit, TrendingUp, Users, CheckCircle } from 'lucide-react';
-import { getMembershipConfigs, getMembershipConfigUsageStats, updateMembershipPricing } from '@/apis';
+import { Loader2, Edit, Users, CheckCircle, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { getMembershipConfigs, getMembershipConfigUsageStats, updateMembershipPricing, getMembershipUsers } from '@/apis';
 
 export default function AdminMembershipConfig() {
   const [packages, setPackages] = useState([]);
@@ -17,6 +18,9 @@ export default function AdminMembershipConfig() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [editingPrice, setEditingPrice] = useState({ durationMonths: 1, price: 0, discount: 0 });
   const [saving, setSaving] = useState(false);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [userList, setUserList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -100,6 +104,21 @@ export default function AdminMembershipConfig() {
     }
   };
 
+  const handleViewUsers = async (pkg) => {
+    try {
+      setLoadingUsers(true);
+      setSelectedPackage(pkg);
+      const res = await getMembershipUsers(pkg.membershipType);
+      setUserList(res.data || []);
+      setUserDialogOpen(true);
+    } catch (error) {
+      toast.error('Failed to load users');
+      console.error(error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   const getStatsForPackage = (membershipType) => {
     return usageStats.find(s => s.membershipType === membershipType) || {
       activeUsers: 0,
@@ -161,6 +180,10 @@ export default function AdminMembershipConfig() {
                     <div className="text-2xl font-bold">{stats.totalUsers}</div>
                   </div>
                 </div>
+
+                <Button variant="outline" size="sm" className="w-full" onClick={() => handleViewUsers(pkg)}>
+                  <Eye className="h-4 w-4 mr-2" /> View users
+                </Button>
 
                 {/* Pricing Options */}
                 <div className="space-y-3">
@@ -265,6 +288,56 @@ export default function AdminMembershipConfig() {
                 'Save Changes'
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Users Dialog */}
+      <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Users in {selectedPackage?.displayName?.en}</DialogTitle>
+            <DialogDescription>Danh sách user đã mua gói này</DialogDescription>
+          </DialogHeader>
+
+          {loadingUsers ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <div className="max-h-[480px] overflow-y-auto space-y-3">
+              {userList.length === 0 && (
+                <p className="text-sm text-muted-foreground">Chưa có user nào</p>
+              )}
+              {userList.map((user) => (
+                <div key={user._id} className="flex items-center justify-between border rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-muted">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">No avatar</div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Link to={`/agents/${user._id}`} className="font-semibold hover:underline" target="_blank" rel="noreferrer">
+                        {user.fullName || 'No name'}
+                      </Link>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="text-sm text-muted-foreground">{user.phone}</div>
+                    </div>
+                  </div>
+                  <div className="text-right text-sm text-muted-foreground">
+                    <div>Start: {user.startDate ? new Date(user.startDate).toLocaleDateString() : '-'}</div>
+                    <div>End: {user.endDate ? new Date(user.endDate).toLocaleDateString() : '-'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

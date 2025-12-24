@@ -10,6 +10,9 @@ Router.use(authMiddleware.isAuthorized)
 // Usage stats (đặt trước để tránh conflict)
 Router.get('/stats/usage', listingTierController.getUsageStats)
 
+// Properties by tier
+Router.get('/:tierName/properties', listingTierController.getPropertiesByTier)
+
 Router.route('/')
   .get(listingTierController.getTiers)
   .post(listingTierController.createTier)
