@@ -1,4 +1,4 @@
-import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid, MessageCircleMore, HeartPlus, House, ShieldCheck, UserCheck, Home, Zap, Crown } from "lucide-react";
+import { Tag, Users, Settings, Bookmark, SquarePen, LayoutGrid, MessageCircleMore, HeartPlus, House, ShieldCheck, UserCheck, Home, Zap, Crown, DollarSign, BarChart3 } from "lucide-react";
 
 export function getMenuList(pathname, isAdminPanel = false) {
   // Admin Panel Menu
@@ -34,6 +34,23 @@ export function getMenuList(pathname, isAdminPanel = false) {
             href: "/admin/users",
             label: "Users",
             icon: Users,
+            submenus: []
+          }
+        ]
+      },
+      {
+        groupLabel: "Pricing & Config",
+        menus: [
+          {
+            href: "/admin/membership-config",
+            label: "Membership Packages",
+            icon: Crown,
+            submenus: []
+          },
+          {
+            href: "/admin/listing-tier-config",
+            label: "Listing Tiers",
+            icon: Zap,
             submenus: []
           }
         ]

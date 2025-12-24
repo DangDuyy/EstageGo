@@ -167,6 +167,48 @@ class MembershipConfigService {
       throw error;
     }
   }
+
+  // Thống kê usage của membership configs
+  async getUsageStats() {
+    try {
+      const { UserMembership } = await import('~/models/userMembership.js');
+      
+      const configs = await MembershipConfig.find({ isActive: true });
+      const stats = await Promise.all(
+        configs.map(async (config) => {
+          // Đếm số user đang active với membership này
+          const activeUsers = await UserMembership.countDocuments({
+            membershipType: config.membershipType,
+            endDate: { $gte: new Date() }
+          });
+
+          // Tổng số user đã từng sử dụng
+          const totalUsers = await UserMembership.countDocuments({
+            membershipType: config.membershipType
+          });
+
+          // Tính tổng revenue (giả sử lấy từ pricing đầu tiên)
+          const totalRevenue = await UserMembership.aggregate([
+            { $match: { membershipType: config.membershipType } },
+            { $group: { _id: null, total: { $sum: '$payment.amount' } } }
+          ]);
+
+          return {
+            membershipType: config.membershipType,
+            displayName: config.displayName,
+            activeUsers,
+            totalUsers,
+            expiredUsers: totalUsers - activeUsers,
+            totalRevenue: totalRevenue[0]?.total || 0
+          };
+        })
+      );
+
+      return stats;
+    } catch (error) {
+      throw new Error(`Error fetching usage stats: ${error.message}`);
+    }
+  }
 }
 
 export default new MembershipConfigService();

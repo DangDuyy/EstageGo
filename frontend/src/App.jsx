@@ -9,6 +9,8 @@ import AdminAgentRequests from './pages/AdminPage/AdminAgentRequests'
 import AdminDashboard from './pages/AdminPage/AdminDashboard'
 import AdminProperties from './pages/AdminPage/AdminProperties'
 import AdminUsers from './pages/AdminPage/AdminUsers'
+import AdminMembershipConfig from './pages/AdminPage/AdminMembershipConfig'
+import AdminListingTierConfig from './pages/AdminPage/AdminListingTierConfig'
 import AgentListPage from './pages/AgentPage'
 import AgentProfile from './pages/AgentPage/AgentProfile'
 import AISearchPage from './pages/AI/AISearchPage'
@@ -111,6 +113,8 @@ function App() {
           <Route path="properties" element={<AdminProperties />} />
           <Route path="agent-requests" element={<AdminAgentRequests />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="membership-config" element={<AdminMembershipConfig />} />
+          <Route path="listing-tier-config" element={<AdminListingTierConfig />} />
         </Route>
 
         {/* page not found */}

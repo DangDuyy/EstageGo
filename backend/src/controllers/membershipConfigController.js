@@ -167,6 +167,23 @@ class MembershipConfigController {
       });
     }
   }
+
+  // GET /api/membership-configs/stats/usage - Thống kê usage
+  async getUsageStats(req, res) {
+    try {
+      const stats = await membershipConfigService.getUsageStats();
+      
+      res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
 }
 
 export default new MembershipConfigController();

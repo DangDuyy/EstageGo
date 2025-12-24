@@ -90,6 +90,85 @@ const getTierPriceByDuration = async (tierName, days) => {
     };
 };
 
+/**
+ * Cập nhật giá của tier
+ */
+const updateTierPricing = async (tierName, pricingData) => {
+    const tier = await ListingTierConfig.findOne({ tierName });
+
+    if (!tier) {
+        throw new Error(`Không tìm thấy tier "${tierName}"`);
+    }
+
+    // Tìm và cập nhật giá theo days hoặc thêm mới
+    const existingDurationIndex = tier.durations.findIndex(
+        d => d.days === pricingData.days
+    );
+
+    if (existingDurationIndex > -1) {
+        tier.durations[existingDurationIndex] = pricingData;
+    } else {
+        tier.durations.push(pricingData);
+    }
+
+    await tier.save();
+    return tier;
+};
+
+/**
+ * Thống kê usage của listing tiers
+ */
+const getUsageStats = async () => {
+    // Property model được export default
+    const Property = (await import('~/models/properties.js')).default;
+    
+    const tiers = await ListingTierConfig.find({ isActive: true });
+    
+    const stats = await Promise.all(
+        tiers.map(async (tier) => {
+            // Đếm số listings đang active: status active và chưa hết hạn (expireAt null hoặc >= now)
+            const activeListings = await Property.countDocuments({
+                tier: tier._id,
+                status: 'active',
+                $or: [
+                    { expireAt: null },
+                    { expireAt: { $gte: new Date() } }
+                ]
+            });
+
+            // Tổng số listings đã từng sử dụng tier này
+            const totalListings = await Property.countDocuments({
+                tier: tier._id
+            });
+
+            // Listings đã hết hạn (dù status gì) dựa trên expireAt < now
+            const expiredListings = await Property.countDocuments({
+                tier: tier._id,
+                expireAt: { $lt: new Date() }
+            });
+
+            return {
+                tierName: tier.tierName,
+                displayName: tier.displayName,
+                priority: tier.priority,
+                activeListings,
+                totalListings,
+                expiredListings
+            };
+        })
+    );
+
+    return stats;
+};
+
 export const listingTierService = {
-    getAllListingTiers
+    getAllListingTiers,
+    getListingTierByName,
+    createListingTier,
+    updateListingTier,
+    deactivateListingTier,
+    activateListingTier,
+    getTierPriceByDuration,
+    updateTierPricing,
+    getUsageStats
 }
