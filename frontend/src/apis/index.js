@@ -818,6 +818,46 @@ export const getMembershipConfigs = async () => {
   return response.data
 }
 
+export const getMembershipConfigUsageStats = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/membershipConfig/stats/usage`)
+  return response.data
+}
+
+export const getMembershipUsers = async (type) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/membershipConfig/${type}/users`)
+  return response.data
+}
+
+export const updateMembershipConfig = async (type, data) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/membershipConfig/${type}`, data)
+  return response.data
+}
+
+export const updateMembershipPricing = async (type, pricingData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/membershipConfig/${type}/pricing`, pricingData)
+  return response.data
+}
+
+export const getListingTierUsageStats = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/listingTier/stats/usage`)
+  return response.data
+}
+
+export const getListingTierProperties = async (tierName) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/listingTier/${tierName}/properties`)
+  return response.data
+}
+
+export const updateListingTier = async (tierName, data) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/listingTier/${tierName}`, data)
+  return response.data
+}
+
+export const updateListingTierPricing = async (tierName, pricingData) => {
+  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/listingTier/${tierName}/pricing`, pricingData)
+  return response.data
+}
+
 // ==================================
 // User Membership
 // ==================================

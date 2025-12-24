@@ -169,10 +169,12 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const [similarProperties, setSimilarProperties] = React.useState([])
   const [loadingSimilar, setLoadingSimilar] = React.useState(true)
 
+  const isLoggedIn = Boolean(currentUser?._id)
+
   // Handle start chat with owner
   const handleStartChat = async () => {
-    if (!currentUser) {
-      toast.error('Please login to send messages')
+    if (!isLoggedIn) {
+      toast.error('Please log in to chat with the owner')
       return
     }
 
@@ -219,6 +221,14 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     if (r === 0) return principal / loan.months;
     return (principal * r) / (1 - Math.pow(1 + r, -loan.months));
   }, [loan]);
+
+  const handleLeadSubmit = () => {
+    if (!isLoggedIn) {
+      toast.info('Please log in to continue');
+      return;
+    }
+    toast.success('Your request has been submitted');
+  };
 
   const [showFullDesc, setShowFullDesc] = React.useState(false);
   const descriptionParas = React.useMemo(() => {
@@ -525,7 +535,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                 const owner = property.ownerInfo || {};
                 const ownerName = owner.fullName || "Seller name";
                 const ownerAvatar = owner.avatar || null;
-                const isOwnProperty = currentUser?._id === owner._id;
+                const isOwnProperty = isLoggedIn && currentUser?._id === owner._id;
 
                 return (
                   <div className="space-y-4">
@@ -553,7 +563,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                         )}
                       </div>
                     </div>
-                    {!isOwnProperty && currentUser && (
+                    {!isOwnProperty && isLoggedIn && (
                       <Button
                         variant="default"
                         className="w-full"
@@ -568,25 +578,32 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                         ) : (
                           <>
                             <MessageCircle className="h-4 w-4 mr-2" />
-                            Message Owner
+                            Chat with owner
                           </>
                         )}
                       </Button>
+                    )}
+                    {!isLoggedIn && (
+                      <p className="text-sm text-muted-foreground">
+                        Please log in to chat with the owner.
+                      </p>
                     )}
                   </div>
                 );
               })()}
 
-              {/* Form */}
-              <div className="space-y-3">
-                <Input placeholder="Your name" />
-                <Input placeholder="ex 0123456789" />
-                <Input placeholder="your@email.com" />
-                <Textarea placeholder="Message" className="min-h-[100px]" />
-                <Button className="w-full rounded-full">
-                  Find Properties →
-                </Button>
-              </div>
+              {/* Form for guests */}
+              {!isLoggedIn && (
+                <div className="space-y-3">
+                  <Input placeholder="Your name" />
+                  <Input placeholder="ex 0123456789" />
+                  <Input placeholder="your@email.com" />
+                  <Textarea placeholder="Message" className="min-h-[100px]" />
+                  <Button type="button" onClick={handleLeadSubmit} className="w-full rounded-full">
+                    Find Properties →
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

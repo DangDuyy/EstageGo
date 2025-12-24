@@ -3,18 +3,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "@/redux/user/userSlice";
 import PropertyCard from "./PropertyCard";
 
 export function RecommendationCard() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const currentUser = useSelector(selectCurrentUser);
 
   const pageSize = 6;
 
   useEffect(() => {
     const fetchProperties = async () => {
       try {
+        // Only fetch personalized recommendations if user is logged in
+        if (!currentUser) {
+          setProperties([]);
+          setLoading(false);
+          return;
+        }
+
         setLoading(true);
         const result = await getPersonalizedRecommendationsAPI(30);
         const recommended = result?.data || result?.properties || result?.recommendations || [];
@@ -30,7 +40,7 @@ export function RecommendationCard() {
     };
 
     fetchProperties();
-  }, []);
+  }, [currentUser]);
 
   const totalPages = Math.max(1, Math.ceil(properties.length / pageSize));
   const visibleProperties = properties.slice(page * pageSize, page * pageSize + pageSize);

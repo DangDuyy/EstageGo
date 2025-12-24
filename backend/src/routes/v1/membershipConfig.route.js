@@ -3,8 +3,14 @@ import membershipConfigController from '~/controllers/membershipConfigController
 
 const router = express.Router();
 
+// Thống kê usage (đặt trước để tránh conflict với :type route)
+router.get('/stats/usage', membershipConfigController.getUsageStats);
+
 // Lấy tất cả cấu hình
 router.get('/', membershipConfigController.getAllConfigs);
+
+// Lấy user theo gói
+router.get('/:type/users', membershipConfigController.getUsersByType);
 
 // Lấy cấu hình theo loại
 router.get('/:type', membershipConfigController.getConfigByType);
