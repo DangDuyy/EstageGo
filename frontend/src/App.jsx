@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { MapProvider } from './components/common/GoogleMap/MapProvider'
 import { SocketManager } from './components/common/SocketManager'
 import { useAuth } from './hooks/useAuth'
+import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './layouts/AdminLayout'
 import DashboardLayout from './layouts/DashboardLayout'
 import NotFoundPage from './pages/404'
@@ -77,7 +78,11 @@ function App() {
         <Route path="/ai/semantic-recommend" element={<SemanticRecommendPage />} />
 
         <Route path="/map" element={<MapPage />} />
-        <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<DashboardPage />} />
           <Route path="users" element={<UserProfileRedirect />} />
           <Route path="account" element={<Profile />} />
@@ -107,7 +112,11 @@ function App() {
         <Route path="/payment/result" element={<PaymentResultPage />} />
 
         {/* Admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={
+          <ProtectedRoute adminOnly>
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="properties" element={<AdminProperties />} />
