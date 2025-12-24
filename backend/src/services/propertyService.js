@@ -5,12 +5,19 @@ import userModel from "~/models/users"
 import { pagingSkipValue } from "~/utils/algorithms"
 import ApiError from "~/utils/ApiError"
 import { DEFAULT_ITEM_PER_PAGE, DEFAULT_PAGE } from "~/utils/constants"
+import userMembershipService from "./userMembershipService"
+import SystemConfig from "~/models/systemConfig"
 
 const { default: propertyModel } = require("~/models/properties")
 const { slugify, escapeRegex, removeDiacritics, createFuzzyRegex } = require("~/utils/formatter")
 
 const createProperty = async (propertyData) => {
   try {
+    
+    if (!await canCreateProperty(propertyData.owner)) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Property creation limit reached. Please upgrade your membership to post more properties.")
+    }
+    
     // Tạo slug từ title
     const baseSlug = slugify(propertyData.title, {
       lower: true, // chuyển hết sang chữ thường
@@ -64,6 +71,35 @@ const createProperty = async (propertyData) => {
   catch (error) {
     throw error
   }
+}
+
+const canCreateProperty = async (userId) => {
+  // 1. Kiểm tra hội viên
+  const activeMembership = await userMembershipService.getActiveMembership(userId)
+
+  if (activeMembership) {
+    return true
+  }
+  
+  // 2. Lấy số lượng tin miễn phí từ config hệ thống
+  const DEFAULT_POST_LIMIT = await SystemConfig.findOne({ key: 'DEFAULT_POST_LIMIT' })
+  const maxPost = DEFAULT_POST_LIMIT ?? 15
+
+  // 3. Đếm số tin hiện có của user
+  const currentPostCount = await propertyModel.countDocuments({
+    owner: userId,
+    _destroy: { $ne: true },
+    $or: [
+      { expireAt: null },
+      { expireAt: { $gt: new Date() } }
+    ]
+  })
+
+  if (currentPostCount >= maxPost) {
+    return false
+  }
+
+  return true
 }
 
 const addMediaToProperty = async (propertyId, mediaItems) => {

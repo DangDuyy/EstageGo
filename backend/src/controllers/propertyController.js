@@ -133,10 +133,11 @@ const createProperty = async (req, res, next) => {
         })
     } catch (error) {
         console.error("Error createProperty:", error)
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-            success: false,
-            message: error?.message || "Internal Server Error"
-        })
+        // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        //     success: false,
+        //     message: error?.message || "Internal Server Error"
+        // })
+        next(error)
     }
 }
 

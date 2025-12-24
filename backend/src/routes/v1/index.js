@@ -19,6 +19,7 @@ import { listingTierRoutes } from './listingTierRoute'
 import { addressRoutes } from './addressRoute'
 import { membershipConfigRoute } from './membershipConfig.route'
 import { userMembershipRouters } from './userMembershipRoute'
+import { systemConfigRoutes } from './systemConfigRoute'
 
 const Router = express.Router()
 
@@ -63,5 +64,7 @@ Router.use('/api.vn', addressRoutes)
 Router.use('/membershipConfig', membershipConfigRoute)
 
 Router.use('/membership', userMembershipRouters)
+
+Router.use('/system-configs', systemConfigRoutes)
 
 export const APIs_V1 = Router

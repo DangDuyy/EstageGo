@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +14,7 @@ import {
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
     DialogClose,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,8 @@ import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X, Trash2, Tag, Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { setupApiInterceptors } from "@/utils/authorizeAxios";
+import { useError } from "@/components/common/Error/ErrorContext";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial", "Office", "Villa", "Townhouse", "Other"];
@@ -762,6 +765,14 @@ export default function AddPropertyWizard() {
         setSelectedPlan(plan);
     };
 
+
+    // cấu hình hiển thị lỗi
+    const { showError } = useError()
+
+    // useEffect(() => {
+    //     setupApiInterceptors(showError)
+    // }, [showError])
+
     // Final submission
     const onSubmit = async (data) => {
         console.log('[onSubmit] data snapshot:', data);
@@ -865,7 +876,7 @@ export default function AddPropertyWizard() {
             // navigate("/dashboard/posts");
         } catch (error) {
             console.error('[onSubmit] API error:', error);
-            const status = error?.response?.status;
+            const status = error?.response?.status || error?.response?.statusCode;
             const payload = error?.response?.data;
 
             // 🚨 XỬ LÝ LỖI 402 PAYMENT REQUIRED
@@ -875,9 +886,22 @@ export default function AddPropertyWizard() {
                 setServerMsg(payload?.message || "Insufficient balance to pay listing fee");
                 setDepositDialogOpen(true);
                 return;
+            } else if (status === 403) {
+                showError({
+                    title: "Permission Denied",
+                    message: payload?.message || "You do not have permission to perform this action.",
+                    type: "error",
+                    statusCode: 403,
+                    action: {
+                        text: "Upgrade Membership",
+                        handler: () => {
+                            navigate("/dashboard/plans");
+                        }
+                    }
+                })
             }
 
-            toast.error(payload?.message || "Failed to publish listing.");
+            // toast.error(payload?.message || "Failed to publish listing.");
         }
     };
 
@@ -1267,7 +1291,7 @@ export default function AddPropertyWizard() {
                                                                     if (!label) return;
                                                                     setLocalImages((prev) => prev.map((im, i) => i === idx ? {
                                                                         ...im,
-                                                                        tags: [ ...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' } ]
+                                                                        tags: [...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' }]
                                                                     } : im));
                                                                     setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
                                                                 }
@@ -1281,7 +1305,7 @@ export default function AddPropertyWizard() {
                                                                 if (!label) return;
                                                                 setLocalImages((prev) => prev.map((im, i) => i === idx ? {
                                                                     ...im,
-                                                                    tags: [ ...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' } ]
+                                                                    tags: [...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' }]
                                                                 } : im));
                                                                 setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
                                                             }}

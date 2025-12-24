@@ -140,4 +140,89 @@ authorizeAxiosInstance.interceptors.response.use((response) => {
   return Promise.reject(error)
 })
 
+
+// Setup interceptor với Error Context
+export const setupApiInterceptors = (showError) => {
+  authorizeAxiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const message = error.response?.data?.message || 'Có lỗi xảy ra';
+      const statusCode = error.response?.status;
+
+      // Xử lý lỗi 403 - Giới hạn đăng tin
+      if (statusCode === 403) {
+        showError({
+          title: 'Đã đạt giới hạn',
+          message: message,
+          type: 'warning',
+          statusCode: 403,
+          action: {
+            text: '🚀 Nâng cấp gói',
+            handler: () => {
+              window.location.href = '/dashboard/plans';
+            }
+          }
+        });
+      } 
+      // Xử lý lỗi 401 - Chưa đăng nhập
+      else if (statusCode === 401) {
+        showError({
+          title: 'Chưa đăng nhập',
+          message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+          type: 'warning',
+          action: {
+            text: 'Đăng nhập',
+            handler: () => {
+              localStorage.removeItem('token');
+              window.location.href = '/login';
+            }
+          }
+        });
+      } 
+      // Xử lý lỗi 400 - Validation
+      else if (statusCode === 400) {
+        showError({
+          title: 'Dữ liệu không hợp lệ',
+          message: message,
+          type: 'error',
+        });
+      } 
+      // Xử lý lỗi 404
+      else if (statusCode === 404) {
+        showError({
+          title: 'Không tìm thấy',
+          message: message,
+          type: 'error',
+        });
+      }
+      // Xử lý lỗi 500
+      else if (statusCode >= 500) {
+        showError({
+          title: 'Lỗi hệ thống',
+          message: 'Đã có lỗi xảy ra từ phía server. Vui lòng thử lại sau.',
+          type: 'error',
+        });
+      }
+      // Xử lý lỗi network
+      else if (!error.response) {
+        showError({
+          title: 'Lỗi kết nối',
+          message: 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.',
+          type: 'error',
+        });
+      }
+      // Lỗi khác
+      else {
+        showError({
+          title: 'Có lỗi xảy ra',
+          message: message,
+          type: 'error',
+        });
+      }
+
+      return Promise.reject(error);
+    }
+  );
+};
+
 export default authorizeAxiosInstance
