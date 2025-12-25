@@ -344,6 +344,11 @@ export const getAgentDashboardStatsAPI = async () => {
   return response.data
 }
 
+export const getListingStatsAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/me/listing-stats`)
+  return response.data
+}
+
 // ========== CONVERSATION APIs ==========
 
 // Get all conversations for current user

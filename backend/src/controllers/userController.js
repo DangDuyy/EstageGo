@@ -466,6 +466,17 @@ const getAgentDashboardStats = async (req, res, next) => {
   }
 }
 
+const getListingStats = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const result = await userService.getListingStats(userId)
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    console.error('❌ Get listing stats error:', error)
+    next(error)
+  }
+}
+
 // Export
 export const userController = {
   createNew,
@@ -486,5 +497,6 @@ export const userController = {
   sendPhoneVerification,
   verifyPhoneCode,
   upgradeMembership,
-  getAgentDashboardStats
+  getAgentDashboardStats,
+  getListingStats
 }

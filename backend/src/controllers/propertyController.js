@@ -10,6 +10,9 @@ import { StatusCodes } from "http-status-codes"
 import { propertyService } from "~/services/propertyService"
 import paymentService from "~/services/paymentService"
 import { ListingTierConfig } from "~/models/listingTierConfig"
+import membershipConfigService from "~/services/membershipConfigService"
+import userMembershipService from "~/services/userMembershipService"
+import mongoose from "mongoose"
 
 const safeParse = (v) => {
     if (typeof v === 'string') {
@@ -30,116 +33,276 @@ const computeRentBase = (v) => {
 }
 
 const createProperty = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    
     try {
+        // Start transaction
+        session.startTransaction();
+
         // Normalize complex fields from multipart
-        const body = { ...req.body }
-        console.log(body)
-        body.price = safeParse(body.price)
-        body.address = safeParse(body.address)
-        body.rooms = safeParse(body.rooms)
+        const body = { ...req.body };
+        body.price = safeParse(body.price);
+        body.address = safeParse(body.address);
+        body.rooms = safeParse(body.rooms);
 
-        // res.status(StatusCodes.OK).json(body)
-        // return
-
-        const owner = req.jwtDecoded?._id
-        if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
-
-        const user = await propertyService.getUserById(owner)
-        if (!user) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User not found" })
-
-        const membership = user.membershipLevel || 'basic'
-        const purpose = body.purpose === 'rent' ? 'rent' : 'sale'
-        const propertyPriceValue = Number(body?.price?.value || 0)
-
-        const baseFee = purpose === 'rent' ? computeRentBase(propertyPriceValue) : computeSaleBase(propertyPriceValue)
-        const discountPercent = membership === 'premium' ? 30 : membership === 'standard' ? 10 : 0
-        const feeAfterDiscount = Math.round(baseFee * (1 - discountPercent / 100))
-
-        let postType = 'normal'
-        let expireDays
-        if (membership === 'premium') { postType = 'vip'; expireDays = 15 }
-        else if (membership === 'standard') { expireDays = purpose === 'rent' ? 14 : 7 }
-        else { expireDays = purpose === 'rent' ? 7 : 3 }
-        // const expireAt = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000)
-
-        const tierConfig = await ListingTierConfig.findById(body.tier)
-
-        if (!tierConfig) {
-            throw new Error('Listing tier config not found')
+        const owner = req.jwtDecoded?._id;
+        if (!owner) {
+            await session.abortTransaction();
+            return res.status(StatusCodes.UNAUTHORIZED).json({ 
+                success: false, 
+                message: "Unauthorized" 
+            });
         }
 
-        let priority = tierConfig.priority
+        // Get user info
+        const user = await propertyService.getUserById(owner, { session });
+        if (!user) {
+            await session.abortTransaction();
+            return res.status(StatusCodes.NOT_FOUND).json({ 
+                success: false, 
+                message: "User not found" 
+            });
+        }
 
+        // Get tier configuration
+        const tierConfig = await ListingTierConfig.findOne({ 
+            tierName: body.tierType 
+        }).session(session);
+        
+        if (!tierConfig) {
+            await session.abortTransaction();
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: 'Listing tier config not found'
+            });
+        }
+
+        // Find selected duration
         const duration = tierConfig.durations.find(
             (d) => d._id.toString() === body.durationId
-        )
-
+        );
+        
         if (!duration) {
-            throw new Error('Invalid listing duration')
+            await session.abortTransaction();
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: 'Invalid listing duration'
+            });
         }
 
-        let expireAt = new Date(
-            Date.now() + duration.days * 24 * 60 * 60 * 1000
-        )
+        // Check active membership
+        const activeMembership = await userMembershipService.getActiveMembership(owner, { session });
 
-        let listingFee = duration.price
+        // Calculate listing fee
+        let listingFee = duration.price;
+        const isFreeFromMembership = activeMembership && 
+                                      activeMembership.includedListings.remaining > 0 && 
+                                      duration.days === 30 &&
+                                      tierConfig.tierName === activeMembership.membershipType
+        
+        if (isFreeFromMembership) {
+            listingFee = 0;
+        }
 
-        let isFeatured = tierConfig.features.featuredListing
-
+        // Check balance
         if (user.balance < listingFee) {
+            await session.abortTransaction();
             return res.status(StatusCodes.PAYMENT_REQUIRED).json({
                 success: false,
                 message: "Insufficient balance to pay listing fee",
                 required: listingFee,
                 currentBalance: user.balance
-            })
+            });
         }
 
+        // Calculate expire date
+        const expireAt = new Date(Date.now() + duration.days * 24 * 60 * 60 * 1000);
+
+        // Prepare property data
         const propertyData = {
             ...body,
+            tier: tierConfig._id,
             owner,
-            postType,
             listingFee,
-            priority,
-            isFeatured,
+            priority: tierConfig.priority,
+            isFeatured: tierConfig.features.featuredListing,
             expireAt,
             visibility: 'public'
+        };
+
+        // Create property
+        const newProperty = await propertyService.createProperty(propertyData, { session });
+
+        // Deduct balance if needed
+        if (listingFee > 0) {
+            await paymentService.deductBalance({
+                userId: owner,
+                amount: listingFee,
+                description: `Listing fee - ${newProperty.title}`,
+                referenceId: newProperty._id.toString()
+            }, { session });
         }
 
-        const newProperty = await propertyService.createProperty(propertyData)
+        // Use included listing from membership if applicable
+        if (isFreeFromMembership) {
+            await userMembershipService.useIncludedListing(owner, { session });
+        }
 
-        await paymentService.deductBalance({
-            userId: owner,
-            amount: listingFee,
-            description: `Listing fee (${purpose}) - ${newProperty.title}`,
-            referenceId: newProperty._id.toString()
-        })
-
-        const files = req.files || []
-        let updateProperty = newProperty
+        // Upload images (outside transaction - external service)
+        const files = req.files || [];
+        let finalProperty = newProperty;
+        
         if (files.length && mediaService?.uploadPropertyImage) {
-            const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
-            updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult.flat())
+            const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id);
+            finalProperty = await propertyService.addMediaToProperty(
+                newProperty._id, 
+                uploadResult.flat(),
+                { session }
+            );
         }
+
+        // Commit transaction
+        await session.commitTransaction();
 
         res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Property created successfully",
-            data: updateProperty,
-            feeCharged: feeAfterDiscount,
-            discountPercent,
-            postType,
+            data: finalProperty,
+            listingFee,
             expireAt
-        })
+        });
+
     } catch (error) {
-        console.error("Error createProperty:", error)
-        // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        //     success: false,
-        //     message: error?.message || "Internal Server Error"
-        // })
-        next(error)
+        // Rollback tự động
+        await session.abortTransaction();
+        console.error("Error createProperty (transaction aborted):", error);
+        next(error);
+    } finally {
+        session.endSession();
     }
-}
+};
+
+// const createProperty = async (req, res, next) => {
+//     try {
+//         // Normalize complex fields from multipart
+//         const body = { ...req.body }
+//         console.log(body)
+//         body.price = safeParse(body.price)
+//         body.address = safeParse(body.address)
+//         body.rooms = safeParse(body.rooms)
+
+//         // res.status(StatusCodes.OK).json(body)
+//         // return
+
+//         const owner = req.jwtDecoded?._id
+//         if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
+
+//         const user = await propertyService.getUserById(owner)
+//         if (!user) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User not found" })
+
+//         const membership = user.membershipLevel || 'basic'
+//         const purpose = body.purpose === 'rent' ? 'rent' : 'sale'
+//         const propertyPriceValue = Number(body?.price?.value || 0)
+
+//         const baseFee = purpose === 'rent' ? computeRentBase(propertyPriceValue) : computeSaleBase(propertyPriceValue)
+//         const discountPercent = membership === 'premium' ? 30 : membership === 'standard' ? 10 : 0
+//         const feeAfterDiscount = Math.round(baseFee * (1 - discountPercent / 100))
+
+//         let postType = 'normal'
+//         let expireDays
+//         if (membership === 'premium') { postType = 'vip'; expireDays = 15 }
+//         else if (membership === 'standard') { expireDays = purpose === 'rent' ? 14 : 7 }
+//         else { expireDays = purpose === 'rent' ? 7 : 3 }
+//         // const expireAt = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000)
+
+//         const tierConfig = await ListingTierConfig.findOne({ tierName: body.tierType })
+
+//         // Kiểm tra xem ngừi dùng có gói đăng ký nào không
+//         const activeMembership = await userMembershipService.getActiveMembership(owner)
+
+//         if (!tierConfig) {
+//             throw new Error('Listing tier config not found')
+//         }
+
+//         let priority = tierConfig.priority
+
+//         const duration = tierConfig.durations.find(
+//             (d) => d._id.toString() === body.durationId
+//         )
+
+//         if (!duration) {
+//             throw new Error('Invalid listing duration')
+//         }
+
+//         let expireAt = new Date(
+//             Date.now() + duration.days * 24 * 60 * 60 * 1000
+//         )
+
+//         let listingFee = duration.price
+//         if (activeMembership && activeMembership.includedListings.remaining > 0 && duration.days === 30) {
+//             listingFee = 0
+//             await userMembershipService.useIncludedListing(owner)
+//         }
+
+//         let isFeatured = tierConfig.features.featuredListing
+
+//         if (user.balance < listingFee) {
+//             return res.status(StatusCodes.PAYMENT_REQUIRED).json({
+//                 success: false,
+//                 message: "Insufficient balance to pay listing fee",
+//                 required: listingFee,
+//                 currentBalance: user.balance
+//             })
+//         }
+
+//         const propertyData = {
+//             ...body,
+//             tier: tierConfig._id,
+//             owner,
+//             postType,
+//             listingFee,
+//             priority,
+//             isFeatured,
+//             expireAt,
+//             visibility: 'public'
+//         }
+
+//         const newProperty = await propertyService.createProperty(propertyData)
+
+//         if (listingFee > 0) {
+//             await paymentService.deductBalance({
+//                 userId: owner,
+//                 amount: listingFee,
+//                 description: `Listing fee (${purpose}) - ${newProperty.title}`,
+//                 referenceId: newProperty._id.toString()
+//             })
+//         }
+
+//         const files = req.files || []
+//         let updateProperty = newProperty
+//         if (files.length && mediaService?.uploadPropertyImage) {
+//             const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
+//             updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult.flat())
+//         }
+
+//         res.status(StatusCodes.CREATED).json({
+//             success: true,
+//             message: "Property created successfully",
+//             data: updateProperty,
+//             feeCharged: feeAfterDiscount,
+//             discountPercent,
+//             postType,
+//             expireAt
+//         })
+//     } catch (error) {
+//         console.error("Error createProperty:", error)
+//         // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+//         //     success: false,
+//         //     message: error?.message || "Internal Server Error"
+//         // })
+//         next(error)
+//     }
+// }
 
 function buildPrompt(property, tone) {
     const rooms = JSON.parse(property.rooms || "{}");
@@ -1387,11 +1550,11 @@ const boostProperty = async (req, res, next) => {
 
         // Update property with boost info
         const now = new Date()
-        
+
         // Check if boost is currently active
         const currentBoostExpiry = property.boostExpiresAt ? new Date(property.boostExpiresAt) : null
         const isBoostActive = currentBoostExpiry && currentBoostExpiry > now
-        
+
         // If boost is active, add to existing time. Otherwise, start fresh
         let expiresAt
         if (isBoostActive) {
@@ -1401,7 +1564,7 @@ const boostProperty = async (req, res, next) => {
             // Start fresh boost from now
             expiresAt = new Date(now.getTime() + boostDuration * 60 * 60 * 1000)
         }
-        
+
         const updatedProperty = await propertyService.updateProperty(propertyId, userId, {
             bumpedAt: now,
             boostExpiresAt: expiresAt,

@@ -69,4 +69,7 @@ Router.route('/upgrade-membership')
 Router.route('/agent/dashboard-stats')
   .get(authMiddleware.isAuthorized, userController.getAgentDashboardStats)
 
+Router.route('/me/listing-stats')
+  .get(authMiddleware.isAuthorized, userController.getListingStats)
+
 export const userRoutes = Router

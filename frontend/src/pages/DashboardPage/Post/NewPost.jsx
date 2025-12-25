@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI, analyzeTemporaryImageAPI, updateImageTagsAPI, getUserPropertiesWithMediaAPI, searchPropertiesByTagAPI } from "@/apis";
+import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI, analyzeTemporaryImageAPI, updateImageTagsAPI, getUserPropertiesWithMediaAPI, searchPropertiesByTagAPI, getListingStatsAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -34,10 +34,11 @@ import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
-import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X, Trash2, Tag, Plus } from "lucide-react";
+import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X, Trash2, Tag, Plus, Zap, Lock, Gift, Info } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { setupApiInterceptors } from "@/utils/authorizeAxios";
 import { useError } from "@/components/common/Error/ErrorContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial", "Office", "Villa", "Townhouse", "Other"];
@@ -822,7 +823,8 @@ export default function AddPropertyWizard() {
         formData.append("selectedPlan", selectedPlan);
         formData.append("listingFeeClient", String(listingFee));
 
-        formData.append('tier', selectedTier)
+        const tiered = listingTiers?.find(t => t._id === selectedTier)
+        formData.append('tierType', tiered?.tierName || 'basic')
         formData.append('durationId', selectedDuration._id)
 
         // ONLY listing images
@@ -935,7 +937,8 @@ export default function AddPropertyWizard() {
             }
         }
 
-        formData.append('tier', selectedTier)
+        const tiered = listingTiers?.find(t => t._id === selectedTier)
+        formData.append('tier', tiered?.tierName || 'basic')
         formData.append('durationId', selectedDuration._id)
 
         // ONLY listing images
@@ -985,12 +988,12 @@ export default function AddPropertyWizard() {
                         'A premium solution for sellers and landlords who want to dominate the market, maximize visibility, and attract potential customers immediately after posting.'
                     tier.highlights = [
                         { text: "Display size is double compared to Basic listings", enabled: true },
-                        { text: "Includes 4 Top Boosts", enabled: true },
+                        // { text: "Includes 4 Top Boosts", enabled: true },
                         { text: "Priority listing displayed at the top of listing pages", enabled: true },
                         // { text: "Free trial of 3 premium services", enabled: true },
                         // { text: "Optional purchase of 3 add-on services (Priority Listing, Boost, Scheduled Boost)", enabled: true, color: "orange" }
                     ]
-                    tier.color = 'from-yellow-600/80 to-yellow-800/80'
+                    tier.color = 'from-yellow-500 via-yellow-200 to-amber-100'
                 }
                 else if (tier.tierName === 'boosted') {
                     tier.title = { text: 'Enhanced Exposure', color: 'gray' }
@@ -998,12 +1001,12 @@ export default function AddPropertyWizard() {
                         'A popular solution for sellers and landlords looking to accelerate performance right after posting at a reasonable cost.'
                     tier.highlights = [
                         { text: "Boosted listings are prioritized over Basic listings", enabled: true },
-                        { text: "Includes 2 Top Boosts", enabled: true },
+                        // { text: "Includes 2 Top Boosts", enabled: true },
                         // { text: "Priority listing displayed at the top of listing pages for 1 day", enabled: false, color: "gray" },
                         // { text: "Free trial of 1 premium service", enabled: true },
                         // { text: "Optional purchase of 3 add-on services (Priority Listing, Boost, Scheduled Boost)", enabled: true, color: "orange" }
                     ]
-                    tier.color = 'from-slate-600/80 to-slate-800/80'
+                    tier.color = 'from-blue-300 via-blue-100 to-indigo-100'
                 }
                 else if (tier.tierName === 'basic') {
                     tier.title = { text: 'Sustained Presence', color: 'gray' }
@@ -1011,12 +1014,12 @@ export default function AddPropertyWizard() {
                         'A basic solution for sellers and landlords who want to maintain exposure.'
                     tier.highlights = [
                         { text: "Basic listing", enabled: true },
-                        { text: "Includes boost", enabled: false },
+                        // { text: "Includes boost", enabled: false },
                         // { text: "Priority listing displayed at the top of listing pages for 1 day", enabled: false },
                         // { text: "Free trial of premium services", enabled: false },
                         // { text: "Optional purchase of 1 add-on service (Boost)", enabled: true, color: "orange" }
                     ]
-                    tier.color = 'from-gray-600/50 to-gray-800/60'
+                    tier.color = 'from-gray-500 via-gray-200 to-slate-100'
                 }
             })
 
@@ -1040,6 +1043,40 @@ export default function AddPropertyWizard() {
         setSelectedTier(tier._id)
         setSelectedDuration(tier.durations[0])
     }
+
+    // ----- Listing limit logic -----
+    const [listingStatus, setListingStatus] = useState(null);
+
+    useEffect(() => {
+        const fetchListingStatus = async () => {
+            try {
+                const response = await getListingStatsAPI();
+                setListingStatus(response);
+            } catch (error) {
+                console.error("Failed to fetch listing status:", error);
+            }
+        };
+
+        fetchListingStatus();
+    }, []);
+
+    // Mock data - Thay bằng data thực từ API
+    // const userMembership = {
+    //     hasMembership: true,
+    //     membershipType: 'advanced', // basic, boosted, advanced
+    //     includedListings: {
+    //         tierType: 'advanced',
+    //         total: 10,
+    //         used: 3,
+    //         remaining: 7
+    //     }
+    // };
+
+    // const canUseIncludedListing = (tierName) => {
+    //     if (!userMembership.hasMembership) return false;
+    //     if (userMembership.includedListings.remaining <= 0) return false;
+    //     return tierName === userMembership.includedListings.tierType;
+    // };
 
     // ----- Render -----
     return (
@@ -1920,7 +1957,42 @@ export default function AddPropertyWizard() {
 
                     {/* STEP 2: Agent & Payment */}
                     {step === 2 && (
-                        <div>
+                        <div className="w-full mx-auto">
+
+                            {/* Alert Messages */}
+                            {/* Warning: Approaching limit (no membership) */}
+                            {!listingStatus?.activeMembership && listingStatus?.currentPostCount >= listingStatus?.maxPost && (
+                                <Alert className="mb-6 border-orange-200 bg-orange-50">
+                                    <Info className="h-4 w-4 text-orange-600" />
+                                    <AlertDescription className="text-orange-800">
+                                        You've reached your listing limit ({listingStatus?.currentPostCount} slots used).
+                                        <Button variant="link" className="px-1 h-auto text-orange-600 font-semibold">
+                                            Upgrade to unlimited
+                                        </Button>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
+                            {/* Success: Has free listings remaining */}
+                            {listingStatus?.activeMembership && listingStatus?.activeMembership.includedListings.remaining > 0 && (
+                                <Alert className="mb-6 border-green-200 bg-green-50">
+                                    <Gift className="h-4 w-4 text-green-600" />
+                                    <AlertDescription className="text-green-800">
+                                        You have <strong>{listingStatus?.activeMembership.includedListings.remaining} free {listingStatus?.activeMembership.includedListings.tierType} listing{listingStatus?.activeMembership.includedListings.remaining > 1 ? 's' : ''}</strong> included in your membership!
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
+                            {/* Info: No free listings, but can still post with paid tiers */}
+                            {listingStatus?.activeMembership && listingStatus?.activeMembership.includedListings.remaining <= 0 && (
+                                <Alert className="mb-6 border-blue-200 bg-blue-50">
+                                    <Info className="h-4 w-4 text-blue-600" />
+                                    <AlertDescription className="text-blue-800">
+                                        You've used all your free {listingStatus?.activeMembership.includedListings.tierType} listings. You can still post by selecting a listing tier below.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
                             <Card className="mb-6">
                                 <CardHeader><CardTitle>Select Listing Plan</CardTitle></CardHeader>
                                 <CardContent>
@@ -1939,15 +2011,34 @@ export default function AddPropertyWizard() {
                                                                 }`}
                                                         >
                                                             {/* Header */}
-                                                            <div
-                                                                className={`min-h-[10rem] bg-gradient-to-r ${tier.color} text-white px-6 py-4 flex flex-col gap-2 rounded-t-lg`}
+                                                            {/* <div
+                                                                className={`min-h-[10rem] bg-gradient-to-br ${tier.color} px-6 py-4 flex flex-col gap-2 rounded-t-lg`}
                                                             >
                                                                 <h3 className="text-3xl font-bold">
                                                                     {tier.displayName.en}
                                                                 </h3>
-                                                                <p className="text-sm opacity-90 pt-2">
+                                                                <p className="text-sm opacity-90 pt-2 text-gray-800">
                                                                     {tier.description}
                                                                 </p>
+                                                            </div> */}
+
+                                                            <div className={`bg-gradient-to-br ${tier.color} p-6 relative overflow-hidden`}>
+                                                                <div className="relative z-10">
+                                                                    <div className="text-xs text-gray-600 mb-1">TIER</div>
+                                                                    <h3 className="text-3xl font-bold mb-3">{tier.displayName.en}</h3>
+
+                                                                    <div
+                                                                        className={`inline-block bg-gradient-to-r ${tier.color} px-3 py-1 rounded-sm mb-1`}
+                                                                    >
+                                                                        {/* <span className={`font-bold ${tier.accentColor}`}>
+                                                                            {pkg.badge}
+                                                                        </span> */}
+                                                                    </div>
+
+                                                                    <div className="text-sm text-gray-600 mt-1 h-15">
+                                                                        {tier.description}
+                                                                    </div>
+                                                                </div>
                                                             </div>
 
                                                             <CardContent className="p-6 bg-white flex flex-col flex-grow">
@@ -1992,19 +2083,72 @@ export default function AddPropertyWizard() {
                                                         <Button type="button" onClick={() => { setDurationDialog((v) => !v) }} variant="outline" size="sm" className="font-semibold">Replace</Button>
                                                     </div>
 
-                                                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                                        <div className="flex items-center justify-center w-14 h-14 bg-red-50 rounded-lg border-2 border-red-200">
+                                                    <div className={`flex items-center gap-4 p-4 rounded-lg border ${selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                                        ? 'bg-green-50 border-green-200'
+                                                        : 'bg-gray-50 border-gray-200'
+                                                        }`}>
+                                                        {/* Icon badge */}
+                                                        <div className={`w-14 h-14 rounded-lg flex items-center justify-center text-white ${selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                                            ? 'bg-gradient-to-br from-green-500 to-green-600'
+                                                            : 'bg-gradient-to-br from-primary to-primary'
+                                                            }`}>
                                                             <div className="text-center">
-                                                                <div className="text-lg font-bold text-red-600 leading-none">{selectedDuration.days}</div>
+                                                                {selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0) ? (
+                                                                    // Icon FREE
+                                                                    <div>
+                                                                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </div>
+                                                                ) : (
+                                                                    // Số ngày
+                                                                    <div>
+                                                                        <div className="text-2xl font-bold leading-none">
+                                                                            {selectedDuration?.days}
+                                                                        </div>
+                                                                        <div className="text-xs opacity-80">days</div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
+
+                                                        {/* Thông tin gói */}
                                                         <div className="flex items-center gap-2">
                                                             <span className="font-semibold text-gray-900">{tierSelected?.displayName?.en}</span>
                                                             <span className="text-gray-400">|</span>
                                                             <span className="text-gray-600">{selectedDuration.days} days</span>
+                                                            {(selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)) && (
+                                                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                                                    FREE
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                        <div className="ml-auto text-lg font-bold text-gray-900">
-                                                            {formatPrice(selectedDuration.price)} đ
+
+                                                        {/* Giá */}
+                                                        <div className="ml-auto">
+                                                            {listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0 ? (
+                                                                <div className="text-right">
+                                                                    <div className="text-sm text-gray-400 line-through">
+                                                                        {formatPrice(selectedDuration.price)} đ
+                                                                    </div>
+                                                                    <div className="text-lg font-bold text-green-600">
+                                                                        FREE
+                                                                    </div>
+                                                                </div>
+                                                            ) : selectedDuration.price === 0 ? (
+                                                                <div className="text-right">
+                                                                    <div className="text-sm text-gray-400 line-through">
+                                                                        {formatPrice(selectedDuration.price)} đ
+                                                                    </div>
+                                                                    <div className="text-lg font-bold text-green-600">
+                                                                        FREE
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-lg font-bold text-gray-900">
+                                                                    {formatPrice(selectedDuration.price)} đ
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2054,20 +2198,54 @@ export default function AddPropertyWizard() {
                                         setDurationDialog(false)
                                     }}
                                     className={`flex items-center justify-between rounded-xl border px-4 py-3 cursor-pointer transition
-                                        ${d.days === selectedDuration.days ? "border-primary border-2" : "border-gray-200"}
-                                    `}
+        ${d.days === selectedDuration.days
+                                            ? (d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                                ? "border-green-500 border-2 bg-green-50"
+                                                : "border-primary border-2")
+                                            : "border-gray-200 hover:border-gray-300"}
+    `}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                                            <span className="font-bold text-gray-700">{d.days}</span>
+                                        {/* Icon badge */}
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                            ? "bg-green-100"
+                                            : "bg-gray-100"
+                                            }`}>
+                                            {d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0) ? (
+                                                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                </svg>
+                                            ) : (
+                                                <span className="font-bold text-gray-700">{d.days}</span>
+                                            )}
                                         </div>
+
+                                        {/* Text info */}
                                         <div>
-                                            <p className="font-semibold text-gray-900">
-                                                {tierSelected.displayName.en} <span className="text-gray-500 font-normal">| {d.days} days</span>
-                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-gray-900">
+                                                    {tierSelected.displayName.en} <span className="text-gray-500 font-normal">| {d.days} days</span>
+                                                </p>
+                                                {(d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)) && (
+                                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                                        FREE
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <p className="font-semibold text-gray-900">{formatPrice(d.price)} ₫</p>
+
+                                    {/* Price */}
+                                    <div className="text-right">
+                                        {d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0) ? (
+                                            <div>
+                                                <p className="text-sm text-gray-400 line-through">{formatPrice(d.price)} ₫</p>
+                                                <p className="font-bold text-green-600">FREE</p>
+                                            </div>
+                                        ) : (
+                                            <p className="font-semibold text-gray-900">{formatPrice(d.price)} ₫</p>
+                                        )}
+                                    </div>
                                 </div>
                             ))
                         })()}

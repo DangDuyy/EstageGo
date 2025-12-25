@@ -12,6 +12,8 @@ import propertyModel from '~/models/properties'
 import agentFollowModel from '~/models/agentFollows'
 import agentReviewModel from '~/models/agentReviews'
 import mongoose from 'mongoose'
+import userMembershipService from './userMembershipService'
+import SystemConfig from '~/models/systemConfig'
 
 /**
  * Generate random fullName
@@ -661,6 +663,32 @@ const getAgentDashboardStats = async (userId) => {
   }
 }
 
+const getListingStats = async (userId) => {
+  try {
+      const activeMembership = await userMembershipService.getActiveMembership(userId)
+
+      const DEFAULT_POST_LIMIT = await SystemConfig.findOne({ key: 'DEFAULT_POST_LIMIT' })
+      const maxPost = DEFAULT_POST_LIMIT ?? 15
+
+      const currentPostCount = await propertyModel.countDocuments({
+        owner: userId,
+        _destroy: { $ne: true },
+        $or: [
+          { expireAt: null },
+          { expireAt: { $gt: new Date() } }
+        ]
+      })
+
+      return {
+        currentPostCount,
+        maxPost: maxPost,
+        activeMembership
+      }
+  } catch (error) {
+      throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
@@ -677,5 +705,6 @@ export const userService = {
   getUserProfileById,
   updatePhone,
   updateMembership,
-  getAgentDashboardStats
+  getAgentDashboardStats,
+  getListingStats
 }
