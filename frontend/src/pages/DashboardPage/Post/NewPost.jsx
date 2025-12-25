@@ -1966,7 +1966,7 @@ export default function AddPropertyWizard() {
                                     <Info className="h-4 w-4 text-orange-600" />
                                     <AlertDescription className="text-orange-800">
                                         You've reached your listing limit ({listingStatus?.currentPostCount} slots used).
-                                        <Button variant="link" className="px-1 h-auto text-orange-600 font-semibold">
+                                        <Button onClick={() => navigate('/dashboard/plans')} variant="link" className="px-1 h-auto text-orange-600 font-semibold">
                                             Upgrade to unlimited
                                         </Button>
                                     </AlertDescription>
@@ -1974,21 +1974,21 @@ export default function AddPropertyWizard() {
                             )}
 
                             {/* Success: Has free listings remaining */}
-                            {listingStatus?.activeMembership && listingStatus?.activeMembership.includedListings.remaining > 0 && (
+                            {listingStatus?.activeMembership && listingStatus?.activeMembership?.includedListings?.remaining > 0 && (
                                 <Alert className="mb-6 border-green-200 bg-green-50">
                                     <Gift className="h-4 w-4 text-green-600" />
                                     <AlertDescription className="text-green-800">
-                                        You have <strong>{listingStatus?.activeMembership.includedListings.remaining} free {listingStatus?.activeMembership.includedListings.tierType} listing{listingStatus?.activeMembership.includedListings.remaining > 1 ? 's' : ''}</strong> included in your membership!
+                                        You have <strong>{listingStatus?.activeMembership?.includedListings?.remaining} free {listingStatus?.activeMembership?.includedListings?.tierType} listing{listingStatus?.activeMembership?.includedListings?.remaining > 1 ? 's' : ''}</strong> included in your membership!
                                     </AlertDescription>
                                 </Alert>
                             )}
 
                             {/* Info: No free listings, but can still post with paid tiers */}
-                            {listingStatus?.activeMembership && listingStatus?.activeMembership.includedListings.remaining <= 0 && (
+                            {listingStatus?.activeMembership && listingStatus?.activeMembership?.includedListings?.remaining <= 0 && (
                                 <Alert className="mb-6 border-blue-200 bg-blue-50">
                                     <Info className="h-4 w-4 text-blue-600" />
                                     <AlertDescription className="text-blue-800">
-                                        You've used all your free {listingStatus?.activeMembership.includedListings.tierType} listings. You can still post by selecting a listing tier below.
+                                        You've used all your free {listingStatus?.activeMembership?.includedListings?.tierType} listings. You can still post by selecting a listing tier below.
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -2083,17 +2083,17 @@ export default function AddPropertyWizard() {
                                                         <Button type="button" onClick={() => { setDurationDialog((v) => !v) }} variant="outline" size="sm" className="font-semibold">Replace</Button>
                                                     </div>
 
-                                                    <div className={`flex items-center gap-4 p-4 rounded-lg border ${selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                                    <div className={`flex items-center gap-4 p-4 rounded-lg border ${selectedDuration.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)
                                                         ? 'bg-green-50 border-green-200'
                                                         : 'bg-gray-50 border-gray-200'
                                                         }`}>
                                                         {/* Icon badge */}
-                                                        <div className={`w-14 h-14 rounded-lg flex items-center justify-center text-white ${selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                                        <div className={`w-14 h-14 rounded-lg flex items-center justify-center text-white ${selectedDuration.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)
                                                             ? 'bg-gradient-to-br from-green-500 to-green-600'
                                                             : 'bg-gradient-to-br from-primary to-primary'
                                                             }`}>
                                                             <div className="text-center">
-                                                                {selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0) ? (
+                                                                {selectedDuration.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0) ? (
                                                                     // Icon FREE
                                                                     <div>
                                                                         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
@@ -2117,7 +2117,7 @@ export default function AddPropertyWizard() {
                                                             <span className="font-semibold text-gray-900">{tierSelected?.displayName?.en}</span>
                                                             <span className="text-gray-400">|</span>
                                                             <span className="text-gray-600">{selectedDuration.days} days</span>
-                                                            {(selectedDuration.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)) && (
+                                                            {(selectedDuration.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)) && (
                                                                 <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                                                                     FREE
                                                                 </span>
@@ -2126,7 +2126,7 @@ export default function AddPropertyWizard() {
 
                                                         {/* Giá */}
                                                         <div className="ml-auto">
-                                                            {listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0 ? (
+                                                            {listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0 ? (
                                                                 <div className="text-right">
                                                                     <div className="text-sm text-gray-400 line-through">
                                                                         {formatPrice(selectedDuration.price)} đ
@@ -2199,7 +2199,7 @@ export default function AddPropertyWizard() {
                                     }}
                                     className={`flex items-center justify-between rounded-xl border px-4 py-3 cursor-pointer transition
         ${d.days === selectedDuration.days
-                                            ? (d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                            ? (d.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)
                                                 ? "border-green-500 border-2 bg-green-50"
                                                 : "border-primary border-2")
                                             : "border-gray-200 hover:border-gray-300"}
@@ -2207,11 +2207,11 @@ export default function AddPropertyWizard() {
                                 >
                                     <div className="flex items-center gap-3">
                                         {/* Icon badge */}
-                                        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${d.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)
                                             ? "bg-green-100"
                                             : "bg-gray-100"
                                             }`}>
-                                            {d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0) ? (
+                                            {d.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0) ? (
                                                 <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                 </svg>
@@ -2226,7 +2226,7 @@ export default function AddPropertyWizard() {
                                                 <p className="font-semibold text-gray-900">
                                                     {tierSelected.displayName.en} <span className="text-gray-500 font-normal">| {d.days} days</span>
                                                 </p>
-                                                {(d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0)) && (
+                                                {(d.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)) && (
                                                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                                                         FREE
                                                     </span>
@@ -2237,7 +2237,7 @@ export default function AddPropertyWizard() {
 
                                     {/* Price */}
                                     <div className="text-right">
-                                        {d.price === 0 || (listingStatus?.activeMembership.includedListings.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership.includedListings.remaining > 0) ? (
+                                        {d.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && d.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0) ? (
                                             <div>
                                                 <p className="text-sm text-gray-400 line-through">{formatPrice(d.price)} ₫</p>
                                                 <p className="font-bold text-green-600">FREE</p>
