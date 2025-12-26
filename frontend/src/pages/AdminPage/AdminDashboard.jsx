@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getDashboardStatsAPI } from "@/apis/adminAPI";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import { format, subDays } from "date-fns";
 import { ResponsiveLine } from "@nivo/line";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveBar } from "@nivo/bar";
+import randomColor from "randomcolor";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -35,6 +36,15 @@ export default function AdminDashboard() {
     style: 'currency',
     currency: 'VND'
   });
+
+  // Generate random colors for property types - MUST be before other const declarations
+  const propertyTypeColorsMap = useMemo(() => {
+    const colorMap = {};
+    propertyTypeData.forEach((item) => {
+      colorMap[item.name] = randomColor({ luminosity: 'bright', hue: 'random' });
+    });
+    return colorMap;
+  }, [propertyTypeData]);
 
   const handlePresetDate = (days) => {
     const endDate = new Date();
@@ -400,7 +410,7 @@ export default function AdminDashboard() {
                   layout="horizontal"
                   margin={{ top: 10, right: 20, bottom: 40, left: 150 }}
                   padding={0.3}
-                  colors={(bar) => COLORS[bar.indexValue.split('').reduce((a, b) => a + b.charCodeAt(0), 0) % COLORS.length]}
+                  colors={(bar) => propertyTypeColorsMap[bar.indexValue] || randomColor()}
                   enableGridY={false}
                   axisBottom={{
                     legend: 'Count',
