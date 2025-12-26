@@ -2,6 +2,11 @@ import { StatusCodes } from 'http-status-codes';
 import propertyModel from '~/models/properties';
 import userModel from '~/models/users';
 import agentRequestModel from '~/models/agentRequests';
+import transactionModel from '~/models/transations';
+import wishlistModel from '~/models/wishlists';
+import userMembershipModel from '~/models/userMembership';
+import agentReviewModel from '~/models/agentReviews';
+import userActivityModel from '~/models/userActivity';
 import ApiError from '~/utils/ApiError';
 import { createAndEmitNotification } from '~/services/notificationService';
 import { emitNotification } from '~/sockets';
@@ -9,6 +14,22 @@ import { emitNotification } from '~/sockets';
 // ===== DASHBOARD STATISTICS =====
 const getDashboardStats = async (req, res, next) => {
   try {
+    // Parse date range from query (default: last 30 days)
+    let startDate = req.query.startDate ? new Date(req.query.startDate) : new Date();
+    let endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    
+    if (isNaN(startDate.getTime())) {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+    }
+    if (isNaN(endDate.getTime())) {
+      endDate = new Date();
+    }
+    
+    endDate.setHours(23, 59, 59, 999);
+
+    const dateFilter = { $gte: startDate, $lte: endDate };
+
     const [
       totalUsers,
       totalAgents,
@@ -16,18 +37,161 @@ const getDashboardStats = async (req, res, next) => {
       pendingAgentRequests,
       activeProperties,
       soldProperties,
-      totalRevenue
+      totalRevenue,
+      topViewedProperties,
+      topWishlistedProperties,
+      topListingTiers,
+      topMemberships,
+      topAgentsByRating,
+      userTrendData,
+      revenueData,
+      topSearchedKeywords
     ] = await Promise.all([
-      userModel.countDocuments({ isActive: true }),
+      userModel.countDocuments({ role: 'user', isActive: true }),
       userModel.countDocuments({ role: 'agent', isActive: true }),
       propertyModel.countDocuments(),
       agentRequestModel.countDocuments({ status: 'pending' }),
       propertyModel.countDocuments({ status: 'active' }),
       propertyModel.countDocuments({ status: 'sold' }),
-      // Tính tổng giá trị properties đã bán (chỉ ước tính)
+      // Total revenue from transactions
+      transactionModel.aggregate([
+        { $match: { status: 'completed', createdAt: dateFilter } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      // Top 10 most viewed properties - COUNT from userActivity
+      (async () => {
+        const viewCounts = await userActivityModel.aggregate([
+          { $match: { eventType: 'VIEW', propertyId: { $ne: null } } },
+          { $group: { _id: '$propertyId', viewCount: { $sum: 1 } } },
+          { $sort: { viewCount: -1 } },
+          { $limit: 10 },
+          { $lookup: { from: 'properties', localField: '_id', foreignField: '_id', as: 'property' } },
+          { $unwind: '$property' },
+          { $project: { _id: 1, viewCount: 1, title: '$property.title', price: '$property.price', owner: '$property.owner' } },
+          { $lookup: { from: 'users', localField: 'owner', foreignField: '_id', as: 'ownerInfo' } },
+          { $unwind: { path: '$ownerInfo', preserveNullAndEmptyArrays: true } },
+          { $project: { _id: 1, viewCount: 1, title: 1, price: 1, owner: 1, ownerFullName: '$ownerInfo.fullName' } }
+        ]);
+        return viewCounts.map(item => ({
+          _id: item._id,
+          title: item.title,
+          viewCount: item.viewCount,
+          price: item.price,
+          owner: { fullName: item.ownerFullName }
+        }));
+      })(),
+      // Top 10 most wishlisted properties
+      wishlistModel.aggregate([
+        { $unwind: '$properties' },
+        { $group: { _id: '$properties', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $lookup: { from: 'properties', localField: '_id', foreignField: '_id', as: 'property' } },
+        { $unwind: '$property' },
+        { $project: { _id: 1, count: 1, title: '$property.title', price: '$property.price' } }
+      ]),
+      // Top 5 most purchased listing tiers
       propertyModel.aggregate([
-        { $match: { status: 'sold' } },
-        { $group: { _id: null, total: { $sum: '$price.value' } } }
+        { $match: { postType: 'vip', createdAt: dateFilter } },
+        { $group: { _id: '$postType', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+      ]),
+      // Top 5 most purchased memberships
+      userMembershipModel.aggregate([
+        { $match: { createdAt: dateFilter } },
+        { $group: { _id: '$membershipType', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+      ]),
+      // Top 10 agents by rating
+      agentReviewModel.aggregate([
+        { $match: { _destroy: false } },
+        { $group: { _id: '$agent', avgRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+        { $match: { reviewCount: { $gte: 1 } } },
+        { $sort: { avgRating: -1, reviewCount: -1 } },
+        { $limit: 10 },
+        { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'agentInfo' } },
+        { $unwind: '$agentInfo' },
+        { $project: { _id: 1, avgRating: 1, reviewCount: 1, fullName: '$agentInfo.fullName', avatar: '$agentInfo.avatar' } }
+      ]),
+      // User trend data (daily) for last 30 days - COMBINED with listings and requests
+      (async () => {
+        const userTrend = await userModel.aggregate([
+          { $match: { createdAt: dateFilter } },
+          { $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }},
+          { $sort: { _id: 1 } },
+          { $project: { date: '$_id', users: '$count', _id: 0 } }
+        ]);
+
+        const propertyTrend = await propertyModel.aggregate([
+          { $match: { createdAt: dateFilter } },
+          { $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }},
+          { $sort: { _id: 1 } },
+          { $project: { date: '$_id', listings: '$count', _id: 0 } }
+        ]);
+
+        const requestTrend = await agentRequestModel.aggregate([
+          { $match: { createdAt: dateFilter } },
+          { $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }},
+          { $sort: { _id: 1 } },
+          { $project: { date: '$_id', requests: '$count', _id: 0 } }
+        ]);
+
+        // Merge all trends by date
+        const dateMap = new Map();
+        userTrend.forEach(item => {
+          if (!dateMap.has(item.date)) dateMap.set(item.date, {});
+          dateMap.get(item.date).users = item.users;
+        });
+        propertyTrend.forEach(item => {
+          if (!dateMap.has(item.date)) dateMap.set(item.date, {});
+          dateMap.get(item.date).listings = item.listings;
+        });
+        requestTrend.forEach(item => {
+          if (!dateMap.has(item.date)) dateMap.set(item.date, {});
+          dateMap.get(item.date).requests = item.requests;
+        });
+
+        // Convert to sorted array with all fields
+        const merged = Array.from(dateMap.entries())
+          .map(([date, data]) => ({
+            date,
+            users: data.users || 0,
+            listings: data.listings || 0,
+            requests: data.requests || 0
+          }))
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        return merged;
+      })(),
+      // Revenue trend data (daily) for last 30 days
+      transactionModel.aggregate([
+        { $match: { status: 'completed', createdAt: dateFilter } },
+        { $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$amount' }
+        }},
+        { $sort: { _id: 1 } },
+        { $project: { date: '$_id', revenue: 1, _id: 0 } }
+      ]),
+      // Top 10 most searched keywords
+      userActivityModel.aggregate([
+        { $match: { eventType: 'SEARCH', createdAt: dateFilter } },
+        { $group: { _id: '$metadata.keyword', count: { $sum: 1 } } },
+        { $match: { _id: { $ne: null } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $project: { keyword: '$_id', count: 1, _id: 0 } }
       ])
     ]);
 
@@ -47,6 +211,21 @@ const getDashboardStats = async (req, res, next) => {
       .populate('userId', 'fullName email avatar')
       .lean();
 
+    // Get property type distribution
+    const propertyTypeData = await propertyModel.aggregate([
+      { $group: { _id: '$type', value: { $sum: 1 } } },
+      { $project: { name: '$_id', value: 1, _id: 0 } },
+      { $sort: { value: -1 } }
+    ]);
+
+    // Get user type data
+    const regularUsers = await userModel.countDocuments({ role: 'user', isActive: true });
+    const agents = await userModel.countDocuments({ role: 'agent', isActive: true });
+    const userTypeData = [
+      { name: 'Regular Users', value: regularUsers },
+      { name: 'Agents', value: agents }
+    ];
+
     res.status(StatusCodes.OK).json({
       stats: {
         totalUsers,
@@ -58,7 +237,21 @@ const getDashboardStats = async (req, res, next) => {
         totalRevenue: totalRevenue[0]?.total || 0
       },
       recentProperties,
-      recentAgentRequests
+      recentAgentRequests,
+      userTrendData,
+      revenueData,
+      propertyTypeData,
+      userTypeData,
+      topViewedProperties,
+      topWishlistedProperties,
+      topListingTiers,
+      topMemberships,
+      topAgentsByRating,
+      topSearchedKeywords,
+      dateRange: {
+        startDate,
+        endDate
+      }
     });
   } catch (error) {
     next(error);

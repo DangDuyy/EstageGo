@@ -3,8 +3,8 @@ import { API_ROOT } from '@/utils/constants';
 import { toast } from 'react-toastify';
 
 // ===== DASHBOARD =====
-export const getDashboardStatsAPI = async () => {
-  const response = await authorizeAxiosInstance.get(`${API_ROOT}/V1/admin/dashboard/stats`);
+export const getDashboardStatsAPI = async (params) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/V1/admin/dashboard/stats`, { params });
   return response.data;
 };
 
