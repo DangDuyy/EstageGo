@@ -13,6 +13,7 @@ import { ListingTierConfig } from "~/models/listingTierConfig"
 import membershipConfigService from "~/services/membershipConfigService"
 import userMembershipService from "~/services/userMembershipService"
 import mongoose from "mongoose"
+import userActivityModel from "~/models/userActivity"
 
 const safeParse = (v) => {
     if (typeof v === 'string') {
@@ -540,6 +541,7 @@ const uploadPropertyMedia = async (req, res, next) => {
 const getProperties = async (req, res, next) => {
     try {
         const { page, itemsPerPage, ...raw } = req.query
+        const userId = req.jwtDecoded?._id || null
 
         const queryFilter = {
             // search
@@ -593,6 +595,21 @@ const getProperties = async (req, res, next) => {
             delete queryFilter.type
         }
 
+        // Record SEARCH event if there's a search query
+        if (queryFilter.q) {
+            try {
+                await userActivityModel.create({
+                    userId: userId,
+                    sessionId: req.sessionId || null,
+                    eventType: 'SEARCH',
+                    metadata: { keyword: queryFilter.q }
+                })
+            } catch (activityError) {
+                console.error('Error recording search activity:', activityError)
+                // Don't fail the request if activity logging fails
+            }
+        }
+
         const result = await propertyService.getProperties(page, itemsPerPage, queryFilter)
 
         // Nếu không có kết quả và có search query, tìm suggestions
@@ -613,6 +630,22 @@ const getProperties = async (req, res, next) => {
 const getPropertyDetails = async (req, res, next) => {
     try {
         const propertyId = req.params.id
+        const userId = req.jwtDecoded?._id || null
+        
+        // Record VIEW event in userActivity
+        try {
+            await userActivityModel.create({
+                userId: userId,
+                sessionId: req.sessionId || null,
+                eventType: 'VIEW',
+                propertyId: propertyId,
+                metadata: {}
+            })
+        } catch (activityError) {
+            console.error('Error recording property view:', activityError)
+            // Don't fail the request if activity logging fails
+        }
+        
         const result = await propertyService.getPropertyDetails(propertyId)
         return res.status(StatusCodes.OK).json(result)
     } catch (error) {

@@ -69,4 +69,7 @@ userMembershipSchema.methods.useIncludedListing = function() {
   return false;
 };
 
-export const UserMembership = mongoose.model('UserMembership', userMembershipSchema);
+const UserMembership = mongoose.model('UserMembership', userMembershipSchema);
+
+export default UserMembership;
+export { UserMembership };
