@@ -7,5 +7,10 @@ flows:
   pattern_search:
     description: Flow for handling knowledge-based questions
     name: pattern search
+    run_pattern_completed: false
     steps:
-      - action: utter_free_chitchat_response
+      - action: action_trigger_search
+  pattern_completed:
+    description: "Hoàn thành flow"
+    steps:
+      - action: utter_can_do_something_else

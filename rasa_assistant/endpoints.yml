@@ -61,16 +61,69 @@ action_endpoint:
 #       - provider: openai
 #         model: text-embedding-3-large
 
-nlg:
-  type: rephrase
-  llm:
-    model_group: rasa_command_generation_model
-  rephrase_all: true
-  promt: "prompts/search-summary-rephraser.jinja2"
+# nlg:
+#   type: rephrase
+#   llm:
+#     model_group: rasa_command_generation_model
+#   rephrase_all: true
+#   promt: "prompts/search-summary-rephraser.jinja2"
+
+# model_groups:
+#   - id: rasa_command_generation_model
+#     models:
+#       - provider: rasa
+#         model: rasa/command-generator-llama-3.1-8b-instruct
+#         api_base: "https://tutorial-llm.rasa.ai"
+
+#   - id: gemini_command_generator
+#     models:
+#       - provider: gemini
+#         model: gemini-1.5-flash
+#         api_key: ${GEMINI_API_KEY}
+#   - id: gemini_search_generation
+#     models:
+#       - provider: gemini
+#         model: gemini-1.5-flash
+#         api_key: ${GEMINI_API_KEY}
+#   - id: gemini_embeddings
+#     models:
+#       - provider: gemini
+#         model: text-embedding-004
+#         api_key: ${GEMINI_API_KEY}
+
+# nlg:
+#   type: rephrase
+#   llm:
+#     model_group: groq_llm
 
 model_groups:
-  - id: rasa_command_generation_model
+  - id: groq_llm
     models:
-      - provider: rasa
-        model: rasa/command-generator-llama-3.1-8b-instruct
-        api_base: "https://tutorial-llm.rasa.ai"
+      - provider: groq
+        model: openai/gpt-oss-120b
+        api_key: ${GROQ_API_KEY}  # Optional, nếu muốn set trong config
+  
+  - id: gemini_embeddings
+    models:
+      - provider: gemini
+        model: text-embedding-004
+        api_key: ${GEMINI_API_KEY}
+
+# vector_store:
+#   type: qdrant
+#   host: "47672428-0a38-4050-8637-d4c48b3012f8.europe-west3-0.gcp.cloud.qdrant.io"
+#   api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.wenti9M4RSnZod1uUkO2AYg3VoaqAqRppCc1ThqMNM8"
+#   collection: rasa_knowledge_base
+#   content_payload_key: page_content
+#   metadata_payload_key: metadata
+#   https: true
+
+vector_store:
+  type: qdrant
+  host: ${QDRANT_HOST}
+  api_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.wenti9M4RSnZod1uUkO2AYg3VoaqAqRppCc1ThqMNM8"
+  # api_key: ${QDRANT_API_KEY}
+  collection: rasa_knowledge_base
+  content_payload_key: page_content
+  metadata_payload_key: metadata
+  https: true

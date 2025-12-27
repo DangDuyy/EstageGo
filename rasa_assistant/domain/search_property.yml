@@ -179,5 +179,8 @@ responses:
   utter_ask_year_built_max:
     - text: "Năm xây dựng muộn nhất?"
 
+  utter_can_do_something_else:
+    - text: "Tôi có thể giúp gì thêm cho bạn không?"
+
 actions:
   - action_search_properties
