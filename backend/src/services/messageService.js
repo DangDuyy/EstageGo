@@ -4,6 +4,7 @@ import conversationModel from "~/models/conversations"
 import ApiError from "~/utils/ApiError"
 import { conversationService } from "./conversationService"
 import { cloudinary } from "~/config/cloudinary"
+import mongoose from "mongoose"
 
 const uploadBufferToCloudinary = (file, options = {}) => {
   return new Promise((resolve, reject) => {
@@ -252,10 +253,72 @@ const recallMessage = async ({ messageId, userId, io }) => {
   return message
 }
 
+/**
+ * Get conversation media (flattened attachments) filtered by type with pagination
+ */
+const getMedia = async ({ conversationId, userId, type = 'image', page = 1, limit = 12 }) => {
+  try {
+    const conv = await conversationModel.findOne({ _id: conversationId, participants: userId })
+    if (!conv) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Conversation not found or you are not a participant')
+    }
+
+    const matchBase = {
+      conversationId: new mongoose.Types.ObjectId(conversationId),
+      'deletedFor.userId': { $ne: new mongoose.Types.ObjectId(userId) }
+    }
+
+    const countAgg = await messageModel.aggregate([
+      { $match: matchBase },
+      { $unwind: '$attachments' },
+      { $match: { 'attachments.type': type } },
+      { $count: 'total' }
+    ])
+    const total = countAgg?.[0]?.total || 0
+
+    const skip = (page - 1) * limit
+
+    const items = await messageModel.aggregate([
+      { $match: matchBase },
+      { $unwind: '$attachments' },
+      { $match: { 'attachments.type': type } },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 0,
+          url: '$attachments.url',
+          type: '$attachments.type',
+          filename: '$attachments.filename',
+          mimetype: '$attachments.mimetype',
+          size: '$attachments.size',
+          createdAt: '$createdAt',
+          messageId: '$_id',
+          senderId: '$senderId'
+        }
+      }
+    ])
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const messageService = {
   sendMessage,
   getMessages,
   toggleReaction,
   deleteForUser,
-  recallMessage
+  recallMessage,
+  getMedia
 }

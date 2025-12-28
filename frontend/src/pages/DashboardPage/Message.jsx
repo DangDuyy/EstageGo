@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Send, Loader2, Search, Paperclip, Mic, MoreHorizontal } from 'lucide-react'
+import { Send, Loader2, Search, Paperclip, Mic, MoreHorizontal, PanelRightClose, PanelRightOpen, Info } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useSelector } from 'react-redux'
@@ -19,6 +19,7 @@ import { formatDistanceToNow } from 'date-fns'
 import PropertyPreview from '@/components/common/Chat/PropertyPreview'
 import MessageContent from '@/components/common/Chat/MessageContent'
 import { getConversationPreviewText } from '@/utils/messagePreview'
+import ChatSidebarRight from '@/components/common/Chat/ChatSidebarRight'
 
 const toDateKey = (date) => {
   const d = new Date(date || Date.now())
@@ -73,6 +74,7 @@ export default function Message() {
   // Image viewer state
   const [viewerOpen, setViewerOpen] = useState(false)
   const [viewerImageUrl, setViewerImageUrl] = useState(null)
+  const [sidebarRightOpen, setSidebarRightOpen] = useState(false)
 
   const {
     messages,
@@ -272,7 +274,7 @@ export default function Message() {
 
   return (
     <ContentLayout title="Messages">
-      <div className="h-[calc(100vh-200px)] flex gap-4">
+      <div className="h-[calc(100vh-200px)] flex gap-2 relative">
         <Card className="w-80 flex flex-col h-full">
           <div className="p-4 border-b">
             <div className="relative">
@@ -332,32 +334,42 @@ export default function Message() {
           </ScrollArea>
         </Card>
 
-        <Card className="flex-1 flex flex-col h-full overflow-hidden">
+        <Card className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ${sidebarRightOpen ? 'rounded-r-none' : ''}`}>
           {!selectedConversation ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               Select a conversation to start messaging
             </div>
           ) : (
             <>
-              <div className="p-4 border-b flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={getOtherUser(selectedConversation)?.avatar} />
-                  <AvatarFallback>
-                    {getOtherUser(selectedConversation)?.fullName?.charAt(0) || '?'}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold">
-                    {getOtherUser(selectedConversation)?.fullName ||
-                     getOtherUser(selectedConversation)?.userName ||
-                     'Unknown'}
-                  </p>
-                  {typingUserNames.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is' : 'are'} typing...
+              <div className="p-4 border-b flex items-center gap-3 justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={getOtherUser(selectedConversation)?.avatar} />
+                    <AvatarFallback>
+                      {getOtherUser(selectedConversation)?.fullName?.charAt(0) || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">
+                      {getOtherUser(selectedConversation)?.fullName ||
+                       getOtherUser(selectedConversation)?.userName ||
+                       'Unknown'}
                     </p>
-                  )}
+                    {typingUserNames.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is' : 'are'} typing...
+                      </p>
+                    )}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  className={`inline-flex items-center justify-center w-9 h-9 rounded-md border transition-colors ${sidebarRightOpen ? 'bg-accent border-primary' : 'hover:bg-muted'}`}
+                  onClick={() => setSidebarRightOpen((v) => !v)}
+                  title={sidebarRightOpen ? 'Close sidebar' : 'Open sidebar'}
+                >
+                  {sidebarRightOpen ? <PanelRightClose className="w-5 h-5" /> : <PanelRightOpen className="w-5 h-5" />}
+                </button>
               </div>
 
               <div className="flex-1 overflow-hidden min-h-0">
@@ -746,6 +758,18 @@ export default function Message() {
             </>
           )}
         </Card>
+
+        {/* Right sidebar */}
+        {selectedConversation && (
+          <ChatSidebarRight
+            conversation={selectedConversation}
+            isOpen={sidebarRightOpen}
+            onClose={() => setSidebarRightOpen(false)}
+            onOpenProfile={(p) => {
+              // Optional: navigate to profile or open a modal in future
+            }}
+          />
+        )}
       </div>
     </ContentLayout>
   )
