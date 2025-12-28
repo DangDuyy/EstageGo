@@ -138,10 +138,31 @@ const recallMessage = async (req, res, next) => {
   }
 }
 
+const getConversationMedia = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { conversationId } = req.params
+    const { type = 'image', page = 1, limit = 12 } = req.query
+
+    const result = await messageService.getMedia({
+      conversationId,
+      userId,
+      type,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    })
+
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export const messageController = {
   sendMessage,
   getMessages,
   toggleReaction,
   deleteMessageForMe,
-  recallMessage
+  recallMessage,
+  getConversationMedia
 }

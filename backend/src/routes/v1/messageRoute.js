@@ -16,6 +16,10 @@ Router.route('/')
 Router.route('/:conversationId')
   .get(messageController.getMessages)
 
+// Get conversation media by type
+Router.route('/:conversationId/media')
+  .get(messageController.getConversationMedia)
+
 // Toggle reaction on a message
 Router.route('/:messageId/reactions')
   .post(messageController.toggleReaction)
