@@ -432,6 +432,14 @@ export const getMessagesAPI = async (conversationId, page = 1, limit = 50) => {
   return response.data
 }
 
+// Get conversation media by type (image, video, audio, file)
+export const getConversationMediaAPI = async (conversationId, type = 'image', page = 1, limit = 12) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/messages/${conversationId}/media`, {
+    params: { type, page, limit }
+  })
+  return response.data
+}
+
 // ========== IMAGE TAGGING APIs ==========
 
 // Get user properties with media
