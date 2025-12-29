@@ -40,6 +40,7 @@ import PaymentResultPage from './pages/DashboardPage/PaymentResultPage'
 import TransactionHistoryPage from './pages/DashboardPage/TransactionHistoryPage'
 import EditPost from './pages/DashboardPage/Post/EditPost'
 import BoostPackages from './pages/DashboardPage/BoostPackages'
+import ChatbotKnowledgeManager from './pages/AdminPage/AdminDocuments'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -122,6 +123,7 @@ function App() {
           <Route path="properties" element={<AdminProperties />} />
           <Route path="agent-requests" element={<AdminAgentRequests />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="documents" element={<ChatbotKnowledgeManager />} />
           <Route path="membership-config" element={<AdminMembershipConfig />} />
           <Route path="listing-tier-config" element={<AdminListingTierConfig />} />
         </Route>

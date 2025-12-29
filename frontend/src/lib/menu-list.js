@@ -35,6 +35,12 @@ export function getMenuList(pathname, isAdminPanel = false) {
             label: "Users",
             icon: Users,
             submenus: []
+          },
+          {
+            href: "/admin/documents",
+            label: "Documents",
+            icon: Tag,
+            submenus: []
           }
         ]
       },

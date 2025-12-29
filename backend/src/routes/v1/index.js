@@ -20,6 +20,7 @@ import { addressRoutes } from './addressRoute'
 import { membershipConfigRoute } from './membershipConfig.route'
 import { userMembershipRouters } from './userMembershipRoute'
 import { systemConfigRoutes } from './systemConfigRoute'
+import { documentRoutes } from './document.routes'
 
 const Router = express.Router()
 
@@ -66,5 +67,7 @@ Router.use('/membershipConfig', membershipConfigRoute)
 Router.use('/membership', userMembershipRouters)
 
 Router.use('/system-configs', systemConfigRoutes)
+
+Router.use('/documents', documentRoutes)
 
 export const APIs_V1 = Router
