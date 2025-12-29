@@ -1,6 +1,8 @@
 import { Server } from 'socket.io'
 import { JwtProvider } from '~/providers/JwtProvider'
 import { env } from '~/config/environment'
+import { registerPresence } from './presence'
+import { userService } from '~/services/userService'
 
 // ===== Notification helpers (non-breaking) =====
 let ioInstance = null
@@ -144,6 +146,10 @@ export const initSocket = (httpServer) => {
   io.use(socketAuth)
 
   // Register event handlers
+  // Presence (online/offline + focus/blur + snapshot)
+  registerPresence(io, { userService })
+
+  // Chat/typing events (kept separate)
   registerChatEvents(io)
 
   // Save instance for helpers

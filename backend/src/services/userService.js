@@ -20,6 +20,30 @@ import SystemConfig from '~/models/systemConfig'
  */
 const generateFullName = () => {
   const randomNum = Math.floor(10000000 + Math.random() * 90000000)
+ * Update user's presence status
+ * @param {string} userId
+ * @param {{isOnline?: boolean, lastActiveAt?: Date}} payload
+ */
+const markUserStatus = async (userId, payload = {}) => {
+  try {
+    const set = {}
+    if (typeof payload.isOnline === 'boolean') set.isOnline = payload.isOnline
+    if (payload.lastActiveAt instanceof Date) set.lastActiveAt = payload.lastActiveAt
+
+    if (Object.keys(set).length === 0) return null
+
+    const updated = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: set },
+      { new: true, runValidators: true }
+    ).select('-password -verifyToken')
+
+    return updated ? pickUser(updated) : null
+  } catch (error) {
+    // Swallow errors to avoid crashing presence updates
+    return null
+  }
+}
   return `User_${randomNum}`
 }
 
@@ -707,4 +731,5 @@ export const userService = {
   updateMembership,
   getAgentDashboardStats,
   getListingStats
+  markUserStatus
 }

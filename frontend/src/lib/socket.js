@@ -3,7 +3,9 @@ import { API_ROOT } from '@/utils/constants'
 
 let socket = null
 let notificationHandlers = []
+let presenceHandlers = []
 let notificationDispatch = null
+let presenceDispatch = null
 
 // Subscribe notification events using existing socket (same as chat)
 export const onNotification = (handler) => {
@@ -28,6 +30,7 @@ export const connectSocket = (accessToken) => {
     if (!socket.connected) {
       // ensure single listener
       socket.off('notification:new')
+      socket.off('presence:update')
       if (!notificationDispatch) {
         notificationDispatch = (payload) => {
           notificationHandlers.forEach(fn => {
@@ -35,7 +38,15 @@ export const connectSocket = (accessToken) => {
           })
         }
       }
+      if (!presenceDispatch) {
+        presenceDispatch = (payload) => {
+          presenceHandlers.forEach(fn => {
+            try { fn(payload) } catch (e) { console.error('[Socket] presence handler error', e) }
+          })
+        }
+      }
       socket.on('notification:new', notificationDispatch)
+      socket.on('presence:update', presenceDispatch)
       // eslint-disable-next-line no-empty
       try { socket.connect() } catch {}
     }
@@ -59,8 +70,17 @@ export const connectSocket = (accessToken) => {
       })
     }
   }
+  if (!presenceDispatch) {
+    presenceDispatch = (payload) => {
+      presenceHandlers.forEach(fn => {
+        try { fn(payload) } catch (e) { console.error('[Socket] presence handler error', e) }
+      })
+    }
+  }
   socket.off('notification:new')
+  socket.off('presence:update')
   socket.on('notification:new', notificationDispatch)
+  socket.on('presence:update', presenceDispatch)
 
   socket.on('connect', () => console.log('[Socket] Connected:', socket.id))
   socket.on('connect_error', (err) => console.error('[Socket] Connection error:', err?.message || err))
@@ -72,6 +92,7 @@ export const connectSocket = (accessToken) => {
 export const disconnectSocket = () => {
   if (socket) {
     if (notificationDispatch) socket.off('notification:new', notificationDispatch)
+    if (presenceDispatch) socket.off('presence:update', presenceDispatch)
     socket.close()
     socket = null
   }
@@ -101,4 +122,42 @@ export const emitTypingStart = (conversationId) => {
 export const emitTypingStop = (conversationId) => {
   if (!socket?.connected) return
   socket.emit('typing:stop', { conversationId })
+}
+
+// ===== Presence helpers =====
+export const onPresenceUpdate = (handler) => {
+  presenceHandlers.push(handler)
+  return () => {
+    presenceHandlers = presenceHandlers.filter(h => h !== handler)
+  }
+}
+
+export const requestPresenceSnapshot = (userIds = []) => new Promise((resolve) => {
+  if (!socket?.connected) return resolve([])
+  const once = (payload) => {
+    socket.off('presence:snapshot', once)
+    resolve(payload || [])
+  }
+  socket.once('presence:snapshot', once)
+  socket.emit('presence:snapshot', userIds)
+})
+
+export const focusConversation = (conversationId) => {
+  if (!socket?.connected) return
+  socket.emit('conversation:focus', { conversationId })
+}
+
+export const blurConversation = (conversationId) => {
+  if (!socket?.connected) return
+  socket.emit('conversation:blur', { conversationId })
+}
+
+export const sendPresenceHeartbeat = () => {
+  if (!socket?.connected) return
+  socket.emit('presence:heartbeat')
+}
+
+export const emitUserLogoutPresence = () => {
+  if (!socket?.connected) return
+  socket.emit('user:logout')
 }
