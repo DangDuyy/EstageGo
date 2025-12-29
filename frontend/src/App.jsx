@@ -41,6 +41,7 @@ import TransactionHistoryPage from './pages/DashboardPage/TransactionHistoryPage
 import EditPost from './pages/DashboardPage/Post/EditPost'
 import BoostPackages from './pages/DashboardPage/BoostPackages'
 import ChatbotKnowledgeManager from './pages/AdminPage/AdminDocuments'
+import AdminTransactions from './pages/AdminPage/AdminTransactions'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -126,6 +127,7 @@ function App() {
           <Route path="documents" element={<ChatbotKnowledgeManager />} />
           <Route path="membership-config" element={<AdminMembershipConfig />} />
           <Route path="listing-tier-config" element={<AdminListingTierConfig />} />
+          <Route path="transactions" element={<AdminTransactions />} />
         </Route>
 
         {/* page not found */}
