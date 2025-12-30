@@ -37,10 +37,15 @@ import PropertyPages from './pages/PropertyPage'
 import PropertyPage from './pages/PropertyPage/_id'
 import MainLayout from './components/common/Layout/MainLayout'
 import DepositPage from './pages/DashboardPage/DepositPage'
-import PaymentResultPage from './pages/DashboardPage/PaymentResultPage' 
+import PaymentResultPage from './pages/DashboardPage/PaymentResultPage'
 import TransactionHistoryPage from './pages/DashboardPage/TransactionHistoryPage'
 import EditPost from './pages/DashboardPage/Post/EditPost'
 import BoostPackages from './pages/DashboardPage/BoostPackages'
+import ChatbotKnowledgeManager from './pages/AdminPage/AdminDocuments'
+import DocumentViewer from './pages/Document/DocumentViewer'
+import AdminTransactions from './pages/AdminPage/AdminTransactions'
+import VerifyResetPassword from './pages/HomePage/VerifyResetPassword'
+import ResetPasswordPage from './pages/HomePage/ResetPasswordPage'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -63,9 +68,12 @@ function App() {
             </MapProvider>
           } />
           <Route path="listing/grid" element={<PropertyPages />} />
+          <Route path='/document' element={<DocumentViewer />} />
         </Route>
         <Route path="/verify-account" element={<VerifyAccountPage />} />
         <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
+        <Route path="/verify-reset-password" element={<VerifyResetPassword />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/listing/map" element={
           <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
@@ -126,8 +134,10 @@ function App() {
           <Route path="properties" element={<AdminProperties />} />
           <Route path="agent-requests" element={<AdminAgentRequests />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="documents" element={<ChatbotKnowledgeManager />} />
           <Route path="membership-config" element={<AdminMembershipConfig />} />
           <Route path="listing-tier-config" element={<AdminListingTierConfig />} />
+          <Route path="transactions" element={<AdminTransactions />} />
         </Route>
 
         {/* page not found */}

@@ -10,6 +10,7 @@
 
     "dev:fe": "cd frontend && yarn dev",
     "dev:be": "cd backend && yarn dev",
+    "dev:rasa": "cd rasa_assistant && .\\.venv\\Scripts\\rasa run --enable-api --cors \"*\"",
     "production:be":  "cd backend && yarn production"
   },
   "repository": {

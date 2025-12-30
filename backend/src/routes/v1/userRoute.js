@@ -72,4 +72,14 @@ Router.route('/agent/dashboard-stats')
 Router.route('/me/listing-stats')
   .get(authMiddleware.isAuthorized, userController.getListingStats)
 
+// Forgot password routes
+Router.route('/forgot-password')
+  .post(userController.requestForgotPassword)
+
+Router.route('/verify-reset-code')
+  .post(userController.verifyResetCode)
+
+Router.route('/reset-password')
+  .post(userController.resetPassword)
+
 export const userRoutes = Router

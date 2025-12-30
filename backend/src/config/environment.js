@@ -46,5 +46,9 @@ export const env = {
 
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+
+  QDRANT_API_KEY: process.env.QDRANT_API_KEY,
+  QDRANT_URL: process.env.QDRANT_URL,
+  UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN
 }

@@ -115,7 +115,7 @@ const MembershipPricingCards = () => {
             'Bonus 10 advanced listings',
             'Unlimited displayed listings',
             'Professional agent profile page',
-            'Listing performance reports'
+            // 'Listing performance reports'
           ]
         } else if (p.membershipType === 'boosted') {
           p.badge = 'x2.5 Effectiveness'
@@ -131,7 +131,7 @@ const MembershipPricingCards = () => {
             'Bonus 10 boosted listings',
             'Unlimited displayed listings',
             'Professional agent profile page',
-            'Listing performance reports'
+            // 'Listing performance reports'
           ]
         } else if (p.membershipType === 'basic') {
           p.badge = 'Standard Effectiveness'

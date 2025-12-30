@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto'
 import bcryptjs from 'bcryptjs'
 import { StatusCodes } from "http-status-codes"
 import ApiError from "~/utils/ApiError"
-import { sendVerificationEmail } from '~/utils/mail'
+import { sendVerificationEmail, sendPasswordResetEmail } from '~/utils/mail'
 import userModel from "~/models/users"
 import { pickUser } from "~/utils/formatter"
 import { JwtProvider } from "~/providers/JwtProvider"
@@ -735,6 +735,119 @@ const getListingStats = async (userId) => {
   }
 }
 
+/**
+ * Request forgot password - Send OTP or email link
+ */
+const requestForgotPassword = async ({ contactType, email, phone }) => {
+  try {
+    let user
+
+    if (contactType === 'email' && email) {
+      user = await userModel.findOne({ email })
+      if (!user) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'No account found with this email')
+      }
+
+      // Generate reset token
+      const resetToken = randomBytes(32).toString('hex')
+      const resetTokenExpires = Date.now() + 15 * 60 * 1000 // 15 minutes
+
+      user.resetPasswordToken = resetToken
+      user.resetPasswordExpires = resetTokenExpires
+      await user.save()
+
+      // Send email with reset link
+      const resetLink = `${env.WEBSITE_DOMAIN_DEVELOPMENT}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`
+      
+      await sendPasswordResetEmail({ 
+        to: email, 
+        resetLink, 
+        userName: user.fullName 
+      })
+      
+
+      return { success: true, method: 'email' }
+    } 
+    else if (contactType === 'phone' && phone) {
+      user = await userModel.findOne({ phone })
+      if (!user) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'No account found with this phone number')
+      }
+
+      // For phone, OTP will be sent via Twilio (handled in controller)
+      return { success: true, method: 'phone' }
+    }
+
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid contact information')
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Generate temporary reset token after OTP verification
+ */
+const generateResetToken = async (phone) => {
+  try {
+    const user = await userModel.findOne({ phone })
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    const resetToken = randomBytes(32).toString('hex')
+    const resetTokenExpires = Date.now() + 15 * 60 * 1000 // 15 minutes
+
+    user.resetPasswordToken = resetToken
+    user.resetPasswordExpires = resetTokenExpires
+    await user.save()
+
+    return { resetToken }
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Reset password with token
+ */
+const resetPassword = async ({ resetToken, newPassword, contactType, email, phone }) => {
+  try {
+    let user
+
+    if (contactType === 'email' && email) {
+      user = await userModel.findOne({ 
+        email,
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: { $gt: Date.now() }
+      })
+    } else if (contactType === 'phone' && phone) {
+      user = await userModel.findOne({ 
+        phone,
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: { $gt: Date.now() }
+      })
+    }
+
+    if (!user) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or expired reset token')
+    }
+
+    // Hash new password
+    const hashedPassword = bcryptjs.hashSync(newPassword, 10)
+    
+    user.password = hashedPassword
+    user.resetPasswordToken = undefined
+    user.resetPasswordExpires = undefined
+    await user.save()
+
+    console.log('✅ Password reset successful for:', email || phone)
+
+    return { success: true }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
@@ -754,5 +867,8 @@ export const userService = {
   getAgentDashboardStats,
   getListingStats,
   markUserStatus,
-  getPresenceSnapshot
+  getPresenceSnapshot,
+  requestForgotPassword,
+  generateResetToken,
+  resetPassword
 }

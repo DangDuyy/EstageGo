@@ -72,3 +72,9 @@ export const toggleUserStatusAPI = async (userId) => {
   );
   return response.data;
 };
+
+// ===== TRANSACTIONS MANAGEMENT =====
+export const getTransactionStatsAPI = async (params) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/V1/admin/transactions/stats`, { params });
+  return response.data;
+};

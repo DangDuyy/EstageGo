@@ -49,28 +49,33 @@ const MENU = [
   // { label: "Blog", to: "/blog" },
   { label: "Dashboard", to: "/dashboard" },
 
+  // {
+  //   label: "AI Trend",
+  //   to: "/ai",
+  //   type: "mega",
+  //   columns: [
+  //     {
+  //       heading: "Search & Recommend",
+  //       items: [
+  //         { label: "Natural Language Search", to: "/ai/nl-search", desc: 'Type "3BR near schools, under 3B"' },
+  //         { label: "Behavioral Recommendations", to: "/ai/semantic-recommend", desc: "Personalized results from your browsing" },
+  //         { label: "Fuzzy & Semantic Search", to: "/ai/nl-search", desc: "Handle typos and near-meaning terms" },
+  //       ],
+  //     },
+  //     {
+  //       heading: "Media & Assistant",
+  //       items: [
+  //         { label: "Image Tagging", to: "/ai/image-tagging", desc: "Auto-detect kitchen, living room, balcony…" },
+  //         { label: "Chatbot / Assistant", to: "/ai/chatbot", desc: "24/7 Q&A, mortgage calc, viewing schedule" },
+  //       ],
+  //     },
+  //   ],
+  // },
+
   {
-    label: "AI Trend",
-    to: "/ai",
-    type: "mega",
-    columns: [
-      {
-        heading: "Search & Recommend",
-        items: [
-          { label: "Natural Language Search", to: "/ai/nl-search", desc: 'Type "3BR near schools, under 3B"' },
-          { label: "Behavioral Recommendations", to: "/ai/semantic-recommend", desc: "Personalized results from your browsing" },
-          { label: "Fuzzy & Semantic Search", to: "/ai/nl-search", desc: "Handle typos and near-meaning terms" },
-        ],
-      },
-      {
-        heading: "Media & Assistant",
-        items: [
-          { label: "Image Tagging", to: "/ai/image-tagging", desc: "Auto-detect kitchen, living room, balcony…" },
-          { label: "Chatbot / Assistant", to: "/ai/chatbot", desc: "24/7 Q&A, mortgage calc, viewing schedule" },
-        ],
-      },
-    ],
-  },
+    label: "Document",
+    to: "/document"
+  }
 ];
 
 /* ========== Helpers ========== */
@@ -78,7 +83,7 @@ function isParentActive(item, pathname, search = "") {
   if (!item) return false;
   // Home: "/" hoặc "/home"
   if (item.to === "/") return pathname === "/" || pathname === "/home";
-  
+
   // Special case for Properties menu - chỉ active khi có query param types
   if (item.label === "Properties" && item.children?.length > 0) {
     // Check if any child with query params is active
@@ -88,7 +93,7 @@ function isParentActive(item, pathname, search = "") {
       return pathname === childPath && search.includes(childQuery);
     });
   }
-  
+
   // Parent active khi path bắt đầu bằng chính nó hoặc bất kỳ child nào trùng
   if (pathname === item.to || pathname.startsWith(item.to + "/")) return true;
   if (item.children?.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))) return true;
@@ -149,7 +154,7 @@ function DropdownItem({ item, pathname }) {
     if (!childTo) return false;
     const [childPath, childQuery] = childTo.split('?');
     const [currentPath, currentQuery] = (pathname + location.search).split('?');
-    
+
     // Check if paths match and query params match
     return childPath === currentPath && childQuery === currentQuery;
   };
@@ -163,9 +168,8 @@ function DropdownItem({ item, pathname }) {
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
           asChild
-          className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${
-            parentActive ? activeClass : inactiveClass
-          }`}
+          className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${parentActive ? activeClass : inactiveClass
+            }`}
         >
           <button
             type="button"
@@ -189,9 +193,8 @@ function DropdownItem({ item, pathname }) {
                   <Link
                     to={c.to}
                     onClick={() => setOpen(false)}
-                    className={`${linkBase} block text-left w-full ${
-                      isActive ? activeClass : inactiveClass
-                    }`}
+                    className={`${linkBase} block text-left w-full ${isActive ? activeClass : inactiveClass
+                      }`}
                   >
                     {c.label}
                   </Link>
@@ -220,9 +223,8 @@ function MegaItem({ item, pathname }) {
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
           asChild
-          className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${
-            parentActive ? activeClass : inactiveClass
-          }`}
+          className={`${linkBase} bg-transparent hover:bg-transparent whitespace-nowrap ${parentActive ? activeClass : inactiveClass
+            }`}
         >
           <button
             type="button"

@@ -883,3 +883,37 @@ export const getActiveMembership = async () => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/membership/active`)
   return response.data
 }
+
+// ==================================
+// Documentation
+// ==================================
+export const getDocuments = async (query) =>
+  (await authorizeAxiosInstance.get(`${API_ROOT}/v1/documents`, { params: query })).data
+
+export const createDocument = async (payload) =>
+  (await authorizeAxiosInstance.post(`${API_ROOT}/v1/documents`, payload)).data
+
+export const updateDocument = async (id, payload) =>
+  (await authorizeAxiosInstance.put(`${API_ROOT}/v1/documents/${id}`, payload)).data
+
+export const deleteDocument = async (id, hard) =>
+  (await authorizeAxiosInstance.delete(`${API_ROOT}/v1/documents/${id}?hard=${hard}`)).data
+
+export const rebuildDocument = async () =>
+  (await authorizeAxiosInstance.post(`${API_ROOT}/v1/documents/rebuild-index`)).data
+
+// ==================== Forgot Password ============================
+export const requestForgotPasswordAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/forgot-password`, data)
+  return response.data
+}
+
+export const verifyResetCodeAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/verify-reset-code`, data)
+  return response.data
+}
+
+export const resetPasswordAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/reset-password`, data)
+  return response.data
+}
