@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -8,7 +9,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Bell, Pin, Users as UsersIcon, EyeOff, Trash, X, PanelRightClose } from "lucide-react"
 import ConversationMediaPanel from "@/components/common/Chat/ConversationMediaPanel"
 import { useSelector } from "react-redux"
-import { selectCurrentUser } from "@/redux/user/userSlice"
+import { selectCurrentUser, selectUsersStatus } from "@/redux/user/userSlice"
+import { formatTimeAgo } from "@/utils/formatters"
 
 export default function ChatSidebarRight({
   conversation,
@@ -17,12 +19,16 @@ export default function ChatSidebarRight({
   onOpenProfile
 }) {
   const panelRef = useRef(null)
+  const navigate = useNavigate()
   const currentUser = useSelector(selectCurrentUser)
+  const usersStatus = useSelector(selectUsersStatus)
   const participants = useMemo(() => conversation?.participants || [], [conversation])
   const [showAllImages, setShowAllImages] = useState(false)
   const [showAllAudio, setShowAllAudio] = useState(false)
   const [showAllFiles, setShowAllFiles] = useState(false)
   const [fullImage, setFullImage] = useState(null)
+  const [mediaList, setMediaList] = useState([])
+  const [mediaIndex, setMediaIndex] = useState(0)
 
   // Get other participant's name for 1-on-1 conversations
   const displayName = useMemo(() => {
@@ -46,6 +52,23 @@ export default function ChatSidebarRight({
   const buttonStyle = "h-full w-full grid place-items-center rounded-lg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
   const contentStyle = "flex flex-col items-center leading-none"
   const textStyle = "text-xs font-medium"
+
+  const getPresence = (participant) => {
+    const store = participant?._id ? usersStatus[participant._id] : null
+    const isOnline = store?.isOnline ?? participant?.status?.isOnline ?? participant?.isOnline ?? false
+    const lastActiveAt = store?.lastActiveAt ?? participant?.status?.lastActiveAt ?? participant?.lastActiveAt ?? null
+    let text = 'Offline'
+    if (isOnline) text = 'Online'
+    else if (lastActiveAt) text = `Online ${formatTimeAgo(lastActiveAt)} ago`
+    const tone = isOnline ? 'online' : lastActiveAt ? 'away' : 'offline'
+    return { isOnline, text, tone }
+  }
+
+  const handleOpenProfile = (p) => {
+    if (!p?._id) return
+    navigate(`/agents/${p._id}`)
+    onOpenProfile?.(p)
+  }
 
   // Click outside handling
   useEffect(() => {
@@ -172,8 +195,13 @@ export default function ChatSidebarRight({
                     pageSize={showAllImages ? 50 : 8}
                     gridCols={3}
                     showTabs={false}
-                    showLoadMore={false}
-                    onImageClick={(imageUrl) => setFullImage(imageUrl)}
+                    showLoadMore={true}
+                    onItemsChange={setMediaList}
+                    onImageClick={(imageUrl) => {
+                      setFullImage(imageUrl)
+                      const idx = (mediaList || []).findIndex((m) => m.url === imageUrl)
+                      setMediaIndex(idx >= 0 ? idx : 0)
+                    }}
                   />
                 )}
                 <button
@@ -252,21 +280,41 @@ export default function ChatSidebarRight({
                   participants.map((p) => {
                     const name = p?.fullName || p?.userName || 'User'
                     const initial = (name?.[0] || 'U').toUpperCase()
-                    const isOnline = p?.status?.isOnline ?? false
+                    const presence = getPresence(p)
                     return (
                       <div
                         key={p?._id}
                         className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/60 cursor-pointer transition"
-                        onClick={() => onOpenProfile?.(p)}
+                        onClick={() => handleOpenProfile(p)}
                       >
-                        <Avatar className="w-8 h-8 shrink-0">
-                          <AvatarImage src={p?.avatar} />
-                          <AvatarFallback>{initial}</AvatarFallback>
-                        </Avatar>
+                        <div className="relative w-8 h-8 shrink-0">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={p?.avatar} />
+                            <AvatarFallback>{initial}</AvatarFallback>
+                          </Avatar>
+                          <span
+                            className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-background ${
+                              presence.tone === 'online'
+                                ? 'bg-emerald-500'
+                                : presence.tone === 'away'
+                                  ? 'bg-amber-500'
+                                  : 'bg-gray-400'
+                            }`}
+                            aria-hidden
+                          />
+                        </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium truncate">{name}</div>
-                          <div className={`text-xs ${isOnline ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            {isOnline ? '🟢 Online' : 'Offline'}
+                          <div
+                            className={`text-xs ${
+                              presence.tone === 'online'
+                                ? 'text-green-600'
+                                : presence.tone === 'away'
+                                  ? 'text-amber-600'
+                                  : 'text-muted-foreground'
+                            }`}
+                          >
+                            {presence.text}
                           </div>
                         </div>
                       </div>
@@ -310,20 +358,48 @@ export default function ChatSidebarRight({
 
       {/* Full Image Viewer */}
       <Dialog open={!!fullImage} onOpenChange={() => setFullImage(null)}>
-        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
-          <button
-            onClick={() => setFullImage(null)}
-            className="absolute top-2 right-2 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition"
-          >
-            <X size={20} />
-          </button>
-          {fullImage && (
-            <img
-              src={fullImage}
-              alt="Full view"
-              className="w-full h-auto max-h-[90vh] object-contain"
-            />
-          )}
+        <DialogContent unconstrained className="w-[90vw] max-w-[1920px] p-0 overflow-hidden bg-black text-white border-0">
+          <div className="flex h-[92vh]">
+            <div className="flex-[3] bg-black grid place-items-center relative">
+              <button
+                onClick={() => setFullImage(null)}
+                className="absolute top-3 right-3 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition"
+              >
+                <X size={20} />
+              </button>
+              {fullImage && (
+                <img
+                  src={fullImage}
+                  alt="Full view"
+                  className="max-h-[88vh] max-w-full object-contain"
+                />
+              )}
+            </div>
+            <div className="w-72 border-l border-white/10 bg-black/90">
+              <ScrollArea className="h-full">
+                <div className="p-3 space-y-3">
+                  {(mediaList || []).map((m, idx) => (
+                    <button
+                      key={`${m.url}-${idx}`}
+                      onClick={() => {
+                        setFullImage(m.url)
+                        setMediaIndex(idx)
+                      }}
+                      className={`block w-full border rounded-md overflow-hidden ${
+                        idx === mediaIndex ? 'border-primary' : 'border-transparent hover:border-white/40'
+                      }`}
+                    >
+                      <img
+                        src={m.url}
+                        alt={m.filename || 'thumb'}
+                        className="w-full h-28 object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

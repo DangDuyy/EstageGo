@@ -350,6 +350,12 @@ export default function Message() {
                   const isSelected = selectedConversation?._id === conv._id
                   const status = otherUser?._id ? usersStatus[otherUser._id] : null
                   const isOnline = status?.isOnline ?? otherUser?.isOnline ?? false
+                  const lastActiveAt = status?.lastActiveAt ?? otherUser?.lastActiveAt ?? null
+                  const presenceDotClass = isOnline
+                    ? 'bg-emerald-500'
+                    : lastActiveAt
+                      ? 'bg-amber-500'
+                      : 'bg-gray-400'
 
                   return (
                     <div
@@ -367,9 +373,7 @@ export default function Message() {
                           </AvatarFallback>
                         </Avatar>
                         <span
-                          className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-background ${
-                            isOnline ? 'bg-emerald-500' : 'bg-gray-400'
-                          }`}
+                          className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-background ${presenceDotClass}`}
                           aria-hidden
                         />
                       </div>
