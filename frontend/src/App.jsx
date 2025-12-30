@@ -42,6 +42,9 @@ import EditPost from './pages/DashboardPage/Post/EditPost'
 import BoostPackages from './pages/DashboardPage/BoostPackages'
 import ChatbotKnowledgeManager from './pages/AdminPage/AdminDocuments'
 import DocumentViewer from './pages/Document/DocumentViewer'
+import AdminTransactions from './pages/AdminPage/AdminTransactions'
+import VerifyResetPassword from './pages/HomePage/VerifyResetPassword'
+import ResetPasswordPage from './pages/HomePage/ResetPasswordPage'
 
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
@@ -65,6 +68,8 @@ function App() {
         </Route>
         <Route path="/verify-account" element={<VerifyAccountPage />} />
         <Route path="/verify-phone-register" element={<VerifyPhoneRegister />} />
+        <Route path="/verify-reset-password" element={<VerifyResetPassword />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/listing/map" element={
           <MapProvider apiKey={API_KEY_GOOGLE_MAPS}>
@@ -128,6 +133,7 @@ function App() {
           <Route path="documents" element={<ChatbotKnowledgeManager />} />
           <Route path="membership-config" element={<AdminMembershipConfig />} />
           <Route path="listing-tier-config" element={<AdminListingTierConfig />} />
+          <Route path="transactions" element={<AdminTransactions />} />
         </Route>
 
         {/* page not found */}

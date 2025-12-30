@@ -27,4 +27,7 @@ Router.get('/users', adminController.getAllUsers);
 Router.patch('/users/:userId/role', adminController.updateUserRole);
 Router.patch('/users/:userId/toggle-status', adminController.toggleUserStatus);
 
+// Transactions Management
+Router.get('/transactions/stats', adminController.getTransactionStats);
+
 export const adminRoutes = Router;
