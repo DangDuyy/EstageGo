@@ -1,4 +1,3 @@
-import { meta } from "@babel/eslint-parser"
 import mongoose from "mongoose"
 
 const propertySchema = new mongoose.Schema({

@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: ./backend
+    container_name: estagego-backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8017:8017"
+    depends_on:
+      - chatbot
+
+  frontend:
+    build: ./frontend
+    container_name: estagego-frontend
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  chatbot:
+    build: ./rasa_assistant
+    container_name: estagego-chatbot
+    env_file:
+      - ./rasa_assistant/.env
+    ports:
+      - "5005:5005"
+    environment:
+      RASA_LICENSE: ${RASA_LICENSE}
+    volumes:
+    - ./rasa_assistant:/app

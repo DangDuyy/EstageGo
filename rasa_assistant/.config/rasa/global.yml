@@ -1,0 +1,8 @@
+metrics:
+  enabled: true
+  rasa_user_id: 66593638340b4efcb9d66444427bbd3d
+  date: '2025-12-30 19:32:53.547169'
+traits:
+  enabled: true
+  rasa_user_id: 66593638340b4efcb9d66444427bbd3d
+  date: 2025-12-30 19:32:53.547169

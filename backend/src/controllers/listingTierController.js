@@ -1,4 +1,4 @@
-import { listingTierService } from "~/services/ListingTierService"
+import { listingTierService } from "~/services/listingTierService"
 
 const { StatusCodes } = require("http-status-codes")
 
