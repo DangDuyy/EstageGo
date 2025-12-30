@@ -184,6 +184,15 @@ const userSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    // Presence fields
+    isOnline: {
+        type: Boolean,
+        default: false
+    },
+    lastActiveAt: {
+        type: Date,
+        default: null
+    },
     resetPasswordToken: {
         type: String,
         default: null

@@ -4,6 +4,8 @@ export const pickUser = (user) => {
   if (!user) return {}
   return pick(user, [
     '_id', 'email', 'userName', 'fullName', 'avatar', 'phone', 'gender', 'address', 'dob', 'role', 'isActive', 'createdAt', 'updatedAt',
+    // Presence
+    'isOnline', 'lastActiveAt',
     // Agent fields
     'companyName', 'agentTitle', 'bio', 'experience', 'supportServices', 'operatingAreas', 'licenseNumber', 'website', 'socialLinks', 
     // Broker page

@@ -6,7 +6,8 @@ import { connectSocket, disconnectSocket } from '@/lib/socket'
 const initialState = {
   currentUser: null,
   loading: false,
-  error: null
+  error: null,
+  usersStatus: {} // userId -> { isOnline, lastActiveAt }
 }
 
 export const registerUserAPI = createAsyncThunk(
@@ -57,6 +58,11 @@ export const userSlice = createSlice({
   reducers: {
     updateUser: (state, action) => {
       state.currentUser = { ...state.currentUser, ...action.payload }
+    },
+    updatePresenceStatus: (state, action) => {
+      const { userId, isOnline, lastActiveAt } = action.payload
+      if (!state.usersStatus) state.usersStatus = {}
+      state.usersStatus[userId] = { isOnline, lastActiveAt }
     }
   },
   //func bat dong bo
@@ -139,8 +145,12 @@ export const selectCurrentUser = (state) => {
   return state.user.currentUser
 }
 
+export const selectUsersStatus = (state) => {
+  return state.user.usersStatus || {}
+}
+
 // Export actions
-export const { updateUser } = userSlice.actions
+export const { updateUser, updatePresenceStatus } = userSlice.actions
 
 //store nay chua co du lieu dong bo nen chua can dung
 export const userReducer = userSlice.reducer

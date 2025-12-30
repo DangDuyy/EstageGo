@@ -10,9 +10,9 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Send, Loader2, Search, Paperclip, Mic, MoreHorizontal, PanelRightClose, PanelRightOpen, Info } from 'lucide-react'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
-import { useSelector } from 'react-redux'
-import { selectCurrentUser } from '@/redux/user/userSlice'
-import { emitTypingStart, emitTypingStop, joinConversation, leaveConversation } from '@/lib/socket'
+import { useDispatch, useSelector } from 'react-redux'
+import { selectCurrentUser, selectUsersStatus, updatePresenceStatus } from '@/redux/user/userSlice'
+import { emitTypingStart, emitTypingStop, joinConversation, leaveConversation, requestPresenceSnapshot, onPresenceUpdate } from '@/lib/socket'
 import ReactionButton from '@/components/common/Chat/ReactionButton'
 import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
@@ -20,6 +20,7 @@ import PropertyPreview from '@/components/common/Chat/PropertyPreview'
 import MessageContent from '@/components/common/Chat/MessageContent'
 import { getConversationPreviewText } from '@/utils/messagePreview'
 import ChatSidebarRight from '@/components/common/Chat/ChatSidebarRight'
+import { ChatHeader } from '@/components/common/ChatHeader'
 
 const toDateKey = (date) => {
   const d = new Date(date || Date.now())
@@ -50,7 +51,9 @@ const formatTimeOnly = (dateObj) => {
 }
 
 export default function Message() {
+  const dispatch = useDispatch()
   const currentUser = useSelector(selectCurrentUser)
+  const usersStatus = useSelector(selectUsersStatus)
   const location = useLocation()
   const navigate = useNavigate()
   const { conversationId: paramConversationId } = useParams()
@@ -229,6 +232,23 @@ export default function Message() {
     return conversation.participants?.find((p) => p._id !== currentUser._id)
   }
 
+  const otherUser = useMemo(() => getOtherUser(selectedConversation), [selectedConversation, currentUser])
+  const conversationForHeader = useMemo(() => {
+    if (!selectedConversation) return null
+    return {
+      ...selectedConversation,
+      direct: { otherUser }
+    }
+  }, [selectedConversation, otherUser])
+
+  // Subscribe realtime presence updates
+  useEffect(() => {
+    const off = onPresenceUpdate(({ userId, isOnline, lastActiveAt }) => {
+      dispatch(updatePresenceStatus({ userId, isOnline, lastActiveAt }))
+    })
+    return off
+  }, [dispatch])
+
   const filteredConversations = conversations.filter((conv) => {
     const otherUser = getOtherUser(conv)
     const searchLower = searchQuery.toLowerCase()
@@ -272,10 +292,54 @@ export default function Message() {
     return map
   }, [selectedConversation])
 
+  const mentionedProperties = useMemo(() => {
+    const map = new Map()
+    const regex = /https?:\/\/[^\s]*\/properties\/([A-Za-z0-9_-]+)/g
+    messages.forEach((m) => {
+      const text = m?.text || m?.content || ''
+      if (!text) return
+      for (const match of text.matchAll(regex)) {
+        const url = match[0]
+        const id = match[1]
+        if (!map.has(url)) map.set(url, { id, url })
+      }
+    })
+    return Array.from(map.values())
+  }, [messages])
+
+  // Presence snapshot for other user
+  useEffect(() => {
+    if (!otherUser?._id) return
+    requestPresenceSnapshot([otherUser._id]).then((snapshot) => {
+      if (Array.isArray(snapshot)) {
+        snapshot.forEach(({ userId, isOnline, lastActiveAt }) => {
+          dispatch(updatePresenceStatus({ userId, isOnline, lastActiveAt }))
+        })
+      }
+    })
+  }, [otherUser?._id, dispatch])
+
+  // Prefetch presence for all conversation participants (excluding current user)
+  useEffect(() => {
+    if (!conversations?.length) return
+    const ids = conversations
+      .flatMap((c) => (c.participants || []).map((p) => p?._id))
+      .filter((id) => id && id !== currentUser?._id)
+    const uniqueIds = Array.from(new Set(ids))
+    if (!uniqueIds.length) return
+    requestPresenceSnapshot(uniqueIds).then((snapshot) => {
+      if (Array.isArray(snapshot)) {
+        snapshot.forEach(({ userId, isOnline, lastActiveAt }) => {
+          dispatch(updatePresenceStatus({ userId, isOnline, lastActiveAt }))
+        })
+      }
+    })
+  }, [conversations, currentUser?._id, dispatch])
+
   return (
     <ContentLayout title="Messages">
-      <div className="h-[calc(100vh-200px)] flex gap-2 relative">
-        <Card className="w-80 flex flex-col h-full">
+      <div className="h-[calc(100vh-120px)] md:h-[calc(100vh-110px)] flex gap-3">
+        <Card className="w-80 flex flex-col h-full shrink-0">
           <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -299,6 +363,15 @@ export default function Message() {
                 {filteredConversations.map((conv) => {
                   const otherUser = getOtherUser(conv)
                   const isSelected = selectedConversation?._id === conv._id
+                  const status = otherUser?._id ? usersStatus[otherUser._id] : null
+                  const isOnline = status?.isOnline ?? otherUser?.isOnline ?? false
+                  const lastActiveAt = status?.lastActiveAt ?? otherUser?.lastActiveAt ?? null
+                  const presenceDotClass = isOnline
+                    ? 'bg-emerald-500'
+                    : lastActiveAt
+                      ? 'bg-amber-500'
+                      : 'bg-gray-400'
+
                   return (
                     <div
                       key={conv._id}
@@ -307,12 +380,18 @@ export default function Message() {
                         isSelected ? 'bg-accent' : ''
                       }`}
                     >
-                      <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={otherUser?.avatar} />
-                        <AvatarFallback>
-                          {otherUser?.fullName?.charAt(0) || otherUser?.userName?.charAt(0) || '?'}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative h-12 w-12 shrink-0">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={otherUser?.avatar} />
+                          <AvatarFallback>
+                            {otherUser?.fullName?.charAt(0) || otherUser?.userName?.charAt(0) || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span
+                          className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-background ${presenceDotClass}`}
+                          aria-hidden
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold truncate">
                           {otherUser?.fullName || otherUser?.userName || 'Unknown'}
@@ -334,37 +413,29 @@ export default function Message() {
           </ScrollArea>
         </Card>
 
-        <Card className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ${sidebarRightOpen ? 'rounded-r-none' : ''}`}>
+        <Card className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ${sidebarRightOpen ? 'rounded-r-none' : ''} min-w-0`}>
           {!selectedConversation ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               Select a conversation to start messaging
             </div>
           ) : (
             <>
-              <div className="p-4 border-b flex items-center gap-3 justify-between">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={getOtherUser(selectedConversation)?.avatar} />
-                    <AvatarFallback>
-                      {getOtherUser(selectedConversation)?.fullName?.charAt(0) || '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">
-                      {getOtherUser(selectedConversation)?.fullName ||
-                       getOtherUser(selectedConversation)?.userName ||
-                       'Unknown'}
+              <div className="border-b bg-white dark:bg-gray-900 flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <ChatHeader
+                    otherUser={otherUser}
+                    conversation={conversationForHeader}
+                    borderless
+                  />
+                  {typingUserNames.length > 0 && (
+                    <p className="px-4 pb-2 -mt-2 text-xs text-muted-foreground">
+                      {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is' : 'are'} typing...
                     </p>
-                    {typingUserNames.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {typingUserNames.join(', ')} {typingUserNames.length === 1 ? 'is' : 'are'} typing...
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
                 <button
                   type="button"
-                  className={`inline-flex items-center justify-center w-9 h-9 rounded-md border transition-colors ${sidebarRightOpen ? 'bg-accent border-primary' : 'hover:bg-muted'}`}
+                  className={`mr-4 inline-flex items-center justify-center w-9 h-9 rounded-md border transition-colors ${sidebarRightOpen ? 'bg-accent border-primary' : 'hover:bg-muted'}`}
                   onClick={() => setSidebarRightOpen((v) => !v)}
                   title={sidebarRightOpen ? 'Close sidebar' : 'Open sidebar'}
                 >
@@ -760,15 +831,18 @@ export default function Message() {
         </Card>
 
         {/* Right sidebar */}
-        {selectedConversation && (
-          <ChatSidebarRight
-            conversation={selectedConversation}
-            isOpen={sidebarRightOpen}
-            onClose={() => setSidebarRightOpen(false)}
-            onOpenProfile={(p) => {
-              // Optional: navigate to profile or open a modal in future
-            }}
-          />
+        {selectedConversation && sidebarRightOpen && (
+          <div className="w-80 h-full shrink-0 border-l">
+            <ChatSidebarRight
+              conversation={selectedConversation}
+              mentionedProperties={mentionedProperties}
+              isOpen={true}
+              onClose={() => setSidebarRightOpen(false)}
+              onOpenProfile={(_p) => {
+                // Optional: navigate to profile or open a modal in future
+              }}
+            />
+          </div>
         )}
       </div>
     </ContentLayout>
