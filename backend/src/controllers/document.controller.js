@@ -249,9 +249,10 @@ class DocumentController {
    */
   async listDocuments(req, res) {
     try {
-      const { category, status, active, tags, page, limit, sort } = req.query;
+      const { title, category, status, active, tags, page, limit, sort } = req.query;
 
       const filters = {};
+      if (title) filters.title = title;
       if (category) filters.category = category;
       if (status) filters.status = status;
       if (active !== undefined) filters.active = active === "true";

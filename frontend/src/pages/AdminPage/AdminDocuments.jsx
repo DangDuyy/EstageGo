@@ -826,7 +826,7 @@ import { createDocument, deleteDocument, getDocuments, rebuildDocument, updateDo
 
 export default function DocumentManagementDashboard() {
   const [documents, setDocuments] = useState([]);
-  const [filteredDocs, setFilteredDocs] = useState([]);
+  // const [filteredDocs, setFilteredDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -859,10 +859,10 @@ export default function DocumentManagementDashboard() {
   });
 
   // Fetch documents
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (query) => {
     setLoading(true)
     try {
-      const data = await getDocuments()
+      const data = await getDocuments(query)
       setDocuments(data.documents)
       calculateStats(data.documents)
     } catch (error) {
@@ -883,28 +883,19 @@ export default function DocumentManagementDashboard() {
     });
   };
 
-  // Filter documents
   useEffect(() => {
-    let filtered = [...documents];
+    const handler = setTimeout(() => {
+      fetchDocuments({
+        title: searchQuery,
+        status: statusFilter === "all" ? null : statusFilter,
+        category: categoryFilter === "all" ? null : categoryFilter,
+      });
+    }, 500); // debounce 500ms
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (doc) =>
-          doc.metadata.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          doc.metadata.category?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((doc) => doc.status === statusFilter);
-    }
-
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter((doc) => doc.metadata.category === categoryFilter);
-    }
-
-    setFilteredDocs(filtered);
-  }, [documents, searchQuery, statusFilter, categoryFilter]);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery, statusFilter, categoryFilter]);
 
   // Get unique categories
   // const categories = [...new Set(documents.map((d) => d.metadata.category).filter(Boolean))];
@@ -1177,14 +1168,14 @@ export default function DocumentManagementDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredDocs.length === 0 ? (
+              {documents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-slate-500">
                     No documents found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredDocs.map((doc) => (
+                documents.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">{doc.metadata.title}</TableCell>
                     <TableCell>

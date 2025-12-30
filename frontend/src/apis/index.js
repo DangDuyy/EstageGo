@@ -887,8 +887,8 @@ export const getActiveMembership = async () => {
 // ==================================
 // Documentation
 // ==================================
-export const getDocuments = async () =>
-  (await authorizeAxiosInstance.get(`${API_ROOT}/v1/documents`)).data
+export const getDocuments = async (query) =>
+  (await authorizeAxiosInstance.get(`${API_ROOT}/v1/documents`, { params: query })).data
 
 export const createDocument = async (payload) =>
   (await authorizeAxiosInstance.post(`${API_ROOT}/v1/documents`, payload)).data
