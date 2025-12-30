@@ -12,7 +12,8 @@ export default function ConversationMediaPanel({
   gridCols = 4,
   showTabs = false,
   showLoadMore = false,
-  onImageClick
+  onImageClick,
+  onItemsChange
 }) {
   const [tab, setTab] = useState(onlyTab || defaultTab)
   const [items, setItems] = useState([])
@@ -33,6 +34,7 @@ export default function ConversationMediaPanel({
         if (page === 1) setItems(res.items || [])
         else setItems((prev) => [...prev, ...(res.items || [])])
         setHasMore((res.pagination?.page || 1) < (res.pagination?.totalPages || 1))
+        onItemsChange?.(page === 1 ? (res.items || []) : [...items, ...(res.items || [])])
       } catch (e) {
         console.error("media fetch error", e)
       } finally {
@@ -40,6 +42,7 @@ export default function ConversationMediaPanel({
       }
     }
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, tab, page, pageSize])
 
   const gridClass = `grid grid-cols-${gridCols} gap-2`

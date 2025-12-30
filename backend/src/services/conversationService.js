@@ -15,8 +15,8 @@ const findOrCreateDirectConversation = async (userId1, userId2) => {
       type: 'direct',
       participants: { $all: [userId1, userId2], $size: 2 }
     })
-    .populate('participants', '_id userName fullName avatar')
-    .populate('lastMessage.senderId', '_id userName fullName avatar')
+    .populate('participants', '_id userName fullName avatar isOnline lastActiveAt')
+    .populate('lastMessage.senderId', '_id userName fullName avatar isOnline lastActiveAt')
 
     if (conversation) {
       return conversation
@@ -28,7 +28,7 @@ const findOrCreateDirectConversation = async (userId1, userId2) => {
       participants: [userId1, userId2]
     })
 
-    conversation = await conversation.populate('participants', '_id userName fullName avatar')
+    conversation = await conversation.populate('participants', '_id userName fullName avatar isOnline lastActiveAt')
     return conversation
   } catch (error) {
     throw error
@@ -43,8 +43,8 @@ const getUserConversations = async (userId) => {
     const conversations = await conversationModel.find({
       participants: userId
     })
-    .populate('participants', '_id userName fullName avatar')
-    .populate('lastMessage.senderId', '_id userName fullName avatar')
+    .populate('participants', '_id userName fullName avatar isOnline lastActiveAt')
+    .populate('lastMessage.senderId', '_id userName fullName avatar isOnline lastActiveAt')
     .sort({ updatedAt: -1 })
 
     return conversations
@@ -62,8 +62,8 @@ const getConversationById = async (conversationId, userId) => {
       _id: conversationId,
       participants: userId
     })
-    .populate('participants', '_id userName fullName avatar')
-    .populate('lastMessage.senderId', '_id userName fullName avatar')
+    .populate('participants', '_id userName fullName avatar isOnline lastActiveAt')
+    .populate('lastMessage.senderId', '_id userName fullName avatar isOnline lastActiveAt')
 
     if (!conversation) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Conversation not found')

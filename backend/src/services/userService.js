@@ -24,6 +24,52 @@ const generateFullName = () => {
 }
 
 /**
+ * Update user's presence status
+ * @param {string} userId
+ * @param {{isOnline?: boolean, lastActiveAt?: Date}} payload
+ */
+const markUserStatus = async (userId, payload = {}) => {
+  try {
+    const set = {}
+    if (typeof payload.isOnline === 'boolean') set.isOnline = payload.isOnline
+    if (payload.lastActiveAt instanceof Date) set.lastActiveAt = payload.lastActiveAt
+
+    if (Object.keys(set).length === 0) return null
+
+    const updated = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: set },
+      { new: true, runValidators: true }
+    ).select('-password -verifyToken')
+
+    return updated ? pickUser(updated) : null
+  } catch (error) {
+    // Swallow errors to avoid crashing presence updates
+    return null
+  }
+}
+
+/**
+ * Get presence snapshot for a list of userIds
+ * Returns minimal fields: { userId, isOnline, lastActiveAt }
+ * Used by presence:snapshot to provide last known activity even when offline.
+ */
+const getPresenceSnapshot = async (userIds = []) => {
+  const ids = (Array.isArray(userIds) ? userIds : []).filter(Boolean)
+  if (!ids.length) return []
+
+  const docs = await userModel
+    .find({ _id: { $in: ids } }, { _id: 1, isOnline: 1, lastActiveAt: 1 })
+    .lean()
+
+  return docs.map(doc => ({
+    userId: String(doc._id),
+    isOnline: !!doc.isOnline,
+    lastActiveAt: doc.lastActiveAt || null
+  }))
+}
+
+/**
  * Đăng ký user mới - hỗ trợ email hoặc phone
  * payload: { email?, phone?, userName, password, contactType }
  */
@@ -820,6 +866,8 @@ export const userService = {
   updateMembership,
   getAgentDashboardStats,
   getListingStats,
+  markUserStatus,
+  getPresenceSnapshot,
   requestForgotPassword,
   generateResetToken,
   resetPassword

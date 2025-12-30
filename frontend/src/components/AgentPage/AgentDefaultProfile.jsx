@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { PresenceBadge } from '@/components/common/PresenceBadge'
+import { usePresenceSnapshot } from '@/hooks/usePresenceSnapshot'
+import { useSelector } from 'react-redux'
+import { selectUsersStatus } from '@/redux/user/userSlice'
 import {
   Award,
   Briefcase,
@@ -27,7 +31,7 @@ import {
   Upload,
   X
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function AgentDefaultProfile({
@@ -60,6 +64,12 @@ export default function AgentDefaultProfile({
   const navigate = useNavigate()
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [showMenuId, setShowMenuId] = useState(null)
+  
+  // Fetch presence status for this user
+  const usersStatus = useSelector(selectUsersStatus)
+  usePresenceSnapshot(user?._id ? [user._id] : [])
+  
+  const agentPresence = user?._id ? usersStatus[user._id] : null
 
   const handleEditReview = (review) => {
     setEditingReviewId(review._id)
@@ -104,28 +114,43 @@ export default function AgentDefaultProfile({
             </Avatar>
 
             <div className="flex-1 relative">
-              <div className="flex items-center gap-3 mb-2 flex-wrap">
-                <h1 className="text-3xl font-bold">{user?.fullName || user?.userName}</h1>
-                {isAdmin && (
-                  <Badge variant="destructive" className="text-sm">
-                    <Award className="h-3 w-3 mr-1" />
-                    Admin
-                  </Badge>
-                )}
-                {isAgent && (
-                  <Badge variant="default" className="text-sm">
-                    <Briefcase className="h-3 w-3 mr-1" />
-                    Agent
-                  </Badge>
-                )}
-                {!isAdmin && !isAgent && (
-                  <Badge variant="secondary" className="text-sm">
-                    <User className="h-3 w-3 mr-1" />
-                    Personal
-                  </Badge>
-                )}
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h1 className="text-3xl font-bold">{user?.fullName || user?.userName}</h1>
+                    {isAdmin && (
+                      <Badge variant="destructive" className="text-sm">
+                        <Award className="h-3 w-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                    {isAgent && (
+                      <Badge variant="default" className="text-sm">
+                        <Briefcase className="h-3 w-3 mr-1" />
+                        Agent
+                      </Badge>
+                    )}
+                    {!isAdmin && !isAgent && (
+                      <Badge variant="secondary" className="text-sm">
+                        <User className="h-3 w-3 mr-1" />
+                        Personal
+                      </Badge>
+                    )}
+                  </div>
+                  {/* Presence Status */}
+                  {!isOwnProfile && agentPresence && (
+                    <PresenceBadge 
+                      isOnline={agentPresence.isOnline} 
+                      lastActiveAt={agentPresence.lastActiveAt}
+                    />
+                  )}
+                  {isAgent && user?.agentTitle && (
+                    <p className="text-lg text-muted-foreground mb-4">{user.agentTitle}</p>
+                  )}
+                </div>
+
                 {!isOwnProfile && currentUser && (
-                  <div className="flex gap-2 ml-auto">
+                  <div className="flex gap-2 md:items-center md:mt-1 ml-auto">
                     <Button 
                       variant="default" 
                       size="sm"
@@ -159,9 +184,6 @@ export default function AgentDefaultProfile({
                   </div>
                 )}
               </div>
-              {isAgent && user?.agentTitle && (
-                <p className="text-lg text-muted-foreground mb-4">{user.agentTitle}</p>
-              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {isAgent && user?.companyName && (
