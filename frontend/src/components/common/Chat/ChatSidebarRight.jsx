@@ -8,12 +8,14 @@ import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Bell, Pin, Users as UsersIcon, EyeOff, Trash, X, PanelRightClose } from "lucide-react"
 import ConversationMediaPanel from "@/components/common/Chat/ConversationMediaPanel"
+import PropertyPreview from "@/components/common/Chat/PropertyPreview"
 import { useSelector } from "react-redux"
 import { selectCurrentUser, selectUsersStatus } from "@/redux/user/userSlice"
 import { formatTimeAgo } from "@/utils/formatters"
 
 export default function ChatSidebarRight({
   conversation,
+  mentionedProperties = [],
   isOpen = false,
   onClose,
   onOpenProfile
@@ -320,6 +322,24 @@ export default function ChatSidebarRight({
                       </div>
                     )
                   })
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Posts / Properties mentioned */}
+          <AccordionItem value="posts">
+            <AccordionTrigger className="text-base p-4 hover:bg-muted/50">Posts</AccordionTrigger>
+            <AccordionContent className="overflow-hidden">
+              <div className="px-4 pb-4 space-y-3">
+                {(!mentionedProperties || mentionedProperties.length === 0) ? (
+                  <div className="text-sm text-muted-foreground py-4">No properties mentioned yet</div>
+                ) : (
+                  mentionedProperties.map((p) => (
+                    <div key={p.url} className="border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
+                      <PropertyPreview propertyId={p.id} />
+                    </div>
+                  ))
                 )}
               </div>
             </AccordionContent>

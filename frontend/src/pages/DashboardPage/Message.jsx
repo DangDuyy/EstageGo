@@ -292,6 +292,21 @@ export default function Message() {
     return map
   }, [selectedConversation])
 
+  const mentionedProperties = useMemo(() => {
+    const map = new Map()
+    const regex = /https?:\/\/[^\s]*\/properties\/([A-Za-z0-9_-]+)/g
+    messages.forEach((m) => {
+      const text = m?.text || m?.content || ''
+      if (!text) return
+      for (const match of text.matchAll(regex)) {
+        const url = match[0]
+        const id = match[1]
+        if (!map.has(url)) map.set(url, { id, url })
+      }
+    })
+    return Array.from(map.values())
+  }, [messages])
+
   // Presence snapshot for other user
   useEffect(() => {
     if (!otherUser?._id) return
@@ -819,6 +834,7 @@ export default function Message() {
         {selectedConversation && (
           <ChatSidebarRight
             conversation={selectedConversation}
+            mentionedProperties={mentionedProperties}
             isOpen={sidebarRightOpen}
             onClose={() => setSidebarRightOpen(false)}
             onOpenProfile={(_p) => {
