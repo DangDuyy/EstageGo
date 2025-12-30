@@ -31,6 +31,7 @@ export default function ChatSidebarRight({
   const [fullImage, setFullImage] = useState(null)
   const [mediaList, setMediaList] = useState([])
   const [mediaIndex, setMediaIndex] = useState(0)
+  const [avatarImageOpen, setAvatarImageOpen] = useState(false)
 
   // Get other participant's name for 1-on-1 conversations
   const displayName = useMemo(() => {
@@ -94,28 +95,11 @@ export default function ChatSidebarRight({
   return (
     <Card
       ref={panelRef}
-      className={`absolute top-0 right-0 h-full w-80 shadow-none border-l rounded-none transition-all duration-300 ${
-        isOpen ? 'translate-x-0 opacity-100 visible' : 'translate-x-full opacity-0 invisible'
-      } flex flex-col overflow-hidden`}
-      style={{
-        transitionProperty: 'all',
-        transitionDuration: '300ms',
-        position: 'absolute',
-        right: 0,
-        top: 0,
-        height: '100%',
-        width: '320px'
-      }}
+      className="h-full w-full shadow-none border-0 rounded-none flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b h-18 shrink-0">
-        <button
-          onClick={onClose}
-          className="p-1.5 hover:bg-muted rounded-lg transition-colors"
-          aria-label="Close sidebar"
-        >
-          <PanelRightClose size={20} />
-        </button>
+
         <h2 className="text-base font-semibold truncate flex-1 text-center">Conversation information</h2>
         <div className="w-9"></div>
       </div>
@@ -125,9 +109,10 @@ export default function ChatSidebarRight({
         <button
           type="button"
           className="group w-fit mx-auto block"
-          title="View conversation details"
+          onClick={() => displayAvatar && setAvatarImageOpen(true)}
+          title="View image"
         >
-          <div className="relative w-20 h-20 rounded-full mx-auto ring-0 group-hover:ring-2 group-hover:ring-primary/40 transition">
+          <div className="relative w-20 h-20 rounded-full mx-auto ring-0 group-hover:ring-2 group-hover:ring-primary/40 transition cursor-zoom-in">
             {displayAvatar ? (
               <Avatar className="w-20 h-20">
                 <AvatarImage src={displayAvatar} />
@@ -145,7 +130,13 @@ export default function ChatSidebarRight({
         </button>
 
         <div>
-          <h3 className="text-xl font-semibold truncate">{displayName}</h3>
+          <button
+            onClick={() => handleOpenProfile(participants.find(p => p._id !== currentUser?._id))}
+            className="text-xl font-semibold truncate hover:text-primary transition cursor-pointer"
+            title="View profile"
+          >
+            {displayName}
+          </button>
         </div>
 
         {/* Top 3 quick action buttons */}
@@ -419,6 +410,27 @@ export default function ChatSidebarRight({
                 </div>
               </ScrollArea>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Avatar Image Viewer */}
+      <Dialog open={avatarImageOpen} onOpenChange={setAvatarImageOpen}>
+        <DialogContent className="w-[90vw] max-w-2xl p-0 overflow-hidden bg-black border-0">
+          <button
+            onClick={() => setAvatarImageOpen(false)}
+            className="absolute top-3 right-3 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition"
+          >
+            <X size={20} />
+          </button>
+          <div className="flex items-center justify-center bg-black">
+            {displayAvatar && (
+              <img
+                src={displayAvatar}
+                alt={displayName}
+                className="max-h-[80vh] max-w-full object-contain"
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>

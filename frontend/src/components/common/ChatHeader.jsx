@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { selectUsersStatus } from '@/redux/user/userSlice'
 import { PresenceBadge } from '@/components/common/PresenceBadge'
@@ -18,7 +19,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
  * }} props
  */
 export function ChatHeader({ otherUser, conversation, onBack, rightSlot, borderless = false, className = '' }) {
+  const navigate = useNavigate()
   const usersStatus = useSelector(selectUsersStatus)
+  
+  const handleProfileClick = () => {
+    if (otherUser?._id) {
+      navigate(`/agents/${otherUser._id}`)
+    }
+  }
   
   // Get presence status from store or conversation data
   const peerStatus = conversation 
@@ -65,22 +73,32 @@ export function ChatHeader({ otherUser, conversation, onBack, rightSlot, borderl
         )}
 
         {/* Avatar */}
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={avatarUrl} alt={displayName} />
-          <AvatarFallback className="bg-primary text-primary-foreground">
-            {initialChar}
-          </AvatarFallback>
-        </Avatar>
+        <button
+          onClick={handleProfileClick}
+          className="hover:opacity-80 transition"
+          title="View profile"
+        >
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {initialChar}
+            </AvatarFallback>
+          </Avatar>
+        </button>
 
         {/* User info */}
-        <div className="flex-1 min-w-0">
+        <button
+          onClick={handleProfileClick}
+          className="flex-1 min-w-0 text-left hover:opacity-80 transition"
+          title="View profile"
+        >
           <h2 className="font-semibold text-base truncate">{displayName}</h2>
           <PresenceBadge 
             isOnline={peerStatus.isOnline} 
             lastActiveAt={peerStatus.lastActiveAt}
             className="mt-0.5"
           />
-        </div>
+        </button>
 
         {/* Actions - can add call, video, info buttons here */}
         <div className="flex items-center gap-1">

@@ -338,8 +338,8 @@ export default function Message() {
 
   return (
     <ContentLayout title="Messages">
-      <div className="h-[calc(100vh-200px)] flex gap-2 relative">
-        <Card className="w-80 flex flex-col h-full">
+      <div className="h-[calc(100vh-120px)] md:h-[calc(100vh-110px)] flex gap-3">
+        <Card className="w-80 flex flex-col h-full shrink-0">
           <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -413,7 +413,7 @@ export default function Message() {
           </ScrollArea>
         </Card>
 
-        <Card className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ${sidebarRightOpen ? 'rounded-r-none' : ''}`}>
+        <Card className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ${sidebarRightOpen ? 'rounded-r-none' : ''} min-w-0`}>
           {!selectedConversation ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               Select a conversation to start messaging
@@ -831,16 +831,18 @@ export default function Message() {
         </Card>
 
         {/* Right sidebar */}
-        {selectedConversation && (
-          <ChatSidebarRight
-            conversation={selectedConversation}
-            mentionedProperties={mentionedProperties}
-            isOpen={sidebarRightOpen}
-            onClose={() => setSidebarRightOpen(false)}
-            onOpenProfile={(_p) => {
-              // Optional: navigate to profile or open a modal in future
-            }}
-          />
+        {selectedConversation && sidebarRightOpen && (
+          <div className="w-80 h-full shrink-0 border-l">
+            <ChatSidebarRight
+              conversation={selectedConversation}
+              mentionedProperties={mentionedProperties}
+              isOpen={true}
+              onClose={() => setSidebarRightOpen(false)}
+              onOpenProfile={(_p) => {
+                // Optional: navigate to profile or open a modal in future
+              }}
+            />
+          </div>
         )}
       </div>
     </ContentLayout>
