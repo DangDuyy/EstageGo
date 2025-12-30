@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { MapProvider } from './components/common/GoogleMap/MapProvider'
 import { SocketManager } from './components/common/SocketManager'
 import { useAuth } from './hooks/useAuth'
+import { usePresenceSync } from './hooks/usePresenceSync'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './layouts/AdminLayout'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -49,6 +50,9 @@ import ResetPasswordPage from './pages/HomePage/ResetPasswordPage'
 const API_KEY_GOOGLE_MAPS = import.meta.env.VITE_GOOGLE_MAP_API_KEY
 function App() {
   useAuth();
+  // Sync presence updates globally
+  usePresenceSync();
+  
   return (
     <>
       <SocketManager />
