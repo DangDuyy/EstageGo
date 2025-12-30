@@ -22,7 +22,7 @@ export default function MainLayout() {
         serverUrl="http://localhost:5005"
         widgetTitle="Trợ lý AI"
         inputMessagePlaceholder="Nhập tin nhắn..."
-        initialPayload="Xin chào quý khách! Tôi có thể giúp bạn tìm kiếm bất động sản như thế nào?"
+        // initialPayload="Xin chào quý khách! Tôi có thể giúp bạn tìm kiếm bất động sản như thế nào?"
       />
     </>
   );
