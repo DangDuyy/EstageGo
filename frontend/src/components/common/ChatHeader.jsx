@@ -12,9 +12,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
  *   otherUser: { _id, fullName, avatar },
  *   conversation?: object,
  *   onBack?: () => void
+ *   rightSlot?: React.ReactNode
+ *   borderless?: boolean
+ *   className?: string
  * }} props
  */
-export function ChatHeader({ otherUser, conversation, onBack }) {
+export function ChatHeader({ otherUser, conversation, onBack, rightSlot, borderless = false, className = '' }) {
   const usersStatus = useSelector(selectUsersStatus)
   
   // Get presence status from store or conversation data
@@ -37,8 +40,10 @@ export function ChatHeader({ otherUser, conversation, onBack }) {
   const avatarUrl = otherUser.avatar || otherUser.avatarUrl || ''
   const initialChar = displayName.charAt(0).toUpperCase()
 
+  const rootClass = `${borderless ? '' : 'border-b'} bg-white dark:bg-gray-900 shadow-sm ${className}`
+
   return (
-    <div className="border-b bg-white dark:bg-gray-900 shadow-sm">
+    <div className={rootClass}>
       <div className="px-4 py-3 flex items-center gap-3">
         {/* Back button - mobile only */}
         {onBack && (
@@ -79,10 +84,7 @@ export function ChatHeader({ otherUser, conversation, onBack }) {
 
         {/* Actions - can add call, video, info buttons here */}
         <div className="flex items-center gap-1">
-          {/* Example: Phone call button */}
-          {/* <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-            <Phone className="h-5 w-5" />
-          </button> */}
+          {rightSlot}
         </div>
       </div>
     </div>

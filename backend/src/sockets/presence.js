@@ -102,16 +102,41 @@ export function registerPresence(io, { userService }) {
       if (entry) entry.lastActiveAt = new Date()
     })
 
-    socket.on('presence:snapshot', (userIds = []) => {
-      const payload = (Array.isArray(userIds) ? userIds : []).map((raw) => {
-        const uid = String(raw)
+    socket.on('presence:snapshot', async (userIds = []) => {
+      const ids = (Array.isArray(userIds) ? userIds : []).map(String).filter(Boolean)
+      if (!ids.length) return socket.emit('presence:snapshot', [])
+
+      const payload = []
+      const offlineIds = []
+
+      for (const uid of ids) {
         const entry = presence.online.get(uid)
-        return {
-          userId: uid,
-          isOnline: !!entry,
-          lastActiveAt: entry?.lastActiveAt?.toISOString() || null
+        if (entry) {
+          payload.push({
+            userId: uid,
+            isOnline: true,
+            lastActiveAt: entry.lastActiveAt ? entry.lastActiveAt.toISOString() : null
+          })
+        } else {
+          offlineIds.push(uid)
         }
-      })
+      }
+
+      if (offlineIds.length && typeof userService?.getPresenceSnapshot === 'function') {
+        try {
+          const rows = await userService.getPresenceSnapshot(offlineIds)
+          for (const row of rows) {
+            payload.push({
+              userId: String(row.userId),
+              isOnline: !!row.isOnline,
+              lastActiveAt: row.lastActiveAt ? new Date(row.lastActiveAt).toISOString() : null
+            })
+          }
+        } catch (e) {
+          // swallow errors to avoid breaking snapshot
+        }
+      }
+
       socket.emit('presence:snapshot', payload)
     })
 

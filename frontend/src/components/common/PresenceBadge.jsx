@@ -23,8 +23,8 @@ export function PresenceBadge({ isOnline, lastActiveAt, className = '' }) {
   }[tone]
 
   return (
-    <div className={`flex items-center gap-2 mb-3 ${className}`}>
-      <div className={`w-3 h-3 rounded-full ${dotColor}`}></div>
+    <div className={`flex items-center gap-2 ${className}`}>
+      <div className={`w-2 h-2 rounded-full ${dotColor}`}></div>
       <span className={`text-sm ${textColor}`}>{presenceText}</span>
     </div>
   )
