@@ -20,6 +20,10 @@ import SystemConfig from '~/models/systemConfig'
  */
 const generateFullName = () => {
   const randomNum = Math.floor(10000000 + Math.random() * 90000000)
+  return `User_${randomNum}`
+}
+
+/**
  * Update user's presence status
  * @param {string} userId
  * @param {{isOnline?: boolean, lastActiveAt?: Date}} payload
@@ -43,8 +47,6 @@ const markUserStatus = async (userId, payload = {}) => {
     // Swallow errors to avoid crashing presence updates
     return null
   }
-}
-  return `User_${randomNum}`
 }
 
 /**
@@ -730,6 +732,6 @@ export const userService = {
   updatePhone,
   updateMembership,
   getAgentDashboardStats,
-  getListingStats
+  getListingStats,
   markUserStatus
 }

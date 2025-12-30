@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { PresenceBadge } from '@/components/common/PresenceBadge'
+import { usePresenceSnapshot } from '@/hooks/usePresenceSnapshot'
+import { useSelector } from 'react-redux'
+import { selectUsersStatus } from '@/redux/user/userSlice'
 import {
   Award,
   Building2,
@@ -54,6 +58,11 @@ export default function AgentBrokerPage({
   const isOwnProfile = currentUserId === user?._id
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [showMenuId, setShowMenuId] = useState(null)
+  
+  // Fetch presence status
+  const usersStatus = useSelector(selectUsersStatus)
+  usePresenceSnapshot(user?._id ? [user._id] : [])
+  const agentPresence = user?._id ? usersStatus[user._id] : null
 
   const handleEditReview = (review) => {
     setEditingReviewId(review._id)
@@ -134,10 +143,19 @@ export default function AgentBrokerPage({
                       )}
                     </h1>
                     {user?.brokerPage?.agentTitle && (
-                      <p className="text-lg text-emerald-600 dark:text-emerald-400 font-semibold mb-3 flex items-center gap-2">
+                      <p className="text-lg text-emerald-600 dark:text-emerald-400 font-semibold mb-2 flex items-center gap-2">
                         <Award className="h-5 w-5" />
                         {user.brokerPage.agentTitle}
                       </p>
+                    )}
+                    {/* Presence Status */}
+                    {!isOwnProfile && agentPresence && (
+                      <div className="mb-3">
+                        <PresenceBadge 
+                          isOnline={agentPresence.isOnline} 
+                          lastActiveAt={agentPresence.lastActiveAt}
+                        />
+                      </div>
                     )}
                     {user?.companyName && (
                       <div className="flex items-center gap-2 text-muted-foreground mb-2">
