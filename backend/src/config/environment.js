@@ -43,6 +43,7 @@ export const env = {
   VNPAY_URL: process.env.VNPAY_URL,
   VNPAY_RETURN_URL: process.env.VNPAY_RETURN_URL,
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  FRONTEND_PROD_URL: process.env.FRONTEND_PROD_URL || 'https://your-production-domain.com',
 
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 

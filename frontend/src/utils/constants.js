@@ -2,7 +2,7 @@ let apiRoot = ''
 if (import.meta.env.VITE_BUILD_MODE === 'dev')
   apiRoot = 'http://localhost:8017'
 else
-  apiRoot = ''
+  apiRoot = import.meta.env.VITE_API_ROOT || ''
 
 export const DEFAULT_PAGE = 1
 export const DEFAULT_ITEMS_PER_PAGE = 9
