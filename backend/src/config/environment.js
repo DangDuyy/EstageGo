@@ -50,4 +50,5 @@ export const env = {
 
   QDRANT_API_KEY: process.env.QDRANT_API_KEY,
   QDRANT_URL: process.env.QDRANT_URL,
+  UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN
 }

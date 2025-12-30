@@ -21,6 +21,9 @@ import { membershipConfigRoute } from './membershipConfig.route'
 import { userMembershipRouters } from './userMembershipRoute'
 import { systemConfigRoutes } from './systemConfigRoute'
 import { documentRoutes } from './document.routes'
+import { uploadRouter } from './uploadthing'
+import { env } from '~/config/environment'
+import { createRouteHandler } from 'uploadthing/express'
 
 const Router = express.Router()
 
@@ -69,5 +72,15 @@ Router.use('/membership', userMembershipRouters)
 Router.use('/system-configs', systemConfigRoutes)
 
 Router.use('/documents', documentRoutes)
+
+Router.use(
+  "/uploadthing",
+  createRouteHandler({
+    router: uploadRouter,
+    config: {
+      uploadthingToken: env.UPLOADTHING_TOKEN,
+    },
+  })
+);
 
 export const APIs_V1 = Router

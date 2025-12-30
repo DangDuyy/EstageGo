@@ -1,3 +1,4 @@
+import { uploadFiles } from "@/utils/uploadthing";
 import {
   AllSelection,
   NodeSelection,
@@ -6,6 +7,7 @@ import {
 } from "@tiptap/pm/state"
 import { cellAround, CellSelection } from "@tiptap/pm/tables"
 import { findParentNodeClosestToPos } from "@tiptap/react";
+import { progress } from "framer-motion";
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -332,17 +334,28 @@ export const handleImageUpload = async (file, onProgress, abortSignal) => {
     throw new Error(`File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`)
   }
 
-  // For demo/testing: Simulate upload progress. In production, replace the following code
-  // with your own upload implementation.
-  for (let progress = 0; progress <= 100; progress += 10) {
-    if (abortSignal?.aborted) {
-      throw new Error("Upload cancelled")
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    onProgress?.({ progress })
+  if (abortSignal?.aborted) {
+    throw new Error("Upload aborted before starting")
   }
 
-  return "/images/tiptap-ui-placeholder-image.jpg"
+  try {
+    const uploaded = await uploadFiles("imageUploader", {
+      files: [file],
+      onUploadProgress: ({ progress }) => onProgress?.({ progress })
+    }
+    )
+
+    if (!uploaded?.[0]) {
+      throw new Error("Upload failed: No file URL returned")
+    }
+
+    onProgress?.({ progress: 100 })
+
+    return uploaded[0].ufsUrl
+  }
+  catch (error) {
+    throw new Error(`Upload failed: ${error.message}`)
+  }
 }
 
 const ATTR_WHITESPACE =
@@ -378,7 +391,7 @@ export function isAllowedUri(
   }
 
   return (!uri || uri.replace(ATTR_WHITESPACE, "").match(new RegExp(// eslint-disable-next-line no-useless-escape
-  `^(?:(?:${allowedProtocols.join("|")}):|[^a-z]|[a-z0-9+.\-]+(?:[^a-z+.\-:]|$))`, "i")));
+    `^(?:(?:${allowedProtocols.join("|")}):|[^a-z]|[a-z0-9+.\-]+(?:[^a-z+.\-:]|$))`, "i")));
 }
 
 export function sanitizeUrl(inputUrl, baseUrl, protocols) {
