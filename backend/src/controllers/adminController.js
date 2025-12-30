@@ -631,6 +631,146 @@ const toggleUserStatus = async (req, res, next) => {
   }
 };
 
+// ===== TRANSACTION STATS =====
+const getTransactionStats = async (req, res, next) => {
+  try {
+    let startDate = req.query.startDate ? new Date(req.query.startDate) : new Date();
+    let endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    
+    if (isNaN(startDate.getTime())) {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+    }
+    if (isNaN(endDate.getTime())) {
+      endDate = new Date();
+    }
+    
+    endDate.setHours(23, 59, 59, 999);
+
+    const dateFilter = { $gte: startDate, $lte: endDate };
+
+    const [
+      totalTransactions,
+      completedTransactions,
+      totalRevenue,
+      revenueByDateData,
+      transactionByTypeData,
+      transactionByPaymentMethodData,
+      transactionByStatusData,
+      topSpenders,
+      recentTransactions
+    ] = await Promise.all([
+      // Total transactions count
+      transactionModel.countDocuments({ createdAt: dateFilter }),
+      
+      // Completed transactions count
+      transactionModel.countDocuments({ status: 'completed', createdAt: dateFilter }),
+      
+      // Total revenue from completed transactions
+      transactionModel.aggregate([
+        { $match: { status: 'completed', createdAt: dateFilter } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      
+      // Revenue by date
+      transactionModel.aggregate([
+        { $match: { status: 'completed', createdAt: dateFilter } },
+        { $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$amount' }
+        }},
+        { $sort: { _id: 1 } },
+        { $project: { date: '$_id', revenue: 1, _id: 0 } }
+      ]),
+      
+      // Transactions by type
+      transactionModel.aggregate([
+        { $match: { createdAt: dateFilter } },
+        { $group: { _id: '$type', value: { $sum: 1 } } },
+        { $project: { name: '$_id', value: 1, _id: 0 } }
+      ]),
+      
+      // Transactions by payment method
+      transactionModel.aggregate([
+        { $match: { createdAt: dateFilter } },
+        { $group: { _id: '$paymentMethod', value: { $sum: 1 } } },
+        { $project: { name: '$_id', value: 1, _id: 0 } }
+      ]),
+      
+      // Transactions by status
+      transactionModel.aggregate([
+        { $match: { createdAt: dateFilter } },
+        { $group: { _id: '$status', value: { $sum: 1 } } },
+        { $project: { name: '$_id', value: 1, _id: 0 } }
+      ]),
+      
+      // Top 10 spenders
+      transactionModel.aggregate([
+        { $match: { status: 'completed', createdAt: dateFilter } },
+        { $group: {
+          _id: '$user',
+          totalSpent: { $sum: '$amount' },
+          transactionCount: { $sum: 1 },
+          lastTransaction: { $max: '$createdAt' }
+        }},
+        { $sort: { totalSpent: -1 } },
+        { $limit: 10 },
+        { $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }},
+        { $unwind: '$userInfo' },
+        { $project: {
+          _id: 1,
+          totalSpent: 1,
+          transactionCount: 1,
+          lastTransaction: 1,
+          averageSpent: { $divide: ['$totalSpent', '$transactionCount'] },
+          fullName: '$userInfo.fullName',
+          email: '$userInfo.email',
+          avatar: '$userInfo.avatar',
+          role: '$userInfo.role'
+        }}
+      ]),
+
+      // Recent transactions (all transactions in date range, sorted by date)
+      transactionModel.find({ createdAt: dateFilter })
+        .populate('user', 'fullName email avatar role')
+        .sort({ createdAt: -1 })
+        .lean()
+    ]);
+    
+
+    const averageTransactionValue = completedTransactions > 0 
+      ? (totalRevenue[0]?.total || 0) / completedTransactions 
+      : 0;
+    
+    const successRate = totalTransactions > 0 
+      ? (completedTransactions / totalTransactions) * 100 
+      : 0;
+
+    res.status(StatusCodes.OK).json({
+      stats: {
+        totalRevenue: totalRevenue[0]?.total || 0,
+        totalTransactions,
+        completedTransactions,
+        averageTransactionValue,
+        successRate
+      },
+      revenueByDateData,
+      transactionByTypeData,
+      transactionByPaymentMethodData,
+      transactionByStatusData,
+      topSpenders,
+      recentTransactions
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const adminController = {
   getDashboardStats,
   getAllProperties,
@@ -641,5 +781,6 @@ export const adminController = {
   rejectAgentRequest,
   getAllUsers,
   updateUserRole,
-  toggleUserStatus
+  toggleUserStatus,
+  getTransactionStats
 };

@@ -477,6 +477,100 @@ const getListingStats = async (req, res, next) => {
   }
 }
 
+// Request forgot password - Gửi OTP/Token
+const requestForgotPassword = async (req, res, next) => {
+  try {
+    const { contactType, email, phone } = req.body
+
+    if (!contactType || (contactType === 'email' && !email) || (contactType === 'phone' && !phone)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Please provide valid contact information'
+      })
+    }
+
+    // For phone, send OTP via Twilio
+    if (contactType === 'phone' && phone) {
+      await TwilioProvider.sendVerificationCode(phone)
+    }
+
+    const result = await userService.requestForgotPassword({ contactType, email, phone })
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: contactType === 'email' 
+        ? 'Password reset link sent to your email' 
+        : 'Verification code sent to your phone',
+      data: result
+    })
+  } catch (error) {
+    console.error('❌ Request forgot password error:', error)
+    next(error)
+  }
+}
+
+// Verify OTP for phone reset
+const verifyResetCode = async (req, res, next) => {
+  try {
+    const { phone, code } = req.body
+
+    if (!phone || !code) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Phone and code are required'
+      })
+    }
+
+    const check = await TwilioProvider.checkVerificationCode(phone, code)
+
+    if (check.status !== 'approved') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      })
+    }
+
+    // Generate temporary token for password reset
+    const result = await userService.generateResetToken(phone)
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Verification successful',
+      resetToken: result.resetToken
+    })
+  } catch (error) {
+    console.error('❌ Verify reset code error:', error)
+    next(error)
+  }
+}
+
+// Reset password with token
+const resetPassword = async (req, res, next) => {
+  try {
+    const { resetToken, newPassword, contactType, email, phone } = req.body
+
+    if (!resetToken || !newPassword) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Reset token and new password are required'
+      })
+    }
+
+    const result = await userService.resetPassword({ 
+      resetToken, 
+      newPassword,
+      contactType,
+      email,
+      phone
+    })
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Password reset successfully! You can now login with your new password.'
+    })
+  } catch (error) {
+    console.error('❌ Reset password error:', error)
+    next(error)
+  }
+}
+
 // Export
 export const userController = {
   createNew,
@@ -498,5 +592,8 @@ export const userController = {
   verifyPhoneCode,
   upgradeMembership,
   getAgentDashboardStats,
-  getListingStats
+  getListingStats,
+  requestForgotPassword,
+  verifyResetCode,
+  resetPassword
 }

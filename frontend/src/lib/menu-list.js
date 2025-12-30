@@ -41,6 +41,12 @@ export function getMenuList(pathname, isAdminPanel = false) {
             label: "Documents",
             icon: Tag,
             submenus: []
+          },
+          {
+            href: "/admin/transactions",
+            label: "Transactions",
+            icon: DollarSign,
+            submenus: []
           }
         ]
       },

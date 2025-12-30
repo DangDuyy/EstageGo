@@ -901,3 +901,19 @@ export const deleteDocument = async (id, hard) =>
 
 export const rebuildDocument = async () =>
   (await authorizeAxiosInstance.post(`${API_ROOT}/v1/documents/rebuild-index`)).data
+
+// ==================== Forgot Password ============================
+export const requestForgotPasswordAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/forgot-password`, data)
+  return response.data
+}
+
+export const verifyResetCodeAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/verify-reset-code`, data)
+  return response.data
+}
+
+export const resetPasswordAPI = async (data) => {
+  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/reset-password`, data)
+  return response.data
+}
