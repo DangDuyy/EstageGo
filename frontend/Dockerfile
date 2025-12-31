@@ -3,7 +3,7 @@ FROM node:20 AS build
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json ./
 RUN yarn install --frozen-lockfile
 
 # Đặt ARG để lấy biến môi trường lúc build
