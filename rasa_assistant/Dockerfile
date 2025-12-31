@@ -24,4 +24,4 @@ RUN rasa train
 
 EXPOSE 5005
 
-CMD ["run --enable-api --cors \"*\" --interface 0.0.0.0 -p ${PORT:-5005}"]
+CMD ["run", "--enable-api", "--cors", "*", "--interface", "0.0.0.0", "--port", "5005"]
