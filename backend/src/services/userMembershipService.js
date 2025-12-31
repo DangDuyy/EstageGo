@@ -56,7 +56,7 @@ class UserMembershipService {
       await subscription.save();
 
       const user = await userModel.findById(userId)
-      user.brokerPage.exprieAt = endDate
+      user.brokerPage.expireAt = endDate
       user.save()
 
       return {
