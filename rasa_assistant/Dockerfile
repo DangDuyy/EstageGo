@@ -25,4 +25,5 @@ RUN rasa train
 
 EXPOSE 5005
 
+ENTRYPOINT ["sh", "-c"]
 CMD ["run", "--enable-api", "--cors", "*", "-i", "0.0.0.0", "-p", "5005"]
