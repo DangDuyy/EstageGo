@@ -19,7 +19,7 @@ export default function MainLayout() {
         `}
       </style>
       <ChatWidget
-        serverUrl="http://localhost:5005"
+        serverUrl={import.meta.env.VITE_CHATBOT_URL || "http://localhost:5005"}
         widgetTitle="Trợ lý AI"
         inputMessagePlaceholder="Nhập tin nhắn..."
         // initialPayload="Xin chào quý khách! Tôi có thể giúp bạn tìm kiếm bất động sản như thế nào?"

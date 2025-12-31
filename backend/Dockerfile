@@ -6,7 +6,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy file dependency trước để cache
-COPY package.json yarn.lock ./
+COPY package.json ./
 
 # Cài FULL dependency (có devDependencies để build Babel)
 RUN yarn install --frozen-lockfile
@@ -26,7 +26,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package.json để biết metadata
-COPY package.json yarn.lock ./
+COPY package.json ./
 
 # Chỉ cài dependency production (NHẸ)
 RUN yarn install --frozen-lockfile --production
