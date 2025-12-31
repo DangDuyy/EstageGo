@@ -18,10 +18,11 @@ ENV GROQ_API_KEY=$GROQ_API_KEY
 ENV API_ROOT=$API_ROOT
 ENV FRONTEND_URL=$FRONTEND_URL
 ENV RASA_LICENSE=$RASA_LICENSE
+ENV MPLCONFIGDIR=/tmp/matplotlib
 
 # Train model khi build
 RUN rasa train
 
-EXPOSE 10000
+EXPOSE 5005
 
-CMD ["run", "--enable-api", "--cors", "*", "--interface", "0.0.0.0", "--port", "10000"]
+CMD ["run", "--enable-api", "--cors", "*", "-i", "0.0.0.0", "-p", "5005"]
