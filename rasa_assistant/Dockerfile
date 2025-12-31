@@ -8,4 +8,4 @@ ENV RASA_LICENSE=$RASA_LICENSE
 
 EXPOSE 5005
 
-CMD ["run", "--enable-api", "--cors", "*", "-p", "5005", "-i", "0.0.0.0"]
+CMD ["sh", "-c", "rasa run --enable-api --cors \"*\" -i 0.0.0.0 -p ${PORT:-5005}"]
