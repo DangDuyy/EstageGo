@@ -22,6 +22,6 @@ ENV RASA_LICENSE=$RASA_LICENSE
 # Train model khi build
 RUN rasa train
 
-EXPOSE 5005
+EXPOSE 10000
 
-CMD ["run", "--enable-api", "--cors", "*", "--interface", "0.0.0.0", "--port", "5005"]
+CMD ["run", "--enable-api", "--cors", "*", "--interface", "0.0.0.0", "--port", "10000"]
