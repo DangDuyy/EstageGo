@@ -177,9 +177,11 @@ class ActionSearchProperties(Action):
             print(f"DEBUG - Found {len(results)} results")
             # print(f"DEBUG - Results: {results}")
             
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+            
             if not results:
                 dispatcher.utter_message(
-                    text=f"😞 Rất tiếc, không tìm thấy bất động sản nào giống với yêu cầu của bạn. Để tìm kiếm nâng cao bạn hãy truy cập [EstageGo Search](http://localhost:5173/listing/grid)\n\n"
+                    text=f"😞 Rất tiếc, không tìm thấy bất động sản nào giống với yêu cầu của bạn. Để tìm kiếm nâng cao bạn hãy truy cập [EstageGo Search]({frontend_url}/listing/grid)\n\n"
                          f"💡 Gợi ý:\n"
                          f"• Thử tìm kiếm ở khu vực rộng hơn (bỏ qua quận/huyện hoặc phường/xã)\n"
                          f"• Kiểm tra lại tên địa điểm có chính xác không\n"
@@ -195,10 +197,12 @@ class ActionSearchProperties(Action):
             
             elements = []
             
+            api_root = os.getenv("API_ROOT", "http://localhost:8017")
+            
             for idx, prop in enumerate(results, 1):
                 title = prop.get('title', f"Bất động sản #{idx}")
                 image_url = prop.get('media', [])[0].get('url')
-                link = f"http://localhost:5173/properties/{prop.get('_id')}"
+                link = f"{api_root}/properties/{prop.get('_id')}"
                 
                 elements.append({
                     "image_url": image_url,
