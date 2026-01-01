@@ -40,7 +40,7 @@ router.route('/search-by-tag')
 
 router.route('/:id')
   .get(propertyController.getPropertyDetails)
-  .put(authMiddleware.isAuthorized, propertyController.updateProperty)
+  .put(authMiddleware.isAuthorized, uploadFiles, propertyController.updateProperty) // Add uploadFiles middleware
   .delete(authMiddleware.isAuthorized, propertyController.deleteProperty)
 
 // Boost routes

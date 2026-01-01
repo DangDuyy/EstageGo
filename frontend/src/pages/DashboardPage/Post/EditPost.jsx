@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
-import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles } from 'lucide-react'
+import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles, Plus, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,10 +22,6 @@ import { selectCurrentUser } from '@/redux/user/userSlice'
 import { MapsContext } from "@/components/common/GoogleMap/MapProvider"
 import { cn } from '@/lib/utils'
 
-import ImageUploadComponent from "@/components/common/Upload/uploadImage"
-import CustomSearchBox from "@/components/common/GoogleMap/SearchBox"
-import MapContainer from "@/components/common/GoogleMap/MapContainer"
-import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer"
 import TourLinkModal from "@/components/common/Upload/tour-link-modal"
 
 import { 
@@ -38,6 +34,11 @@ import {
 import { propertySchema } from "@/schemas/property.schema"
 import { API_ROOT } from '@/utils/constants'
 import { deletePropertyAPI } from '@/apis/adminAPI'
+
+// Import map components
+import CustomSearchBox from "@/components/common/GoogleMap/SearchBox"
+import MapContainer from "@/components/common/GoogleMap/MapContainer"
+import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer"
 
 // ----- Mock data -----
 const propertyTypes = ["Apartment", "House", "Condo", "Land", "Commercial","Office","Villa","Townhouse","Other"]
@@ -134,7 +135,11 @@ export default function EditPost() {
     const [property, setProperty] = useState(null)
     const [visibility, setVisibility] = useState("public")
     const [status, setStatus] = useState("active") // active, draft, archived
-    const [existingMedia, setExistingMedia] = useState([]) // Lưu ảnh đã có
+    
+    // Combined media state - stores both existing and new images
+    const [allImages, setAllImages] = useState([])
+    const [deletedImageIds, setDeletedImageIds] = useState([]) // Track deleted existing images
+    const fileInputRef = useRef(null)
     
     const [fullAddress, setFullAddress] = useState("")
     const [provinces, setProvinces] = useState([])
@@ -145,7 +150,9 @@ export default function EditPost() {
     const [center, setCenter] = useState({ lat: 10.762622, lng: 106.660172 })
     const [results, setResults] = useState([])
 
-    // react-hook-form setup
+    // react-hook-form setup - BỎ validation files cho edit mode
+    const propertySchemaForEdit = propertySchema.omit({ files: true })
+
     const form = useForm({
         defaultValues: {
             title: '',
@@ -178,7 +185,7 @@ export default function EditPost() {
             yearBuilt: new Date().getFullYear(),
             amenities: [],
         },
-        resolver: zodResolver(propertySchema),
+        resolver: zodResolver(propertySchemaForEdit),
         mode: 'onBlur',
     })
 
@@ -201,7 +208,7 @@ export default function EditPost() {
         'area'
     ])
 
-    // Load property data - FIX: Remove 'form' from dependency array
+    // Load property data
     useEffect(() => {
         const loadProperty = async () => {
             if (!propertyId) return
@@ -209,9 +216,7 @@ export default function EditPost() {
             try {
                 setIsLoading(true)
                 
-                console.log('Loading property ID:', propertyId)
                 const apiUrl = `${API_ROOT}/v1/properties/${propertyId}`
-                console.log('API URL:', apiUrl)
                 
                 const response = await fetch(apiUrl)
                 
@@ -223,7 +228,7 @@ export default function EditPost() {
                     if (response.status === 404) {
                         toast.error('Property not found')
                     } else {
-                        toast.error(`Error: ${response.status}`)
+                        toast.error('Failed to load property')
                     }
                     navigate('/dashboard/posts')
                     return
@@ -239,7 +244,6 @@ export default function EditPost() {
                 
                 // Check ownership
                 const ownerId = data.owner?._id || data.ownerInfo?._id || data.owner
-                console.log('Owner ID:', ownerId, 'Current User ID:', currentUser?._id)
                 
                 if (ownerId !== currentUser?._id) {
                     toast.error('You do not have permission to edit this property')
@@ -250,7 +254,17 @@ export default function EditPost() {
                 setProperty(data)
                 setVisibility(data.visibility || 'public')
                 setStatus(data.status || 'active')
-                setExistingMedia(data.media || [])
+                
+                // Load existing images with type marker
+                const existingImages = (data.media || [])
+                    .filter(m => m.type === 'image')
+                    .map((media, index) => ({
+                        id: `existing-${media._id || index}`,
+                        url: media.url,
+                        type: 'existing',
+                        mediaId: media._id
+                    }))
+                setAllImages(existingImages)
                 
                 // Populate form
                 form.reset({
@@ -287,14 +301,14 @@ export default function EditPost() {
                 
                 // Set map center if coordinates exist
                 if (data.address?.location?.coordinates?.length === 2) {
-                    setCenter({
-                        lng: data.address.location.coordinates[0],
-                        lat: data.address.location.coordinates[1]
-                    })
-                    setResults([{
-                        lat: data.address.location.coordinates[1],
-                        lng: data.address.location.coordinates[0],
-                        address: data.address?.fullAddress || ''
+                    const [lng, lat] = data.address.location.coordinates
+                    setCenter({ lat, lng })
+                    setResults([{ 
+                        lat, 
+                        lng, 
+                        address: [data.address.street, data.address.ward, data.address.district, data.address.province]
+                            .filter(Boolean)
+                            .join(', ')
                     }])
                 }
                 
@@ -308,7 +322,7 @@ export default function EditPost() {
         }
         
         loadProperty()
-    }, [propertyId, currentUser?._id, navigate]) // FIXED: Removed 'form' from dependencies
+    }, [propertyId, currentUser?._id, navigate])
 
     // Update visibility form value
     useEffect(() => {
@@ -489,7 +503,6 @@ export default function EditPost() {
     }
 
     const handleMarkerClick = (marker) => {
-        console.log("Marker clicked:", marker)
     }
 
     const handleSearch = () => {
@@ -515,6 +528,47 @@ export default function EditPost() {
             }
         })
     }, [fullAddress, loaded, handleGeocodeSuccess])
+
+    // Image handling functions
+    const handleAddImages = () => {
+        fileInputRef.current?.click()
+    }
+
+    const handleFileInputChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const newImages = Array.from(e.target.files).map(file => ({
+                id: `new-${Date.now()}-${Math.random()}`,
+                url: URL.createObjectURL(file),
+                type: 'new',
+                file: file
+            }))
+            setAllImages(prev => [...prev, ...newImages])
+            
+            // Update form files
+            const newFiles = newImages.map(img => img.file)
+            const currentFiles = form.getValues('files') || []
+            form.setValue('files', [...currentFiles, ...newFiles])
+        }
+    }
+
+    const handleRemoveImage = (imageId, imageType) => {
+        setAllImages(prev => prev.filter(img => img.id !== imageId))
+        
+        if (imageType === 'existing') {
+            // Track deleted existing image
+            const image = allImages.find(img => img.id === imageId)
+            if (image?.mediaId) {
+                setDeletedImageIds(prev => [...prev, image.mediaId])
+            }
+        } else {
+            // Remove from form files
+            const imageToRemove = allImages.find(img => img.id === imageId)
+            if (imageToRemove?.file) {
+                const currentFiles = form.getValues('files') || []
+                form.setValue('files', currentFiles.filter(f => f !== imageToRemove.file))
+            }
+        }
+    }
 
     // Actions
     const handleSaveDraft = async () => {
@@ -567,32 +621,50 @@ export default function EditPost() {
     }
 
     const onSubmit = async (data) => {
-        if (isSubmitting) return // Prevent double submission
+        if (isSubmitting) return
         
         try {
             setIsSubmitting(true)
-            console.log('Submitting update data:', data)
             
-            // Chuẩn bị data để gửi
-            const updateData = {
-                title: data.title,
-                description: data.description,
-                area: data.area,
-                type: data.type,
-                address: data.address,
-                price: data.price,
-                purpose: data.purpose,
-                visibility: visibility,
-                rooms: data.rooms,
-                yearBuilt: data.yearBuilt,
-                status: status,
-                amenities: data.amenities || []
+            // Create FormData for multipart/form-data
+            const formData = new FormData()
+            
+            // Add basic fields
+            formData.append('title', data.title)
+            formData.append('description', data.description)
+            formData.append('area', data.area)
+            formData.append('type', data.type)
+            formData.append('purpose', data.purpose)
+            formData.append('visibility', visibility)
+            formData.append('yearBuilt', data.yearBuilt)
+            formData.append('status', status)
+            
+            // Add address as JSON string
+            formData.append('address', JSON.stringify(data.address))
+            
+            // Add price as JSON string
+            formData.append('price', JSON.stringify(data.price))
+            
+            // Add rooms as JSON string
+            formData.append('rooms', JSON.stringify(data.rooms))
+            
+            // Add amenities as JSON string
+            formData.append('amenities', JSON.stringify(data.amenities || []))
+            
+            // Add deleted image IDs as JSON string
+            if (deletedImageIds.length > 0) {
+                formData.append('deletedImages', JSON.stringify(deletedImageIds))
             }
             
-            console.log('Update payload:', updateData)
-            
-            await updatePropertyAPI(propertyId, updateData)
-            console.log('Update successful')
+            // Add new image files
+            const newFiles = form.getValues('files') || []
+            if (newFiles.length > 0) {
+                newFiles.forEach((file) => {
+                    formData.append('files', file)
+                })
+            }
+                        
+            await updatePropertyAPI(propertyId, formData)
             navigate('/dashboard/posts')
         } catch (error) {
             console.error('Error updating property:', error)
@@ -622,6 +694,35 @@ export default function EditPost() {
                         <CardHeader><CardTitle>Status & Actions</CardTitle></CardHeader>
                         <CardContent className="flex flex-wrap items-center gap-3">
                             <span className="flex flex-row gap-3 items-center">
+                                {/* Status Toggle */}
+                                <div className="flex items-center gap-2">
+                                    <Label className="text-sm">Status</Label>
+                                    <div className="rounded-full border p-1">
+                                        <div className="flex gap-1">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={status === "active" ? "default" : "ghost"}
+                                                onClick={() => setStatus("active")}
+                                                className="rounded-full"
+                                            >
+                                                Active
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={status === "draft" ? "default" : "ghost"}
+                                                onClick={() => setStatus("draft")}
+                                                className="rounded-full"
+                                            >
+                                                Draft
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator orientation="vertical" className="h-6" />
+
                                 {/* Visibility Toggle */}
                                 <div className="flex items-center gap-2">
                                     <Label className="text-sm">Visibility</Label>
@@ -648,25 +749,9 @@ export default function EditPost() {
                                         </div>
                                     </div>
                                 </div>
-
-                                <Separator orientation="vertical" className="h-6" />
-
-                                {/* Status Badge */}
-                                <span className={cn(
-                                    "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
-                                    status === 'active' ? "bg-green-100 text-green-700" :
-                                    status === 'draft' ? "bg-amber-100 text-amber-700" :
-                                    "bg-gray-100 text-gray-700"
-                                )}>
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </span>
                             </span>
 
                             <div className="ml-auto flex gap-2">
-                                <Button type="button" variant="outline" size="sm" onClick={handleSaveDraft}>
-                                    <Save className="w-4 h-4 mr-2" />
-                                    Save Draft
-                                </Button>
                                 <Button type="button" variant="outline" size="sm" onClick={handleToggleVisibility}>
                                     {visibility === 'public' ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
                                     {visibility === 'public' ? 'Hide' : 'Show'}
@@ -690,44 +775,82 @@ export default function EditPost() {
                             <TabsTrigger value='3D'>3D Tour</TabsTrigger>
                         </TabsList>
                         <TabsContent value="photos">
-                            {/* Hiển thị ảnh đã có */}
-                            {existingMedia.length > 0 && (
-                                <div className="mb-6">
-                                    <Label className="mb-3 block">Existing Photos</Label>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                        {existingMedia.filter(m => m.type === 'image').map((media, index) => (
-                                            <div key={index} className="relative group">
-                                                <div className="relative h-32 bg-muted rounded-lg overflow-hidden border-2 border-border">
-                                                    <img
-                                                        src={media.url}
-                                                        alt={`Property ${index + 1}`}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <span className="text-white text-xs">Existing</span>
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle>Property Photos</CardTitle>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleAddImages}
+                                            className="gap-2"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Add Photos
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleFileInputChange}
+                                        className="hidden"
+                                    />
+                                    
+                                    {allImages.length > 0 ? (
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                            {allImages.map((image) => (
+                                                <div key={image.id} className="relative group">
+                                                    <div className="relative h-32 bg-muted rounded-lg overflow-hidden border-2 border-border">
+                                                        <img
+                                                            src={image.url}
+                                                            alt="Property"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        {/* Overlay with delete button */}
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                className="absolute top-2 right-2 h-8 w-8"
+                                                                onClick={() => handleRemoveImage(image.id, image.type)}
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                        {/* Badge for existing images */}
+                                                        {image.type === 'existing' && (
+                                                            <div className="absolute bottom-2 left-2">
+                                                                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                                                    Existing
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {/* Upload ảnh mới */}
-                            <div>
-                                <Label className="mb-3 block">Upload New Photos</Label>
-                                <Controller
-                                    name="files"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <ImageUploadComponent
-                                            form={form}
-                                            files={field.value}
-                                            onChange={field.onChange}
-                                        />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
+                                            <p className="text-muted-foreground mb-4">No photos yet</p>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={handleAddImages}
+                                                className="gap-2"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                Add Photos
+                                            </Button>
+                                        </div>
                                     )}
-                                />
-                            </div>
+                                </CardContent>
+                            </Card>
                         </TabsContent>
                         <TabsContent value="3D">
                             <TourLinkModal form={form} />

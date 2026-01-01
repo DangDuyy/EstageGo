@@ -770,7 +770,18 @@ export const getAgentFollowStatsAPI = async (agentId) => {
 
 // Update property
 export const updatePropertyAPI = async (propertyId, propertyData) => {
-  const response = await authorizeAxiosInstance.put(`${API_ROOT}/v1/properties/${propertyId}`, propertyData)
+  // Check if propertyData is FormData
+  const isFormData = propertyData instanceof FormData
+  
+  const response = await authorizeAxiosInstance.put(
+    `${API_ROOT}/v1/properties/${propertyId}`, 
+    propertyData,
+    isFormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    } : undefined
+  )
   toast.success('Property updated successfully!')
   return response.data
 }

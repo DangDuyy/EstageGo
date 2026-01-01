@@ -187,7 +187,6 @@ const createProperty = async (req, res, next) => {
 //     try {
 //         // Normalize complex fields from multipart
 //         const body = { ...req.body }
-//         console.log(body)
 //         body.price = safeParse(body.price)
 //         body.address = safeParse(body.address)
 //         body.rooms = safeParse(body.rooms)
@@ -669,7 +668,6 @@ const getPropertiesWithMap = async (req, res, next) => {
 const getPropertiesWithinPolygon = async (req, res, next) => {
     try {
         const { polygon } = req.body;
-        console.log(polygon)
 
         // Tạo GeoJSON polygon
         const polygonGeoJSON = {
@@ -970,7 +968,6 @@ Ví dụ 6 - Tìm theo địa điểm gần (dùng fullAddress):
         }
 
         let responseText = result.response.text();
-        console.log("AI Response (raw):", responseText);
 
         // Parse JSON - xử lý markdown code blocks nếu có
         let filters;
@@ -982,7 +979,6 @@ Ví dụ 6 - Tìm theo địa điểm gần (dùng fullAddress):
             }
 
             filters = JSON.parse(responseText);
-            console.log("AI Parsed Filters:", filters);
         } catch (parseError) {
             console.error("Lỗi parse JSON từ Gemini:", parseError);
             console.error("Response text:", responseText);
@@ -1002,12 +998,8 @@ Ví dụ 6 - Tìm theo địa điểm gần (dùng fullAddress):
             return acc;
         }, {});
 
-        console.log("AI Generated Filters:", cleanFilters);
-        console.log("Natural Language Query:", naturalLanguageQuery);
-
         // Thực thi truy vấn MongoDB
         const properties = await propertyService.getPropertiesByFilters(cleanFilters);
-        console.log(`Found ${properties.length} properties`);
 
         // Nếu không có kết quả, tìm suggestions (không block main flow)
         let searchSuggestions = null
@@ -1332,7 +1324,6 @@ const analyzeTemporaryImage = async (req, res, next) => {
         const file = files[0] // Get first file
 
         // Upload to cloudinary temporarily
-        console.log('[Upload] Uploading file to Cloudinary:', file.originalname)
         const uploadResult = await mediaService.uploadPropertyImage([file], 'temp')
 
         if (!uploadResult || uploadResult.length === 0) {
@@ -1344,12 +1335,9 @@ const analyzeTemporaryImage = async (req, res, next) => {
         }
 
         const imageUrl = uploadResult[0].url
-        console.log('[Upload] Image uploaded successfully:', imageUrl)
 
         // Analyze with AI
-        console.log('[AI] Starting analysis with Gemini...')
         const analysis = await imageTaggingService.analyzeImageWithGemini(imageUrl)
-        console.log('[AI] Analysis completed:', analysis)
 
         res.status(StatusCodes.OK).json({
             success: true,
@@ -1409,9 +1397,65 @@ const updateProperty = async (req, res, next) => {
     try {
         const { id: propertyId } = req.params
         const userId = req.jwtDecoded._id
-        const updateData = req.body
-
-        const updatedProperty = await propertyService.updateProperty(propertyId, userId, updateData)
+        
+        // Parse FormData fields
+        const updateData = { ...req.body }
+        
+        // Parse JSON strings from FormData
+        if (typeof updateData.address === 'string') {
+            updateData.address = JSON.parse(updateData.address)
+        }
+        if (typeof updateData.price === 'string') {
+            updateData.price = JSON.parse(updateData.price)
+        }
+        if (typeof updateData.rooms === 'string') {
+            updateData.rooms = JSON.parse(updateData.rooms)
+        }
+        if (typeof updateData.amenities === 'string') {
+            updateData.amenities = JSON.parse(updateData.amenities)
+        }
+        
+        let deletedImages = []
+        if (typeof updateData.deletedImages === 'string') {
+            deletedImages = JSON.parse(updateData.deletedImages)
+            delete updateData.deletedImages
+        }
+        
+        // Convert number strings to numbers
+        if (updateData.area) updateData.area = Number(updateData.area)
+        if (updateData.yearBuilt) updateData.yearBuilt = Number(updateData.yearBuilt)
+        
+        // Get property first
+        const property = await propertyService.getPropertyById(propertyId)
+        if (!property) {
+            throw new ApiError(StatusCodes.NOT_FOUND, 'Property not found')
+        }
+        
+        // Check ownership
+        if (property.owner.toString() !== userId) {
+            throw new ApiError(StatusCodes.FORBIDDEN, 'You do not have permission to update this property')
+        }
+        
+        // Handle deleted images - remove from media array
+        if (deletedImages && deletedImages.length > 0) {
+            property.media = property.media.filter(m => !deletedImages.includes(m._id.toString()))
+            await property.save()
+        }
+        
+        // Update property basic info
+        let updatedProperty = await propertyService.updateProperty(propertyId, userId, updateData)
+        
+        // Handle new image uploads
+        if (req.files && req.files.length > 0) {
+            const uploadedMedia = await mediaService.uploadPropertyImage(req.files, propertyId)
+            const mediaItems = uploadedMedia.map(item => ({
+                url: item.url,
+                publicId: item.publicId,
+                type: 'image'
+            }))
+            
+            updatedProperty = await propertyService.addMediaToProperty(propertyId, mediaItems)
+        }
 
         return res.status(StatusCodes.OK).json({
             success: true,
