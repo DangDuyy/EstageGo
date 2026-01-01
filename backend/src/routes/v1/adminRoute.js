@@ -14,6 +14,7 @@ Router.get('/dashboard/stats', adminController.getDashboardStats);
 
 // Properties Management
 Router.get('/properties', adminController.getAllProperties);
+Router.get('/properties/stats', adminController.getPropertyStats);
 Router.patch('/properties/:propertyId/status', adminController.updatePropertyStatus);
 Router.delete('/properties/:propertyId', adminController.deleteProperty);
 

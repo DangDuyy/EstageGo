@@ -261,18 +261,50 @@ const getDashboardStats = async (req, res, next) => {
 // ===== PROPERTIES MANAGEMENT =====
 const getAllProperties = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, status, search, sortBy = 'createdAt', order = 'desc' } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      search, 
+      type,
+      purpose,
+      postType,
+      minPrice,
+      maxPrice,
+      sortBy = 'createdAt', 
+      order = 'desc' 
+    } = req.query;
     
     const query = {};
     
     if (status) {
       query.status = status;
     }
+
+    if (type) {
+      query.type = type;
+    }
+
+    if (purpose) {
+      query.purpose = purpose;
+    }
+
+    if (postType) {
+      query.postType = postType;
+    }
+
+    if (minPrice || maxPrice) {
+      query['price.value'] = {};
+      if (minPrice) query['price.value'].$gte = parseFloat(minPrice);
+      if (maxPrice) query['price.value'].$lte = parseFloat(maxPrice);
+    }
     
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
+        { 'address.fullAddress': { $regex: search, $options: 'i' } },
+        { 'address.province': { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -771,6 +803,99 @@ const getTransactionStats = async (req, res, next) => {
   }
 };
 
+const getPropertyStats = async (req, res, next) => {
+  try {
+    const [
+      totalProperties,
+      totalPropertyTypes,
+      topViewedProperties,
+      propertiesByCity
+    ] = await Promise.all([
+      // Tổng số BDS
+      propertyModel.countDocuments(),
+      
+      // Tổng số loại BDS
+      propertyModel.distinct('type').then(types => types.length),
+      
+      // Top 10 căn hộ được xem nhiều nhất
+      userActivityModel.aggregate([
+        { $match: { eventType: 'VIEW', propertyId: { $ne: null } } },
+        { $group: { _id: '$propertyId', viewCount: { $sum: 1 } } },
+        { $sort: { viewCount: -1 } },
+        { $limit: 10 },
+        { 
+          $lookup: { 
+            from: 'properties', 
+            localField: '_id', 
+            foreignField: '_id', 
+            as: 'property' 
+          } 
+        },
+        { $unwind: '$property' },
+        { 
+          $lookup: { 
+            from: 'users', 
+            localField: 'property.owner', 
+            foreignField: '_id', 
+            as: 'ownerInfo' 
+          } 
+        },
+        { $unwind: { path: '$ownerInfo', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 1,
+            viewCount: 1,
+            title: '$property.title',
+            price: '$property.price',
+            type: '$property.type',
+            address: '$property.address',
+            media: { $arrayElemAt: ['$property.media', 0] },
+            owner: {
+              _id: '$ownerInfo._id',
+              fullName: '$ownerInfo.fullName',
+              avatar: '$ownerInfo.avatar'
+            }
+          }
+        }
+      ]),
+      
+      // Số căn hộ theo thành phố (province)
+      propertyModel.aggregate([
+        {
+          $match: {
+            'address.province': { $exists: true, $ne: null, $ne: '' }
+          }
+        },
+        {
+          $group: {
+            _id: '$address.province',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { count: -1 }
+        },
+        {
+          $project: {
+            _id: 0,
+            city: '$_id',
+            count: 1
+          }
+        }
+      ])
+    ]);
+
+    res.status(StatusCodes.OK).json({
+      totalProperties,
+      totalPropertyTypes,
+      topViewedProperties,
+      propertiesByCity
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const adminController = {
   getDashboardStats,
   getAllProperties,
@@ -782,5 +907,6 @@ export const adminController = {
   getAllUsers,
   updateUserRole,
   toggleUserStatus,
-  getTransactionStats
+  getTransactionStats,
+  getPropertyStats
 };

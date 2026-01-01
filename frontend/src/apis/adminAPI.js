@@ -30,6 +30,11 @@ export const deletePropertyAPI = async (propertyId) => {
   return response.data;
 };
 
+export const getPropertyStatsAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/V1/admin/properties/stats`);
+  return response.data;
+};
+
 // ===== AGENT REQUESTS =====
 export const getAgentRequestsAPI = async (params) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/V1/admin/agent-requests`, { params });
