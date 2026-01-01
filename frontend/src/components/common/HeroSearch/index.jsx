@@ -103,8 +103,8 @@ export default function HeroSearch({
     [...new Set(provincesToQuery)].forEach((p) => params.append("province", p));
     [...new Set(districtsToQuery)].forEach((d) => params.append("district", d));
     
-    // Navigate to map page with search params
-    navigate(`/map?${params.toString()}`);
+    // Navigate to listing grid page with search params
+    navigate(`/listing/grid?${params.toString()}`);
     
     // Call onSearch callback if provided
     if (typeof onSearch === "function") {
