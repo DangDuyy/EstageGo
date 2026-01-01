@@ -13,11 +13,11 @@ const { slugify, escapeRegex, removeDiacritics, createFuzzyRegex } = require("~/
 
 const createProperty = async (propertyData) => {
   try {
-    
+
     if (!await canCreateProperty(propertyData.owner)) {
       throw new ApiError(StatusCodes.FORBIDDEN, "Property creation limit reached. Please upgrade your membership to post more properties.")
     }
-    
+
     // Tạo slug từ title
     const baseSlug = slugify(propertyData.title, {
       lower: true, // chuyển hết sang chữ thường
@@ -80,7 +80,7 @@ const canCreateProperty = async (userId) => {
   if (activeMembership) {
     return true
   }
-  
+
   // 2. Lấy số lượng tin miễn phí từ config hệ thống
   const DEFAULT_POST_LIMIT = await SystemConfig.findOne({ key: 'DEFAULT_POST_LIMIT' })
   const maxPost = DEFAULT_POST_LIMIT ?? 15
@@ -259,23 +259,93 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       )
     }
 
-    const sort = {
-      priority: -1,
-    }
-    const dir = (String(sortDir).toLowerCase() === "asc") ? 1 : -1
+    // const sort = {
+    //   priority: -1,
+    // }
+    // const dir = (String(sortDir).toLowerCase() === "asc") ? 1 : -1
+    // if (sortBy === "price") sort["price.value"] = dir
+    // else if (sortBy === "area") sort["area"] = dir
+    // else if (sortBy === "featured") {
+    //   // Ưu tiên: 1) VIP + Boosted (còn hiệu lực), 2) Boosted, 3) VIP, 4) Normal
+    //   // Tạo trường tính toán để xếp hạng: vip=2, boost active=1, cộng lại
+    //   // Sẽ dùng $addFields trong pipeline thay vì sort trực tiếp
+    //   // Tạm giữ sort cũ, sẽ thay bằng computed field trong pipeline
+    //   sort["_sortPriority"] = -1
+    //   sort["bumpedAt"] = -1
+    //   sort["createdAt"] = -1
+    // }
+    // else sort["createdAt"] = dir // mặc định mới nhất
+
+    // const pipeline = []
+
+    // if (fuzzyOr.length) {
+    //   pipeline.push({ $match: { $and: [match, { $or: fuzzyOr }] } })
+    // } else {
+    //   pipeline.push({ $match: match })
+    // }
+
+    // // Add computed sort priority for featured sorting
+    // if (sortBy === "featured") {
+    //   pipeline.push({
+    //     $addFields: {
+    //       _sortPriority: {
+    //         $let: {
+    //           vars: {
+    //             isVip: { $eq: ["$postType", "vip"] },
+    //             isBoostActive: {
+    //               $and: [
+    //                 { $ne: ["$boostExpiresAt", null] },
+    //                 { $gt: ["$boostExpiresAt", new Date()] }
+    //               ]
+    //             }
+    //           },
+    //           in: {
+    //             $cond: [
+    //               // VIP + Active Boost = 4 points
+    //               { $and: ["$$isVip", "$$isBoostActive"] }, 4,
+    //               {
+    //                 $cond: [
+    //                   // Boost only (not VIP) = 2 points
+    //                   { $and: ["$$isBoostActive", { $not: "$$isVip" }] }, 2,
+    //                   {
+    //                     $cond: [
+    //                       // VIP only (no active boost) = 1 point
+    //                       { $and: ["$$isVip", { $not: "$$isBoostActive" }] }, 1,
+    //                       // Normal = 0 points
+    //                       0
+    //                     ]
+    //                   }
+    //                 ]
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   })
+    // }
+
+
+    // 2️⃣ Khởi tạo sort object
+    const sort = {}
+
+    // 3️⃣ Field user muốn sort
     if (sortBy === "price") sort["price.value"] = dir
     else if (sortBy === "area") sort["area"] = dir
-    else if (sortBy === "featured") {
-      // Ưu tiên: 1) VIP + Boosted (còn hiệu lực), 2) Boosted, 3) VIP, 4) Normal
-      // Tạo trường tính toán để xếp hạng: vip=2, boost active=1, cộng lại
-      // Sẽ dùng $addFields trong pipeline thay vì sort trực tiếp
-      // Tạm giữ sort cũ, sẽ thay bằng computed field trong pipeline
-      sort["_sortPriority"] = -1
-      sort["bumpedAt"] = -1
-      sort["createdAt"] = -1
-    }
-    else sort["createdAt"] = dir // mặc định mới nhất
+    // else sort["createdAt"] = -1 // default
 
+    // 4️⃣ Thêm các field hệ thống: luôn áp dụng
+    // 4a: Boost active lên đầu
+    sort["_boostPriority"] = -1
+    // 4b: Priority break tie
+    sort["priority"] = -1
+    // 4c: createdAt tie-break cuối cùng
+    sort["createdAt"] = -1
+
+    console.log("Final sort object:", sort)
+
+    // ---------------------------
+    // 5️⃣ Pipeline
     const pipeline = []
 
     if (fuzzyOr.length) {
@@ -284,46 +354,23 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
       pipeline.push({ $match: match })
     }
 
-    // Add computed sort priority for featured sorting
-    if (sortBy === "featured") {
-      pipeline.push({
-        $addFields: {
-          _sortPriority: {
-            $let: {
-              vars: {
-                isVip: { $eq: ["$postType", "vip"] },
-                isBoostActive: {
-                  $and: [
-                    { $ne: ["$boostExpiresAt", null] },
-                    { $gt: ["$boostExpiresAt", new Date()] }
-                  ]
-                }
-              },
-              in: {
-                $cond: [
-                  // VIP + Active Boost = 4 points
-                  { $and: ["$$isVip", "$$isBoostActive"] }, 4,
-                  {
-                    $cond: [
-                      // Boost only (not VIP) = 2 points
-                      { $and: ["$$isBoostActive", { $not: "$$isVip" }] }, 2,
-                      {
-                        $cond: [
-                          // VIP only (no active boost) = 1 point
-                          { $and: ["$$isVip", { $not: "$$isBoostActive" }] }, 1,
-                          // Normal = 0 points
-                          0
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
+    // 6️⃣ Tính _boostPriority (1 nếu boost còn hiệu lực, 0 nếu không)
+    pipeline.push({
+      $addFields: {
+        _boostPriority: {
+          $cond: [
+            {
+              $and: [
+                { $ne: ["$boostExpiresAt", null] },
+                { $gt: ["$boostExpiresAt", new Date()] }
+              ]
+            },
+            1,
+            0
+          ]
         }
-      })
-    }
+      }
+    })
 
     pipeline.push(
       {
@@ -509,6 +556,10 @@ const getPropertiesWithMap = async (query) => {
     sortDir = "desc"
   } = query
 
+  const pageParam = Math.max(1, Number(page) || 1)
+  const limitParam = Math.max(1, Number(limit) || 10)
+
+
   /* =======================
       1️⃣ BASE FILTER
   ======================== */
@@ -580,23 +631,60 @@ const getPropertiesWithMap = async (query) => {
   /* =======================
       2️⃣ SORT
   ======================== */
-  const sort = {
-    priority: -1,
-    [sortBy]: sortDir === "asc" ? 1 : -1
+  const sort = {}
+
+  // user sort (nếu có)
+  if (sortBy === "price") {
+    sort["price.value"] = sortDir === "asc" ? 1 : -1
+  } else if (sortBy === "area") {
+    sort["area"] = sortDir === "asc" ? 1 : -1
   }
+
+  // system sort – LUÔN ÁP DỤNG
+  sort["_boostPriority"] = -1   // boost active lên đầu
+  sort["priority"] = -1         // hạng tin
+  sort["createdAt"] = -1        // tie-break cuối
+
+  console.log("Final sort:", sort)
 
   /* =======================
       3️⃣ LIST
   ======================== */
-  const skip = (page - 1) * limit
+  const skip = (pageParam - 1) * limitParam
+  const pipeline = []
+
+  // 2.1 Match
+  pipeline.push({ $match: baseFilter })
+
+  // 2.2 Tính boost priority
+  pipeline.push({
+    $addFields: {
+      _boostPriority: {
+        $cond: [
+          {
+            $and: [
+              { $ne: ["$boostExpiresAt", null] },
+              { $gt: ["$boostExpiresAt", "$$NOW"] }
+            ]
+          },
+          1,
+          0
+        ]
+      }
+    }
+  })
+
+  // 2.3 Sort
+  pipeline.push({ $sort: sort })
+
+  // 2.4 Paging
+  pipeline.push({ $skip: skip })
+  pipeline.push({ $limit: limitParam })
+
+  console.log("Final sort Map", sort)
 
   const listPromise = Promise.all([
-    propertyModel
-      .find(baseFilter)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit),
-
+    propertyModel.aggregate(pipeline),
     propertyModel.countDocuments(baseFilter)
   ])
 
