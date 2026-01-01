@@ -2,6 +2,7 @@ import express from 'express'
 import { userController } from '~/controllers/userController'
 import { userValidation } from '~/validations/userValidation'
 import { authMiddleware } from '~/middlewares/authMiddleware'
+import { uploadFiles, uploadAvatar } from '~/middlewares/uploadMiddleware'
 
 const Router = express.Router()
 
@@ -81,5 +82,8 @@ Router.route('/verify-reset-code')
 
 Router.route('/reset-password')
   .post(userController.resetPassword)
+
+Router.route('/avatar')
+  .put(authMiddleware.isAuthorized, uploadAvatar, userController.updateAvatar)
 
 export const userRoutes = Router

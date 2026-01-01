@@ -14,6 +14,7 @@ import agentReviewModel from '~/models/agentReviews'
 import mongoose from 'mongoose'
 import userMembershipService from './userMembershipService'
 import SystemConfig from '~/models/systemConfig'
+import { cloudinary } from '~/config/cloudinary'
 
 /**
  * Generate random fullName
@@ -766,6 +767,7 @@ const requestForgotPassword = async ({ contactType, email, phone }) => {
       })
       
 
+
       return { success: true, method: 'email' }
     } 
     else if (contactType === 'phone' && phone) {
@@ -848,6 +850,47 @@ const resetPassword = async ({ resetToken, newPassword, contactType, email, phon
   }
 }
 
+const updateAvatar = async (userId, file) => {
+  try {
+    const user = await userModel.findById(userId)
+    
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    // Upload to Cloudinary
+    const uploadPromise = new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'avatars',
+          resource_type: 'auto',
+          transformation: [
+            { width: 500, height: 500, crop: 'fill', gravity: 'face' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      )
+      uploadStream.end(file.buffer)
+    })
+
+    const uploadResult = await uploadPromise
+
+    // Update user avatar
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { avatar: uploadResult.secure_url },
+      { new: true, runValidators: true }
+    )
+
+    return pickUser(updatedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
@@ -870,5 +913,6 @@ export const userService = {
   getPresenceSnapshot,
   requestForgotPassword,
   generateResetToken,
-  resetPassword
+  resetPassword,
+  updateAvatar,
 }
