@@ -25,6 +25,7 @@ Router.patch('/agent-requests/:requestId/reject', adminController.rejectAgentReq
 
 // Users Management
 Router.get('/users', adminController.getAllUsers);
+Router.get('/users/stats', adminController.getUserStats);
 Router.patch('/users/:userId/role', adminController.updateUserRole);
 Router.patch('/users/:userId/toggle-status', adminController.toggleUserStatus);
 

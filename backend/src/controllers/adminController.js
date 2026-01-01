@@ -896,6 +896,206 @@ const getPropertyStats = async (req, res, next) => {
   }
 };
 
+const getUserStats = async (req, res, next) => {
+  try {
+    const [
+      totalUsers,
+      totalRegularUsers,
+      totalAgents,
+      totalAdmins,
+      activeUsers,
+      inactiveUsers,
+      topAgentsByProperties,
+      topUsersByActivity,
+      usersByProvince,
+      userGrowthData,
+      recentUsers
+    ] = await Promise.all([
+      // Tổng số người dùng
+      userModel.countDocuments(),
+      
+      // Tổng số user thường
+      userModel.countDocuments({ role: 'user' }),
+      
+      // Tổng số agent
+      userModel.countDocuments({ role: 'agent' }),
+      
+      // Tổng số admin
+      userModel.countDocuments({ role: 'admin' }),
+      
+      // Người dùng đang hoạt động
+      userModel.countDocuments({ isActive: true }),
+      
+      // Người dùng không hoạt động
+      userModel.countDocuments({ isActive: false }),
+      
+      // Top 10 agents theo số lượng BDS
+      propertyModel.aggregate([
+        {
+          $group: {
+            _id: '$owner',
+            propertyCount: { $sum: 1 }
+          }
+        },
+        { $sort: { propertyCount: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        { $unwind: '$userInfo' },
+        { $match: { 'userInfo.role': 'agent' } },
+        {
+          $project: {
+            _id: 1,
+            propertyCount: 1,
+            fullName: '$userInfo.fullName',
+            email: '$userInfo.email',
+            avatar: '$userInfo.avatar',
+            companyName: '$userInfo.companyName'
+          }
+        }
+      ]),
+      
+      // Top 10 users theo hoạt động (views, searches)
+      userActivityModel.aggregate([
+        { $match: { userId: { $ne: null } } },
+        {
+          $group: {
+            _id: '$userId',
+            activityCount: { $sum: 1 }
+          }
+        },
+        { $sort: { activityCount: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        { $unwind: '$userInfo' },
+        {
+          $project: {
+            _id: 1,
+            activityCount: 1,
+            fullName: '$userInfo.fullName',
+            email: '$userInfo.email',
+            avatar: '$userInfo.avatar',
+            role: '$userInfo.role'
+          }
+        }
+      ]),
+      
+      // Phân bố users theo tỉnh/thành phố
+      userModel.aggregate([
+        {
+          $match: {
+            'address.province': { $exists: true, $ne: null, $ne: '' }
+          }
+        },
+        {
+          $group: {
+            _id: '$address.province',
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 15 },
+        {
+          $project: {
+            _id: 0,
+            city: '$_id',
+            count: 1
+          }
+        }
+      ]),
+      
+      // User growth data (last 30 days)
+      (async () => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const userGrowth = await userModel.aggregate([
+          { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+          {
+            $group: {
+              _id: {
+                date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+                role: '$role'
+              },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { '_id.date': 1 } }
+        ]);
+
+        // Organize by date with role breakdown
+        const dateMap = new Map();
+        userGrowth.forEach(item => {
+          const date = item._id.date;
+          if (!dateMap.has(date)) {
+            dateMap.set(date, { date, users: 0, agents: 0, admins: 0 });
+          }
+          const entry = dateMap.get(date);
+          if (item._id.role === 'user') entry.users = item.count;
+          if (item._id.role === 'agent') entry.agents = item.count;
+          if (item._id.role === 'admin') entry.admins = item.count;
+        });
+
+        return Array.from(dateMap.values()).sort((a, b) => 
+          new Date(a.date) - new Date(b.date)
+        );
+      })(),
+      
+      // Recent users (last 10)
+      userModel
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .select('-password -verifyToken')
+        .lean()
+    ]);
+
+    // User role distribution
+    const userRoleDistribution = [
+      { name: 'Users', value: totalRegularUsers },
+      { name: 'Agents', value: totalAgents },
+      { name: 'Admins', value: totalAdmins }
+    ];
+
+    // User status distribution
+    const userStatusDistribution = [
+      { name: 'Active', value: activeUsers },
+      { name: 'Inactive', value: inactiveUsers }
+    ];
+
+    res.status(StatusCodes.OK).json({
+      totalUsers,
+      totalRegularUsers,
+      totalAgents,
+      totalAdmins,
+      activeUsers,
+      inactiveUsers,
+      userRoleDistribution,
+      userStatusDistribution,
+      topAgentsByProperties,
+      topUsersByActivity,
+      usersByProvince,
+      userGrowthData,
+      recentUsers
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const adminController = {
   getDashboardStats,
   getAllProperties,
@@ -908,5 +1108,6 @@ export const adminController = {
   updateUserRole,
   toggleUserStatus,
   getTransactionStats,
-  getPropertyStats
+  getPropertyStats,
+  getUserStats
 };
