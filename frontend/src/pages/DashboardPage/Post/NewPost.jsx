@@ -34,7 +34,7 @@ import { MapsContext } from "@/components/common/GoogleMap/MapProvider";
 import MarkerLayer from "@/components/common/GoogleMap/MarkerLayer";
 import CustomSearchBox from "@/components/common/GoogleMap/SearchBox";
 import { selectCurrentUser } from "@/redux/user/userSlice";
-import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X, Trash2, Tag, Plus, Zap, Lock, Gift, Info } from "lucide-react";
+import { Building2, Car, Check, CookingPot, ShieldCheck, Sofa, Sparkles, X, Trash2, Tag, Plus, Zap, Lock, Gift, Info, AlertCircle, Phone } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { setupApiInterceptors } from "@/utils/authorizeAxios";
 import { useError } from "@/components/common/Error/ErrorContext";
@@ -215,7 +215,7 @@ export default function AddPropertyWizard() {
     const [phoneModalOpen, setPhoneModalOpen] = useState(true);
     const [phone, setPhone] = useState("");
     const [isSending, setIsSending] = useState(false);
-    const [isPhoneVerified, setIsPhoneVerified] = useState(true);
+    const [isPhoneVerified, setIsPhoneVerified] = useState(currentUser?.isPhoneVerified || false);
 
     // ----- Listing info (Step 1) -----
     const [visibility, setVisibility] = useState("public");
@@ -1929,28 +1929,74 @@ export default function AddPropertyWizard() {
                             </div>
 
                             {/* Phone Verification Modal */}
-                            <Dialog open={phoneModalOpen && !isPhoneVerified} onOpenChange={setPhoneModalOpen}>
-                                <DialogContent>
-                                    <DialogHeader><DialogTitle>Verify your phone</DialogTitle></DialogHeader>
-                                    <div className="space-y-4">
-                                        <Label htmlFor="phone">Phone number</Label>
-                                        <Input
-                                            id="phone"
-                                            placeholder="+84 912 345 678"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            We will send a verification SMS to this number.
+                            <Dialog open={phoneModalOpen && !isPhoneVerified} onOpenChange={(open) => {
+                            if (!open && !isPhoneVerified) {
+                                // Không cho đóng nếu chưa verify
+                                return;
+                            }
+                            setPhoneModalOpen(open);
+                            }}>
+                            <DialogContent className="sm:max-w-md" hideCloseButton>
+                                <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                                    Phone Verification Required
+                                </DialogTitle>
+                                <DialogDescription>
+                                    You need to verify your phone number before creating a property listing.
+                                </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-4 py-4">
+                                {currentUser?.phone ? (
+                                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <Phone className="h-5 w-5 text-amber-600 mt-0.5" />
+                                        <div className="flex-1">
+                                        <p className="text-sm font-medium text-amber-900">
+                                            Phone number not verified
                                         </p>
+                                        <p className="text-sm text-amber-700 mt-1">
+                                            Your phone number <span className="font-semibold">{currentUser.phone}</span> needs to be verified.
+                                        </p>
+                                        </div>
                                     </div>
-                                    <DialogFooter>
-                                        <Button variant="ghost" onClick={() => setPhoneModalOpen(false)}>Close</Button>
-                                        <Button onClick={sendSms} disabled={isSending}>
-                                            {isSending ? "Sending..." : "Send SMS"}
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                                        <div className="flex-1">
+                                        <p className="text-sm font-medium text-blue-900">
+                                            No phone number registered
+                                        </p>
+                                        <p className="text-sm text-blue-700 mt-1">
+                                            You need to add and verify a phone number in your profile.
+                                        </p>
+                                        </div>
+                                    </div>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col gap-2 pt-2">
+                                    <Button
+                                    onClick={() => navigate('/dashboard/account')}
+                                    className="w-full"
+                                    >
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                    Go to Profile to Verify
+                                    </Button>
+                                    
+                                    <Button
+                                    variant="ghost"
+                                    onClick={() => navigate('/dashboard/posts')}
+                                    className="w-full"
+                                    >
+                                    Cancel
+                                    </Button>
+                                </div>
+                                </div>
+                            </DialogContent>
                             </Dialog>
                         </div>
                     )}
@@ -2089,8 +2135,8 @@ export default function AddPropertyWizard() {
                                                         }`}>
                                                         {/* Icon badge */}
                                                         <div className={`w-14 h-14 rounded-lg flex items-center justify-center text-white ${selectedDuration.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0)
-                                                            ? 'bg-gradient-to-br from-green-500 to-green-600'
-                                                            : 'bg-gradient-to-br from-primary to-primary'
+                                                            ? "bg-gradient-to-br from-green-500 to-green-600"
+                                                            : "bg-gradient-to-br from-primary to-primary"
                                                             }`}>
                                                             <div className="text-center">
                                                                 {selectedDuration.price === 0 || (listingStatus?.activeMembership?.includedListings?.tierType === tierSelected.tierName && selectedDuration.days === 30 && listingStatus?.activeMembership?.includedListings?.remaining > 0) ? (
