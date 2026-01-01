@@ -681,7 +681,7 @@ const getPropertiesWithMap = async (query) => {
   pipeline.push({ $skip: skip })
   pipeline.push({ $limit: limitParam })
 
-  console.log("Final sort", sort)
+  console.log("Final sort Map", sort)
 
   const listPromise = Promise.all([
     propertyModel.aggregate(pipeline),
