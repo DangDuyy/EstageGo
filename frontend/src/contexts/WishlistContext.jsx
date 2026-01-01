@@ -53,18 +53,25 @@ export function WishlistProvider({ children }) {
       const response = await getWishlistAPI();
       
       // Transform backend data to match UI format
-      const transformedItems = (response.wishlist?.properties || []).map(property => ({
-        id: property._id,
-        property: {
+      const transformedItems = (response.wishlist?.properties || []).map(property => {
+        // Check if property is available (not hidden, draft, private, or deleted)
+        const isAvailable = property.status !== 'hidden' && property.status !== 'draft' && !property._destroy;
+        
+        return {
           id: property._id,
-          name: property.title,
-          title: property.title,
-          image: property.media?.[0]?.url || '/placeholder.jpg',
-          address: property.address?.fullAddress || `${property.address?.ward}, ${property.address?.district}, ${property.address?.province}`,
-          price: property.price?.value,
-          href: `/properties/${property._id}`
-        }
-      }));
+          status: property.status,
+          isAvailable,
+          property: {
+            id: property._id,
+            name: property.title,
+            title: property.title,
+            image: property.media?.[0]?.url || '/placeholder.jpg',
+            address: property.address?.fullAddress || `${property.address?.ward}, ${property.address?.district}, ${property.address?.province}`,
+            price: property.price?.value,
+            href: `/properties/${property._id}`
+          }
+        };
+      });
       
       setItems(transformedItems);
     } catch (error) {
@@ -86,18 +93,24 @@ export function WishlistProvider({ children }) {
       const response = await toggleWishlistAPI(propertyId);
       
       // Transform and update items
-      const transformedItems = (response.wishlist?.properties || []).map(property => ({
-        id: property._id,
-        property: {
+      const transformedItems = (response.wishlist?.properties || []).map(property => {
+        const isAvailable = property.status !== 'hidden' && property.status !== 'draft' && !property._destroy;
+        
+        return {
           id: property._id,
-          name: property.title,
-          title: property.title,
-          image: property.media?.[0]?.url || '/placeholder.jpg',
-          address: property.address?.fullAddress || `${property.address?.ward}, ${property.address?.district}, ${property.address?.province}`,
-          price: property.price?.value,
-          href: `/properties/${property._id}`
-        }
-      }));
+          status: property.status,
+          isAvailable,
+          property: {
+            id: property._id,
+            name: property.title,
+            title: property.title,
+            image: property.media?.[0]?.url || '/placeholder.jpg',
+            address: property.address?.fullAddress || `${property.address?.ward}, ${property.address?.district}, ${property.address?.province}`,
+            price: property.price?.value,
+            href: `/properties/${property._id}`
+          }
+        };
+      });
       
       setItems(transformedItems);
       

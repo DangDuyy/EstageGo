@@ -55,14 +55,30 @@ export default function WishlistSidebar() {
             </div>
           ) : (
             items.map((item) => (
-              <Card key={item.id} className="p-4 hover:bg-muted/30 transition-colors">
+              <Card 
+                key={item.id} 
+                className={`p-4 hover:bg-muted/30 transition-colors ${
+                  !item.isAvailable ? 'opacity-60 bg-muted/50' : ''
+                }`}
+              >
                 <div className="flex gap-4">
                   {/* Image */}
-                  <img
-                    src={item.property.image}
-                    alt={item.property.name || item.property.title}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
+                  <div className="relative">
+                    <img
+                      src={item.property.image}
+                      alt={item.property.name || item.property.title}
+                      className={`w-20 h-20 object-cover rounded-lg ${
+                        !item.isAvailable ? 'grayscale' : ''
+                      }`}
+                    />
+                    {!item.isAvailable && (
+                      <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+                        <span className="text-[10px] font-semibold text-white text-center px-1">
+                          {item.status === 'draft' ? 'Draft' : 'Hidden'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
@@ -72,8 +88,13 @@ export default function WishlistSidebar() {
                     {item.property.address && (
                       <p className="text-xs text-muted-foreground mt-1">{item.property.address}</p>
                     )}
+                    {!item.isAvailable && (
+                      <p className="text-xs text-red-600 font-semibold mt-1">Unavailable</p>
+                    )}
                     {item.property.price != null && (
-                      <p className="text-sm font-semibold mt-2 text-price">
+                      <p className={`text-sm font-semibold mt-2 ${
+                        item.isAvailable ? 'text-price' : 'text-gray-400'
+                      }`}>
                         ${Number(item.property.price).toLocaleString()}
                       </p>
                     )}
@@ -81,7 +102,12 @@ export default function WishlistSidebar() {
                     {/* Actions */}
                     <div className="mt-3 flex items-center gap-2">
                       {item.property.href && (
-                        <Button asChild size="sm" variant="outline">
+                        <Button 
+                          asChild 
+                          size="sm" 
+                          variant="outline"
+                          disabled={!item.isAvailable}
+                        >
                           <a href={item.property.href}>View Detail</a>
                         </Button>
                       )}

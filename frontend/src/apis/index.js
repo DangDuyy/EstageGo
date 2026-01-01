@@ -813,6 +813,12 @@ export const boostPropertyAPI = async (propertyId, useCredits = false, durationH
   return response.data
 }
 
+// Get property statistics (views, contacts, shares, likes)
+export const getPropertyStatisticsAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}/statistics`)
+  return response.data
+}
+
 // Boost multiple properties
 export const boostMultiplePropertiesAPI = async (propertyIds) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/boost/batch`, {

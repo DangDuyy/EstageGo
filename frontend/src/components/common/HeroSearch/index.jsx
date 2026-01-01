@@ -390,7 +390,7 @@ export default function HeroSearch({
                   <Input
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
-                    placeholder="Search keyword..."
+                    placeholder="Search"
                     className="h-7 rounded-lg border-0 bg-transparent px-0 text-sm focus-visible:ring-0"
                   />
                 </div>

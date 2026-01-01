@@ -56,17 +56,31 @@ export default function Wishlist() {
         {/* Properties Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item) => (
-            <Card key={item.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+            <Card 
+              key={item.id} 
+              className={`overflow-hidden group hover:shadow-lg transition-shadow ${
+                !item.isAvailable ? 'opacity-50' : ''
+              }`}
+            >
               <div className="relative">
                 <img
                   src={item.property.image}
                   alt={item.property.name}
-                  className="w-full h-48 object-cover"
+                  className={`w-full h-48 object-cover ${
+                    !item.isAvailable ? 'grayscale' : ''
+                  }`}
                 />
                 <Badge className="absolute top-3 left-3 bg-blue-600">
                   <Heart className="h-3 w-3 mr-1 fill-white" />
                   Saved
                 </Badge>
+                {!item.isAvailable && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <Badge className="bg-red-600 text-white text-xs font-semibold">
+                      {item.status === 'draft' ? 'Draft' : item.status === 'hidden' ? 'Hidden' : 'Unavailable'}
+                    </Badge>
+                  </div>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"
@@ -88,14 +102,26 @@ export default function Wishlist() {
                   </p>
                 )}
 
+                {!item.isAvailable && (
+                  <p className="text-sm text-red-600 font-semibold mb-3">
+                    Property no longer available
+                  </p>
+                )}
+
                 {item.property.price != null && (
-                  <p className="text-xl font-bold text-blue-600 mb-4">
+                  <p className={`text-xl font-bold mb-4 ${
+                    item.isAvailable ? 'text-blue-600' : 'text-gray-400'
+                  }`}>
                     ${Number(item.property.price).toLocaleString()}
                   </p>
                 )}
 
                 <div className="flex gap-2">
-                  <Button asChild className="flex-1">
+                  <Button 
+                    asChild 
+                    className="flex-1"
+                    disabled={!item.isAvailable}
+                  >
                     <Link to={item.property.href}>
                       <ExternalLink className="h-4 w-4 mr-2" />
                       View Details

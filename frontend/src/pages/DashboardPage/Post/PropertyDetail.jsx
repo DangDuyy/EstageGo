@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCurrentUser, updateUser } from "@/redux/user/userSlice";
 import { ContentLayout } from "@/components/common/SidebarMenu/content-layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,10 +25,8 @@ import {
   Clock,
   DollarSign
 } from "lucide-react";
-import { useSelector } from "react-redux";
-import { selectCurrentUser } from "@/redux/user/userSlice";
 import { toast } from "react-toastify";
-import { boostPropertyAPI } from "@/apis";
+import { boostPropertyAPI, getPropertyStatisticsAPI } from "@/apis";
 import authorizeAxiosInstance from "@/utils/authorizeAxios";
 import { API_ROOT } from "@/utils/constants";
 import {
@@ -43,6 +43,7 @@ import {
 export default function PropertyDetail() {
   const { propertyId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const currentUser = useSelector(selectCurrentUser);
   
   const [property, setProperty] = useState(null);
@@ -50,12 +51,24 @@ export default function PropertyDetail() {
   const [boostDialogOpen, setBoostDialogOpen] = useState(false);
   const [boosting, setBoosting] = useState(false);
   const [boostHours, setBoostHours] = useState(48);
+  const [statistics, setStatistics] = useState({ views: 0, contacts: 0, shares: 0, likes: 0 });
 
   useEffect(() => {
     const fetchProperty = async () => {
       try {
         const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}`);
         setProperty(response.data?.data || response.data || null);
+        
+        // Fetch statistics
+        try {
+          const statsResponse = await getPropertyStatisticsAPI(propertyId);
+          if (statsResponse.success && statsResponse.data) {
+            setStatistics(statsResponse.data);
+          }
+        } catch (statsError) {
+          console.error('Failed to fetch statistics:', statsError);
+          // Keep default statistics if fetch fails
+        }
       } catch (error) {
         console.error('Failed to fetch property:', error);
         toast.error('Failed to load property details');
@@ -73,6 +86,11 @@ export default function PropertyDetail() {
       currency: currency || 'USD',
       maximumFractionDigits: 0
     }).format(value);
+  };
+
+  const getBoostCreditsNeeded = (durationHours = 24) => {
+    // 1 credit = 24h, so 24h=1, 48h=2, 72h=3
+    return Math.ceil(durationHours / 24);
   };
 
   const getBoostPrice = (durationHours = 24) => {
@@ -110,7 +128,7 @@ export default function PropertyDetail() {
     const days = Math.floor(totalMinutes / (60 * 24));
     const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
     const minutes = totalMinutes % 60;
-    if (days > 0) return `${days}d ${hours}h`;
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
   };
@@ -145,15 +163,23 @@ export default function PropertyDetail() {
   const handleConfirmBoost = async () => {
     try {
       setBoosting(true);
-      const creditsNeeded = Math.max(1, Math.ceil((boostHours || 24) / 24));
+      const creditsNeeded = getBoostCreditsNeeded(boostHours);
       const useCredits = (currentUser?.boostCredits || 0) >= creditsNeeded;
+      
       await boostPropertyAPI(propertyId, useCredits, boostHours);
       
+      // Update property details
       const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}`);
       setProperty(response.data?.data || response.data || null);
       
+      // Deduct credits from user if they were used
+      if (useCredits) {
+        const updatedCredits = (currentUser?.boostCredits || 0) - creditsNeeded;
+        dispatch(updateUser({ boostCredits: updatedCredits }));
+      }
+      
       setBoostDialogOpen(false);
-      toast.success(`Property boosted successfully for ${boostHours} hours!`);
+      toast.success(`Property boosted successfully for ${boostHours} hours! ${useCredits ? `(${creditsNeeded} credit${creditsNeeded > 1 ? 's' : ''} used)` : ''}`);
     } catch (error) {
       console.error('Boost error:', error);
       if (error.response?.status === 402) {
@@ -200,19 +226,6 @@ export default function PropertyDetail() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to list
           </Button>
-          
-          {isOwner && (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -425,13 +438,13 @@ export default function PropertyDetail() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-medium">Boost Fee:</span>
                         <span className="text-lg font-bold text-orange-600">
-                          {(currentUser?.boostCredits || 0) >= Math.max(1, Math.ceil((boostHours || 24)/24)) ? (
+                          {(currentUser?.boostCredits || 0) >= getBoostCreditsNeeded(boostHours) ? (
                             <span className="flex items-center gap-1">
                               <Zap className="h-4 w-4" />
-                              {Math.max(1, Math.ceil((boostHours || 24)/24))} credits
+                              {getBoostCreditsNeeded(boostHours)} credit{getBoostCreditsNeeded(boostHours) > 1 ? 's' : ''}
                             </span>
                           ) : (
-                            formatPrice(getBoostPrice(), 'USD')
+                            formatPrice(getBoostPrice(boostHours), 'USD')
                           )}
                         </span>
                       </div>
@@ -469,21 +482,21 @@ export default function PropertyDetail() {
                       <Eye className="h-4 w-4" />
                       Views
                     </div>
-                    <span className="font-semibold">0</span>
+                    <span className="font-semibold">{statistics.views}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Heart className="h-4 w-4" />
                       Likes
                     </div>
-                    <span className="font-semibold">0</span>
+                    <span className="font-semibold">{statistics.likes}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Share2 className="h-4 w-4" />
                       Shares
                     </div>
-                    <span className="font-semibold">0</span>
+                    <span className="font-semibold">{statistics.shares}</span>
                   </div>
                   
                   <Separator />
@@ -519,26 +532,6 @@ export default function PropertyDetail() {
                       {formatPrice(property.listingFee || 0, 'USD')}
                     </span>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <Eye className="mr-2 h-4 w-4" />
-                    View on Home Page
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share Listing
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Detailed Report
-                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -586,25 +579,33 @@ export default function PropertyDetail() {
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Select {isBoostActive() ? 'extension' : 'boost'} duration:</div>
                     <div className="grid grid-cols-3 gap-2">
-                      {[24, 48, 72].map(h => (
-                        <button
-                          key={h}
-                          type="button"
-                          onClick={() => setBoostHours(h)}
-                          className={`p-3 rounded-lg border-2 transition-all ${
-                            boostHours === h
-                              ? 'border-orange-500 bg-orange-50 shadow-sm'
-                              : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="font-bold text-foreground">{h}h</div>
-                          {!(currentUser?.boostCredits >= Math.max(1, Math.ceil(h/24))) && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {formatPrice(getBoostPrice(h), 'USD')}
+                      {[24, 48, 72].map(h => {
+                        const creditsNeeded = getBoostCreditsNeeded(h);
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            onClick={() => setBoostHours(h)}
+                            className={`p-3 rounded-lg border-2 transition-all ${
+                              boostHours === h
+                                ? 'border-orange-500 bg-orange-50 shadow-sm'
+                                : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="font-bold text-foreground">{h}h</div>
+                            <div className={`text-xs mt-1 ${
+                              (currentUser?.boostCredits || 0) >= creditsNeeded
+                                ? 'text-purple-600 font-medium'
+                                : 'text-muted-foreground'
+                            }`}>
+                              {(currentUser?.boostCredits || 0) >= creditsNeeded
+                                ? `${creditsNeeded} credit${creditsNeeded > 1 ? 's' : ''}`
+                                : formatPrice(getBoostPrice(h), 'USD')
+                              }
                             </div>
-                          )}
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -622,15 +623,15 @@ export default function PropertyDetail() {
                     </div>
                   )}
 
-                  {(currentUser?.boostCredits || 0) >= Math.max(1, Math.ceil((boostHours || 24)/24)) ? (
+                  {(currentUser?.boostCredits || 0) >= getBoostCreditsNeeded(boostHours) ? (
                     <div className="bg-purple-50 p-3 rounded-lg space-y-1">
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">Using:</span>
-                        <span className="font-semibold text-purple-600">{Math.max(1, Math.ceil((boostHours || 24)/24))} Boost Credits</span>
+                        <span className="font-semibold text-purple-600">{getBoostCreditsNeeded(boostHours)} Boost Credit{getBoostCreditsNeeded(boostHours) > 1 ? 's' : ''}</span>
                       </div>
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Credits remaining:</span>
-                        <span>{currentUser.boostCredits - Math.max(1, Math.ceil((boostHours || 24)/24))}</span>
+                        <span>{(currentUser?.boostCredits || 0) - getBoostCreditsNeeded(boostHours)}</span>
                       </div>
                     </div>
                   ) : (

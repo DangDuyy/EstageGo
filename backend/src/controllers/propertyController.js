@@ -1929,6 +1929,40 @@ const testNotificationToUser = async (req, res, next) => {
     }
 }
 
+// Get property statistics (views, contacts, shares, wishlist count)
+const getPropertyStatistics = async (req, res, next) => {
+    try {
+        const { propertyId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(propertyId)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: 'Invalid property ID'
+            });
+        }
+
+        // Count different activity types from UserActivity collection
+        const [viewCount, contactCount, shareCount, wishlistCount] = await Promise.all([
+            userActivityModel.countDocuments({ propertyId, eventType: 'VIEW' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'CONTACT' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'SHARE' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'WISHLIST_ADD' })
+        ]);
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            data: {
+                views: viewCount,
+                contacts: contactCount,
+                shares: shareCount,
+                likes: wishlistCount // Using wishlist count as "likes"
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export const propertyController = {
     createProperty,
     generateTitleDescription,
@@ -1955,5 +1989,6 @@ export const propertyController = {
     updatePropertyVisibility,
     getPropertiesGroupedByProvince,
     deleteProperty,
-    testNotificationToUser
+    testNotificationToUser,
+    getPropertyStatistics
 }

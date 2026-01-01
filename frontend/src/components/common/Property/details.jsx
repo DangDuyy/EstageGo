@@ -172,6 +172,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const [startingChat, setStartingChat] = React.useState(false)
   const [similarProperties, setSimilarProperties] = React.useState([])
   const [loadingSimilar, setLoadingSimilar] = React.useState(true)
+  const [shareMenuOpen, setShareMenuOpen] = React.useState(false)
+  const [qrOpen, setQrOpen] = React.useState(false)
 
   const isLoggedIn = Boolean(currentUser?._id)
 
@@ -233,6 +235,39 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     }
     toast.success('Your request has been submitted');
   };
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('Đã sao chép liên kết')
+      setShareMenuOpen(false)
+      
+      // Track SHARE activity
+      if (propertyId && currentUser?._id) {
+        trackActivityAPI('SHARE', propertyId, {
+          timestamp: new Date().toISOString(),
+          method: 'copy_link'
+        });
+      }
+    } catch (error) {
+      toast.error('Không thể sao chép liên kết')
+    }
+  }
+
+  const handleGenerateQR = () => {
+    setQrOpen(true)
+    setShareMenuOpen(false)
+    
+    // Track SHARE activity
+    if (propertyId && currentUser?._id) {
+      trackActivityAPI('SHARE', propertyId, {
+        timestamp: new Date().toISOString(),
+        method: 'qr_code'
+      });
+    }
+  }
 
   const [showFullDesc, setShowFullDesc] = React.useState(false);
   const descriptionParas = React.useMemo(() => {
@@ -349,6 +384,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
     );
   }
 
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(shareUrl)}`
+
   const bedrooms = property.rooms?.bedrooms;
   const bathrooms = property.rooms?.bathrooms;
   const area = property.area;
@@ -379,7 +416,14 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
       <div className="container mx-auto px-4 lg:px-8 xl:px-12">
         <div className="flex flex-col gap-4 py-6 md:flex-col md:justify-between">
           <div className="flex justify-between">
-            <h1 className="text-4xl font-bold tracking-tight">{property.title}</h1>
+            <h1
+              className={cn(
+                "text-4xl font-bold tracking-tight",
+                (property.status === 'sold' || property.status === 'rented') && "text-red-600"
+              )}
+            >
+              {`${property.title} ${property.status === 'sold' ? '(đã bán)' : property.status === 'rented' ? '(đã cho thuê)' : ''}`.trim()}
+            </h1>
             <PriceTag
               value={property.price?.value}
               currency={property.price?.currency}
@@ -438,9 +482,36 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                 <GitCompare className="h-5 w-5" />
               </button>
 
-              <button type="button" title="Share" aria-label="Share" className="rounded-full p-2 hover:bg-muted transition">
-                <Share className="h-5 w-5" />
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  title="Share"
+                  aria-label="Share"
+                  className="rounded-full p-2 hover:bg-muted transition"
+                  onClick={() => setShareMenuOpen((v) => !v)}
+                >
+                  <Share className="h-5 w-5" />
+                </button>
+
+                {shareMenuOpen && (
+                  <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border bg-card shadow-lg">
+                    <button
+                      type="button"
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-muted"
+                      onClick={handleCopyLink}
+                    >
+                      Copy URL
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-muted border-t"
+                      onClick={handleGenerateQR}
+                    >
+                      Generate QR Code
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <button type="button" title="Print" aria-label="Print" className="rounded-full p-2 hover:bg-muted transition">
                 <Printer className="h-5 w-5" />
@@ -656,6 +727,32 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Share QR modal */}
+      {qrOpen && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Mã QR chia sẻ</h3>
+              <button
+                type="button"
+                className="rounded-md p-2 hover:bg-muted"
+                onClick={() => setQrOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-4">
+              <img src={qrImg} alt="QR" className="h-48 w-48 rounded-lg border bg-white p-2" />
+              <p className="text-sm text-center text-muted-foreground break-words">{shareUrl}</p>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={handleCopyLink}>Sao chép liên kết</Button>
+                <Button onClick={() => setQrOpen(false)}>Đóng</Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

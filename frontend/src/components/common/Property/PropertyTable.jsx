@@ -36,7 +36,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { selectCurrentUser } from "@/redux/user/userSlice"
+import { selectCurrentUser, updateUser } from "@/redux/user/userSlice"
 import {
     flexRender,
     getCoreRowModel,
@@ -57,7 +57,7 @@ import {
     Zap
 } from "lucide-react"
 import { useState } from "react"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 
@@ -70,6 +70,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     const [boosting, setBoosting] = useState(false)
     const [deletedIds, setDeletedIds] = useState(new Set())
     const navigate = useNavigate()
+    const dispatch = useDispatch()
     const currentUser = useSelector(selectCurrentUser)
 
     const formatPrice = (value, currency) => {
@@ -79,6 +80,11 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             currency: currency || 'VND',
             maximumFractionDigits: 0
         }).format(value)
+    }
+
+    const getBoostCreditsNeeded = (durationHours = 24) => {
+        // 1 credit = 24h, so 24h=1, 48h=2, 72h=3
+        return Math.ceil(durationHours / 24)
     }
 
     const getBoostPrice = (durationHours = 24) => {
@@ -105,12 +111,19 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
 
         try {
             setBoosting(true)
-            const useCredits = currentUser?.boostCredits > 0
+            const creditsNeeded = getBoostCreditsNeeded(selectedDuration)
+            const useCredits = (currentUser?.boostCredits || 0) >= creditsNeeded
             await boostPropertyAPI(selectedProperty._id, useCredits, selectedDuration)
+            
+            // Deduct credits from user if they were used
+            if (useCredits) {
+                const updatedCredits = (currentUser?.boostCredits || 0) - creditsNeeded
+                dispatch(updateUser({ boostCredits: updatedCredits }))
+            }
             
             setBoostDialogOpen(false)
             setSelectedProperty(null)
-            toast.success(`Property boosted for ${selectedDuration} hours successfully!`)
+            toast.success(`Property boosted for ${selectedDuration} hours successfully! ${useCredits ? `(${creditsNeeded} credit${creditsNeeded > 1 ? 's' : ''} used)` : ''}`)
 
             // Reload data after boost (A more robust solution might be to update the local state)
             setTimeout(() => {
@@ -155,7 +168,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
         const days = Math.floor(totalMinutes / (60 * 24))
         const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
         const minutes = totalMinutes % 60
-        if (days > 0) return `${days}d ${hours}h`
+        if (days > 0) return `${days}d ${hours}h ${minutes}m`
         if (hours > 0) return `${hours}h ${minutes}m`
         return `${minutes}m`
     }
@@ -657,13 +670,13 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                 <div className="space-y-3 text-sm">
                                     <p className="text-foreground">
                                         {isBoostActive(selectedProperty) 
-                                            ? 'Tin này đang được boost. Chọn thời gian để đẩy thêm:'
-                                            : 'Chọn thời gian đẩy tin để tăng độ hiển thị:'}
+                                            ? 'This listing is currently boosted. Select duration to extend:'
+                                            : 'Are you sure you want to boost this listing to the top?'}
                                     </p>
                                     
                                     {selectedProperty.bumpedAt && (
                                         <div className="flex items-center justify-between text-xs bg-blue-50 p-2 rounded">
-                                            <span className="text-muted-foreground">Lần đẩy gần nhất:</span>
+                                            <span className="text-muted-foreground">Last Boost:</span>
                                             <span className="font-medium text-foreground">
                                                 {getTimeSinceBoost(selectedProperty.bumpedAt)}
                                             </span>
@@ -672,7 +685,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
 
                                     {isBoostActive(selectedProperty) && (
                                         <div className="flex items-center justify-between text-xs bg-green-50 p-2 rounded">
-                                            <span className="text-muted-foreground">Thời gian còn lại:</span>
+                                            <span className="text-muted-foreground">Remaining Time:</span>
                                             <span className="font-semibold text-green-600">
                                                 {getTimeRemaining(selectedProperty.boostExpiresAt)}
                                             </span>
@@ -681,52 +694,57 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
 
                                     {/* Duration Selection */}
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Chọn thời gian:</label>
+                                        <label className="text-sm font-medium text-foreground">Select {isBoostActive(selectedProperty) ? 'extension' : 'boost'} duration:</label>
                                         <div className="grid grid-cols-3 gap-2">
-                                            {[24, 48, 72].map((hours) => (
-                                                <button
-                                                    key={hours}
-                                                    type="button"
-                                                    onClick={() => setSelectedDuration(hours)}
-                                                    className={`p-3 rounded-lg border-2 transition-all ${
-                                                        selectedDuration === hours
-                                                            ? 'border-orange-500 bg-orange-50 shadow-sm'
-                                                            : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
-                                                    }`}
-                                                >
-                                                    <div className="font-bold text-foreground">{hours}h</div>
-                                                    {!currentUser?.boostCredits && (
-                                                        <div className="text-xs text-muted-foreground mt-1">
-                                                            {formatPrice(getBoostPrice(hours), 'VND')}
+                                            {[24, 48, 72].map((hours) => {
+                                                const creditsNeeded = getBoostCreditsNeeded(hours)
+                                                return (
+                                                    <button
+                                                        key={hours}
+                                                        type="button"
+                                                        onClick={() => setSelectedDuration(hours)}
+                                                        className={`p-3 rounded-lg border-2 transition-all ${
+                                                            selectedDuration === hours
+                                                                ? 'border-orange-500 bg-orange-50 shadow-sm'
+                                                                : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <div className="font-bold text-foreground">{hours}h</div>
+                                                        <div className={`text-xs mt-1 ${
+                                                            (currentUser?.boostCredits || 0) >= creditsNeeded
+                                                                ? 'text-purple-600 font-medium'
+                                                                : 'text-muted-foreground'
+                                                        }`}>
+                                                            {(currentUser?.boostCredits || 0) >= creditsNeeded
+                                                                ? `${creditsNeeded} credit${creditsNeeded > 1 ? 's' : ''}`
+                                                                : formatPrice(getBoostPrice(hours), 'VND')
+                                                            }
                                                         </div>
-                                                    )}
-                                                </button>
-                                            ))}
+                                                    </button>
+                                                )
+                                            })}
                                         </div>
                                     </div>
 
                                     <div className="pt-2 border-t space-y-2">
-                                        {currentUser?.boostCredits > 0 ? (
+                                        {(currentUser?.boostCredits || 0) >= getBoostCreditsNeeded(selectedDuration) ? (
                                             <div className="space-y-1 bg-purple-50 p-3 rounded-lg">
                                                 <div className="flex justify-between text-foreground">
-                                                    <span className="font-medium">Sử dụng Boost Credit:</span>
-                                                    <span className="font-semibold">1 credit</span>
+                                                    <span className="font-medium">Using:</span>
+                                                    <span className="font-semibold text-purple-600">{getBoostCreditsNeeded(selectedDuration)} Boost Credit{getBoostCreditsNeeded(selectedDuration) > 1 ? 's' : ''}</span>
                                                 </div>
                                                 <div className="flex justify-between text-xs">
-                                                    <span>Credits còn lại:</span>
-                                                    <span className="font-medium">{currentUser.boostCredits - 1}</span>
-                                                </div>
-                                                <div className="text-xs text-muted-foreground mt-1">
-                                                    (Áp dụng cho {selectedDuration}h)
+                                                    <span>Credits remaining:</span>
+                                                    <span className="font-medium">{(currentUser?.boostCredits || 0) - getBoostCreditsNeeded(selectedDuration)}</span>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="flex justify-between text-foreground bg-orange-50 p-3 rounded-lg">
                                                 <div>
-                                                    <div className="font-medium">Phí đẩy tin ({selectedDuration}h):</div>
+                                                    <div className="font-medium">Boost Fee ({selectedDuration}h):</div>
                                                     {selectedDuration > 24 && (
                                                         <div className="text-xs text-green-600 mt-1">
-                                                            Tiết kiệm {Math.round(((getBoostPrice(24) * (selectedDuration/24)) - getBoostPrice(selectedDuration)) / 1000)}k!
+                                                            Save {Math.round(((getBoostPrice(24) * (selectedDuration/24)) - getBoostPrice(selectedDuration)) / 1000)}k!
                                                         </div>
                                                     )}
                                                 </div>
@@ -737,7 +755,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                         )}
                                         {isBoostActive(selectedProperty) && (
                                             <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                                                ℹ️ Thời gian sẽ được cộng thêm vào thời gian boost hiện tại
+                                                ℹ️ Duration will be extended by {selectedDuration}h
                                             </div>
                                         )}
                                     </div>
@@ -756,12 +774,12 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                         {boosting ? (
                             <>
                                 <Zap className="mr-2 h-4 w-4 animate-pulse" />
-                                Đang đẩy...
+                                Boosting...
                             </>
                         ) : (
                             <>
                                 <Zap className="mr-2 h-4 w-4" />
-                                Xác nhận đẩy {selectedDuration}h
+                                {isBoostActive(selectedProperty) ? `Add ${selectedDuration}h` : `Confirm ${selectedDuration}h Boost`}
                             </>
                         )}
                     </AlertDialogAction>
