@@ -32,7 +32,7 @@ export const SocketManager = () => {
       const socket = getSocket()
       
       if (!socket || !socket.connected) {
-        connectSocket(accessToken)
+        connectSocket(accessToken, currentUser._id)
       }
     } else {
       // Disconnect socket when user logs out

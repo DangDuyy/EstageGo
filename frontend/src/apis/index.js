@@ -94,6 +94,11 @@ export const verifyPropertyDocumentsAPI = async (formData) => {
   return response.data
 }
 
+export const deletePropertyAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}`)
+  return response.data
+}
+
 // ==================== GoogleMap ============================
 export const geocodeAddress = async (addr) => {
   // const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addr)}&key=${import.meta.env.VITE_GOOGLE_MAP_API_KEY}`
@@ -803,6 +808,12 @@ export const boostPropertyAPI = async (propertyId, useCredits = false, durationH
   if (durationHours) payload.durationHours = durationHours
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/properties/${propertyId}/boost`, payload)
   toast.success('Property boosted successfully!')
+  return response.data
+}
+
+// Get property statistics (views, contacts, shares, likes)
+export const getPropertyStatisticsAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}/statistics`)
   return response.data
 }
 

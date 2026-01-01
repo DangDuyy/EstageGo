@@ -1,67 +1,40 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Twitter, Dribbble, Twitch, Instagram, Linkedin } from "lucide-react";
-
-const teamMembers = [
-  {
-    name: "John Doe",
-    title: "Founder & CEO",
-    bio: "Former co-founder of Opendoor. Early staff at Spotify and Clearbit.",
-    imageUrl:
-      "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "Jane Doe",
-    title: "Engineering Manager",
-    bio: "Lead engineering teams at Figma, Pitch, and Protocol Labs.",
-    imageUrl:
-      "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "Bob Smith",
-    title: "Product Manager",
-    bio: "Former PM for Linear, Lambda School, and On Deck.",
-    imageUrl:
-      "https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "Peter Johnson",
-    title: "Frontend Developer",
-    bio: "Former frontend dev for Linear, Coinbase, and Postscript.",
-    imageUrl:
-      "https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "David Lee",
-    title: "Backend Developer",
-    bio: "Lead backend dev at Clearbit. Former Clearbit and Loom.",
-    imageUrl:
-      "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "Sarah Williams",
-    title: "Product Designer",
-    bio: "Founding design team at Figma. Former Pleo, Stripe, and Tile.",
-    imageUrl:
-      "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "Michael Brown",
-    title: "UX Researcher",
-    bio: "Lead user research for Slack. Contractor for Netflix and Udacity.",
-    imageUrl:
-      "https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-  {
-    name: "Elizabeth Johnson",
-    title: "Customer Success",
-    bio: "Lead CX at Wealthsimple. Former PagerDuty and Sqreen.",
-    imageUrl:
-      "https://images.pexels.com/photos/2613260/pexels-photo-2613260.jpeg?auto=compress&cs=tinysrgb&w=600",
-  },
-];
+import { Twitter, Instagram, Linkedin } from "lucide-react";
+import { getAllAgentsAPI } from "@/apis";
 
 function AgentForm() {
+  const navigate = useNavigate();
+  const [agents, setAgents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getAllAgentsAPI('', 1, 100); // Fetch up to 100 agents
+        // Map user data to match our display structure
+        const mappedAgents = (response?.agents || response?.data || []).map((user) => ({
+          id: user._id,
+          name: user.fullName || "Agent",
+          title: user.role || "Real Estate Agent",
+          bio: user.bio || "Experienced real estate professional",
+          imageUrl: user.avatar || "https://images.pexels.com/photos/3785079/pexels-photo-3785079.jpeg?auto=compress&cs=tinysrgb&w=600",
+          email: user.email,
+          phone: user.phone,
+        }));
+        setAgents(mappedAgents);
+      } catch (error) {
+        console.error("Error loading agents:", error);
+        setAgents([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAgents();
+  }, []);
   return (
     <div className="flex flex-col justify-center sm:py-12 px-6 lg:px-8 max-w-screen-xl mx-auto gap-16">
       <div className="text-center max-w-2xl mx-auto">
@@ -84,53 +57,67 @@ function AgentForm() {
       </div>
 
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-12">
-        {teamMembers.map((member) => (
-          <div key={member.name}>
-            <img
-              src={member.imageUrl}
-              alt={member.name}
-              width={600}
-              height={600}
-              className="w-full aspect-square rounded-lg object-cover bg-secondary"
-              loading="lazy"
-            />
-            <h3 className="mt-4 text-lg font-semibold">{member.name}</h3>
-            <p className="text-muted-foreground text-sm">{member.title}</p>
-            <p className="mt-3">{member.bio}</p>
-
-            <div className="mt-4 flex items-center gap-2.5">
-              <Button
-                className="bg-accent hover:bg-accent text-muted-foreground shadow-none"
-                size="icon"
-                asChild
-              >
-                <a href="#" target="_blank" rel="noreferrer noopener" aria-label="Twitter">
-                  <Twitter className="stroke-muted-foreground" />
-                </a>
-              </Button>
-
-              <Button
-                className="bg-muted hover:bg-muted text-muted-foreground shadow-none"
-                size="icon"
-                asChild
-              >
-                <a href="#" target="_blank" rel="noreferrer noopener" aria-label="Dribbble">
-                  <Instagram className="stroke-muted-foreground" />
-                </a>
-              </Button>
-
-              <Button
-                className="bg-muted hover:bg-muted text-muted-foreground shadow-none"
-                size="icon"
-                asChild
-              >
-                <a href="#" target="_blank" rel="noreferrer noopener" aria-label="Twitch">
-                  <Linkedin className="stroke-muted-foreground" />
-                </a>
-              </Button>
-            </div>
+        {isLoading ? (
+          <div className="col-span-full text-center py-12">
+            <p className="text-muted-foreground">Loading agents...</p>
           </div>
-        ))}
+        ) : agents.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <p className="text-muted-foreground">No agents available</p>
+          </div>
+        ) : (
+          agents.map((member) => (
+            <div key={member.id} className="cursor-pointer" onClick={() => navigate(`/agents/${member.id}`)}>
+              <img
+                src={member.imageUrl}
+                alt={member.name}
+                width={600}
+                height={600}
+                className="w-full aspect-square rounded-lg object-cover bg-secondary"
+                loading="lazy"
+              />
+              <h3 className="mt-4 text-lg font-semibold">{member.name}</h3>
+              <p className="text-muted-foreground text-sm">{member.title.toUpperCase()}</p>
+              <p className="mt-3">{member.bio}</p>
+
+              <div className="mt-4 flex items-center gap-2.5">
+                {member.email && (
+                  <Button
+                    className="bg-accent hover:bg-accent text-muted-foreground shadow-none"
+                    size="icon"
+                    asChild
+                  >
+                    <a href={`mailto:${member.email}`} aria-label="Email">
+                      <Twitter className="stroke-muted-foreground" />
+                    </a>
+                  </Button>
+                )}
+
+                {member.phone && (
+                  <Button
+                    className="bg-muted hover:bg-muted text-muted-foreground shadow-none"
+                    size="icon"
+                    asChild
+                  >
+                    <a href={`tel:${member.phone}`} aria-label="Phone">
+                      <Instagram className="stroke-muted-foreground" />
+                    </a>
+                  </Button>
+                )}
+
+                <Button
+                  className="bg-muted hover:bg-muted text-muted-foreground shadow-none"
+                  size="icon"
+                  asChild
+                >
+                  <a href="#" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
+                    <Linkedin className="stroke-muted-foreground" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

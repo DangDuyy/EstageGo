@@ -16,7 +16,7 @@ const userActivitySchema = new mongoose.Schema({
   },
   eventType: {
     type: String,
-    enum: ['VIEW', 'SEARCH', 'FILTER', 'WISHLIST_ADD', 'WISHLIST_REMOVE', 'CONTACT', 'CLICK'],
+    enum: ['VIEW', 'SEARCH', 'FILTER', 'WISHLIST_ADD', 'WISHLIST_REMOVE', 'CONTACT', 'CLICK', 'SHARE'],
     required: true,
     index: true
   },

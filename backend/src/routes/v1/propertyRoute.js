@@ -43,6 +43,10 @@ router.route('/:id')
   .put(authMiddleware.isAuthorized, uploadFiles, propertyController.updateProperty) // Add uploadFiles middleware
   .delete(authMiddleware.isAuthorized, propertyController.deleteProperty)
 
+// Property statistics
+router.route('/:propertyId/statistics')
+  .get(authMiddleware.isAuthorized, propertyController.getPropertyStatistics)
+
 // Boost routes
 router.route('/:id/boost')
   .post(authMiddleware.isAuthorized, propertyController.boostProperty)
@@ -72,5 +76,9 @@ router.route('/:propertyId/status')
 
 router.route('/:propertyId/visibility')
   .patch(authMiddleware.isAuthorized, propertyController.updatePropertyVisibility)
+
+// Debug endpoint: Test socket notification delivery
+router.route('/debug/test-notification/:userId')
+  .post(propertyController.testNotificationToUser)
 
 export const propertyRoutes = router

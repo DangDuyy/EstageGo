@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { PresenceBadge } from '@/components/common/PresenceBadge'
 import { usePresenceSnapshot } from '@/hooks/usePresenceSnapshot'
 import { useSelector } from 'react-redux'
@@ -28,6 +30,7 @@ import {
   Shield
 } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PropertyCard from '../common/Property/FeatureCard/PropertyCard'
 
 export default function AgentBrokerPage({
@@ -53,8 +56,13 @@ export default function AgentBrokerPage({
   onDeleteReview,
   currentUser,
   enableFollow = true,
-  enableReviews = true
+  enableReviews = true,
+  followersDialogOpen = false,
+  setFollowersDialogOpen,
+  followers = [],
+  loadingFollowers = false
 }) {
+  const navigate = useNavigate()
   const isOwnProfile = currentUserId === user?._id
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [showMenuId, setShowMenuId] = useState(null)
@@ -273,7 +281,10 @@ export default function AgentBrokerPage({
 
                   {followStats && (
                     <button
-                      onClick={onShowFollowers}
+                      onClick={() => {
+                        setFollowersDialogOpen(true)
+                        onShowFollowers()
+                      }}
                       className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 rounded-xl p-4 text-center border border-emerald-200 dark:border-emerald-800 hover:shadow-lg transition-all"
                     >
                       <div className="flex justify-center mb-2">
@@ -642,6 +653,50 @@ export default function AgentBrokerPage({
           </div>
         </div>
       </div>
+
+      {/* Followers Dialog */}
+      <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Followers</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            {loadingFollowers ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : followers.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">No followers yet</p>
+            ) : (
+              <div className="space-y-2">
+                {followers.map((follower) => (
+                  <button
+                    key={follower._id}
+                    onClick={() => {
+                      navigate(`/agents/${follower._id}`)
+                      setFollowersDialogOpen(false)
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={follower.avatar} />
+                      <AvatarFallback>
+                        {follower.fullName?.charAt(0) || follower.userName?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-semibold">{follower.fullName || follower.userName}</p>
+                      {follower.agentTitle && (
+                        <p className="text-sm text-muted-foreground">{follower.agentTitle}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

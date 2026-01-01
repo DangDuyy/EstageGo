@@ -14,6 +14,9 @@ import membershipConfigService from "~/services/membershipConfigService"
 import userMembershipService from "~/services/userMembershipService"
 import mongoose from "mongoose"
 import userActivityModel from "~/models/userActivity"
+import { agentFollowService } from "~/services/agentFollowService"
+import { createAndEmitNotification } from "~/services/notificationService"
+import agentFollowModel from "~/models/agentFollows"
 
 const safeParse = (v) => {
     if (typeof v === 'string') {
@@ -164,6 +167,49 @@ const createProperty = async (req, res, next) => {
 
         // Commit transaction
         await session.commitTransaction();
+
+        // Notify followers about new post
+        try {
+            console.log(`[createProperty] Fetching followers for user ${owner}...`);
+            const followers = await agentFollowModel
+                .find({ agent: owner, _destroy: false })
+                .select('follower')
+                .lean();
+            
+            console.log(`[createProperty] Found ${followers?.length || 0} followers`);
+            
+            if (followers && followers.length > 0) {
+                const userWithDetails = await propertyService.getUserById(owner);
+                const userName = userWithDetails?.fullName || userWithDetails?.userName || 'User';
+                
+                console.log(`[createProperty] Sending notifications to ${followers.length} followers...`);
+                
+                for (const follow of followers) {
+                    console.log(`[createProperty] Sending notification to follower ${follow.follower}`);
+                    
+                    await createAndEmitNotification(follow.follower, {
+                        type: 'NEW_POST',
+                        title: 'New Property Posted',
+                        message: `${userName} posted a new property: ${finalProperty.title}`,
+                        meta: {
+                            propertyId: finalProperty._id,
+                            userId: owner,
+                            userName: userName,
+                            propertyTitle: finalProperty.title
+                        }
+                    });
+                    
+                    console.log(`[createProperty] Notification sent to follower ${follow.follower}`);
+                }
+                
+                console.log(`[createProperty] All notifications sent`);
+            } else {
+                console.log(`[createProperty] No followers to notify`);
+            }
+        } catch (notifError) {
+            console.error('[createProperty] Error notifying followers:', notifError);
+            // Don't fail the property creation if notification fails
+        }
 
         res.status(StatusCodes.CREATED).json({
             success: true,
@@ -1506,13 +1552,22 @@ const deleteProperty = async (req, res, next) => {
         const { id: propertyId } = req.params
         const userId = req.jwtDecoded._id
 
-        await propertyService.deleteProperty(propertyId, userId)
+        console.log('[deleteProperty] Request to delete property:', {
+            propertyId,
+            userId,
+            userIdType: typeof userId
+        })
+
+        const result = await propertyService.deleteProperty(propertyId, userId)
+
+        console.log('[deleteProperty] Delete result:', result ? 'Success' : 'Failed')
 
         return res.status(StatusCodes.OK).json({
             success: true,
             message: "Property deleted successfully"
         })
     } catch (error) {
+        console.error('[deleteProperty] Error:', error)
         next(error)
     }
 }
@@ -1841,6 +1896,73 @@ const purchaseBoostPackage = async (req, res, next) => {
     }
 }
 
+// Debug endpoint: test notification delivery to specific user
+const testNotificationToUser = async (req, res, next) => {
+    try {
+        const { userId } = req.params
+        const { message = 'Test notification' } = req.body
+        
+        if (!userId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "userId parameter is required"
+            })
+        }
+        
+        console.log(`[testNotification] Sending test notification to user: ${userId}`)
+        
+        await createAndEmitNotification(userId, {
+            type: 'TEST',
+            title: 'Test Notification',
+            message: message,
+            meta: { test: true, sentAt: new Date().toISOString() }
+        })
+        
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Test notification sent",
+            targetUserId: userId
+        })
+    } catch (error) {
+        console.error("Error in testNotificationToUser:", error)
+        next(error)
+    }
+}
+
+// Get property statistics (views, contacts, shares, wishlist count)
+const getPropertyStatistics = async (req, res, next) => {
+    try {
+        const { propertyId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(propertyId)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: 'Invalid property ID'
+            });
+        }
+
+        // Count different activity types from UserActivity collection
+        const [viewCount, contactCount, shareCount, wishlistCount] = await Promise.all([
+            userActivityModel.countDocuments({ propertyId, eventType: 'VIEW' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'CONTACT' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'SHARE' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'WISHLIST_ADD' })
+        ]);
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            data: {
+                views: viewCount,
+                contacts: contactCount,
+                shares: shareCount,
+                likes: wishlistCount // Using wishlist count as "likes"
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export const propertyController = {
     createProperty,
     generateTitleDescription,
@@ -1866,5 +1988,7 @@ export const propertyController = {
     updatePropertyStatus,
     updatePropertyVisibility,
     getPropertiesGroupedByProvince,
-    deleteProperty
+    deleteProperty,
+    testNotificationToUser,
+    getPropertyStatistics
 }

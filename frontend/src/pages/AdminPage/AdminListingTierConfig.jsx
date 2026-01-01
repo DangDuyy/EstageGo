@@ -283,7 +283,7 @@ export default function AdminListingTierConfig() {
 
       {/* Properties Dialog */}
       <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-6xl">
           <DialogHeader>
             <DialogTitle>Listings in {selectedTier?.displayName?.en}</DialogTitle>
             <DialogDescription>Bài post đang gán tier này</DialogDescription>
@@ -294,14 +294,14 @@ export default function AdminListingTierConfig() {
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : (
-            <div className="max-h-[520px] overflow-y-auto space-y-3">
+            <div className="max-h-[600px] overflow-y-auto space-y-3">
               {propertyList.length === 0 && (
                 <p className="text-sm text-muted-foreground">Chưa có bài post nào</p>
               )}
               {propertyList.map((p) => (
-                <div key={p._id} className="border rounded-lg p-3 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-16 h-16 rounded-md overflow-hidden bg-muted">
+                <div key={p._id} className="border rounded-lg p-4 flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-24 h-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
                       {p.media?.[0]?.url ? (
                         <img src={p.media[0].url} alt={p.title} className="w-full h-full object-cover" />
                       ) : (
@@ -309,7 +309,7 @@ export default function AdminListingTierConfig() {
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Link to={`/properties/${p._id}`} className="font-semibold hover:underline" target="_blank" rel="noreferrer">
+                      <Link to={`/properties/${p._id}`} className="font-semibold hover:underline line-clamp-2" target="_blank" rel="noreferrer">
                         {p.title}
                       </Link>
                       <div className="text-sm text-muted-foreground">Status: {p.status}</div>
@@ -319,7 +319,7 @@ export default function AdminListingTierConfig() {
                     </div>
                   </div>
                   {p.owner && (
-                    <div className="text-right text-sm text-muted-foreground">
+                    <div className="text-right text-sm text-muted-foreground flex-shrink-0">
                       <Link to={`/agents/${p.owner._id}`} className="font-medium hover:underline" target="_blank" rel="noreferrer">
                         {p.owner.fullName}
                       </Link>
