@@ -191,7 +191,11 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     }
 
     if (owner && typeof owner === "string") {
-      try { match.owner = new Types.ObjectId(owner) } catch { }
+      try { 
+        match.owner = new Types.ObjectId(owner) 
+      } catch (e) {
+        console.error('[getProperties] Invalid owner ObjectId:', e)
+      }
     }
 
     if (Array.isArray(types) && types.length) {
@@ -367,16 +371,24 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
 
 const getPropertyDetails = async (propertyId) => {
   try {
-    if (!Types.ObjectId.isValid(propertyId))
-      throw new Error('Invalid propertyId')
+    if (!Types.ObjectId.isValid(propertyId)) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid propertyId')
+    }
 
-    const pineline = [
-      {
-        $match: {
-          _id: new Types.ObjectId(propertyId),
-          _destroy: { $ne: true }
-        }
-      },
+    const now = new Date()
+    const match = {
+      _id: new Types.ObjectId(propertyId),
+      _destroy: { $ne: true },
+      status: { $nin: ['hidden', 'draft'] }, // allow active, sold, rented
+      visibility: 'public',
+      $or: [
+        { expireAt: null },
+        { expireAt: { $gt: now } }
+      ]
+    }
+
+    const pipeline = [
+      { $match: match },
       {
         $lookup: {
           from: userModel.collection.name,
@@ -385,9 +397,7 @@ const getPropertyDetails = async (propertyId) => {
           as: 'ownerInfo'
         }
       },
-      {
-        $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true }
-      },
+      { $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           "ownerInfo.password": 0,
@@ -397,12 +407,15 @@ const getPropertyDetails = async (propertyId) => {
       }
     ]
 
-    const [result] = await propertyModel
-      .aggregate(pineline)
+    const [result] = await propertyModel.aggregate(pipeline)
 
-    return result || null
+    if (!result) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Property not found or inactive')
+    }
+
+    return result
   } catch (error) {
-    throw new Error(error)
+    throw error
   }
 }
 
@@ -919,7 +932,10 @@ const getAllImageTags = async (userId) => {
 const updateProperty = async (propertyId, userId, updateData) => {
   try {
     // First check if property exists and user is owner
-    const existingProperty = await propertyModel.findOne({ _id: propertyId, owner: userId })
+    const existingProperty = await propertyModel.findOne({ 
+      _id: propertyId, 
+      owner: new Types.ObjectId(userId) 
+    })
 
     if (!existingProperty) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
@@ -953,7 +969,10 @@ const updateProperty = async (propertyId, userId, updateData) => {
 const updatePropertyStatus = async (propertyId, userId, status) => {
   try {
     const property = await propertyModel.findOneAndUpdate(
-      { _id: propertyId, owner: userId },
+      { 
+        _id: propertyId, 
+        owner: new Types.ObjectId(userId) 
+      },
       { status },
       { new: true }
     )
@@ -971,7 +990,10 @@ const updatePropertyStatus = async (propertyId, userId, status) => {
 const updatePropertyVisibility = async (propertyId, userId, visibility) => {
   try {
     const property = await propertyModel.findOneAndUpdate(
-      { _id: propertyId, owner: userId },
+      { 
+        _id: propertyId, 
+        owner: new Types.ObjectId(userId) 
+      },
       { visibility },
       { new: true }
     )
@@ -988,11 +1010,27 @@ const updatePropertyVisibility = async (propertyId, userId, visibility) => {
 
 const deleteProperty = async (propertyId, userId) => {
   try {
+    console.log('[deleteProperty Service] Attempting delete:', {
+      propertyId,
+      userId,
+      userIdAsObjectId: new Types.ObjectId(userId)
+    })
+
     const property = await propertyModel.findOneAndUpdate(
-      { _id: propertyId, owner: userId },
+      { 
+        _id: propertyId, 
+        owner: new Types.ObjectId(userId) 
+      },
       { _destroy: true },
       { new: true }
     )
+
+    console.log('[deleteProperty Service] Result:', property ? {
+      _id: property._id,
+      title: property.title,
+      _destroy: property._destroy,
+      owner: property.owner
+    } : 'NULL - Property not found or unauthorized')
 
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found or unauthorized")
@@ -1000,6 +1038,7 @@ const deleteProperty = async (propertyId, userId) => {
 
     return property
   } catch (error) {
+    console.error('[deleteProperty Service] Error:', error)
     throw error
   }
 }

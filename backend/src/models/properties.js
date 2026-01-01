@@ -262,6 +262,10 @@ const propertySchema = new mongoose.Schema({
     postTypeExpiresAt: {
         type: Date,
         default: null
+    },
+    _destroy: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true })
 

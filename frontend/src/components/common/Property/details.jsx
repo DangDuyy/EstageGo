@@ -20,7 +20,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPropertyDetailsAPI,
-  selectCurrentActiveProperty
+  selectCurrentActiveProperty,
+  selectActivePropertyStatus,
+  selectActivePropertyError
 } from "@/redux/activeProperty/activePropertySlice";
 import { selectCurrentUser } from "@/redux/user/userSlice";
 import { Textarea } from "@/components/ui/textarea";
@@ -162,6 +164,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
   const navigate = useNavigate();
   const { propertyId } = useParams();
   const property = useSelector(selectCurrentActiveProperty);
+  const propertyStatus = useSelector(selectActivePropertyStatus);
+  const propertyError = useSelector(selectActivePropertyError);
   const currentUser = useSelector(selectCurrentUser);
   const { toggleItem, isInWishlist } = useWishlist()
   const inWishlist = isInWishlist(propertyId)
@@ -300,6 +304,28 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
       fetchSimilar();
     }
   }, [dispatch, propertyId]);
+
+  if (propertyStatus === 'failed') {
+    return (
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 py-20">
+        <div className="mx-auto max-w-2xl rounded-lg border bg-card p-8 text-center shadow-sm">
+          <div className="mb-4 text-sm font-semibold text-primary">Listing unavailable</div>
+          <h1 className="text-2xl font-bold mb-3">The property does not exist or has been hidden.</h1>
+          <p className="text-muted-foreground mb-6">
+            {propertyError || 'The listing may have been deleted, hidden, set to private, or expired. Please return to the listing to continue your search.'}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button onClick={() => navigate('/listing/map')}>
+              View properties listing
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Home page
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!property) {
     // Skeleton

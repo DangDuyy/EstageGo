@@ -94,6 +94,11 @@ export const verifyPropertyDocumentsAPI = async (formData) => {
   return response.data
 }
 
+export const deletePropertyAPI = async (propertyId) => {
+  const response = await authorizeAxiosInstance.delete(`${API_ROOT}/v1/properties/${propertyId}`)
+  return response.data
+}
+
 // ==================== GoogleMap ============================
 export const geocodeAddress = async (addr) => {
   // const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addr)}&key=${import.meta.env.VITE_GOOGLE_MAP_API_KEY}`

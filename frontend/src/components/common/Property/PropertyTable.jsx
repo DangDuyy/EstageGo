@@ -1,5 +1,4 @@
-import { boostPropertyAPI } from "@/apis"
-import { deletePropertyAPI } from "@/apis/adminAPI"
+import { boostPropertyAPI, deletePropertyAPI } from "@/apis"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -237,7 +236,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
             accessorKey: "title",
             header: "Property",
             cell: ({ row }) => (
-                <div className="min-w-[250px] max-w-[300px]">
+                <div className="min-w-[100px] max-w-[150px]">
                     <div className="font-medium truncate">{row.original.title}</div>
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
                         {row.original.description}
@@ -312,7 +311,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                 const fullAddress = parts.join(', ')
                 
                 return (
-                    <div className="text-xs min-w-[200px] max-w-[250px] truncate" title={fullAddress}>
+                    <div className="text-xs min-w-[100px] max-w-[150px] truncate" title={fullAddress}>
                         {fullAddress || 'N/A'}
                     </div>
                 )
@@ -367,7 +366,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                 >
                                     <Zap className="h-3 w-3" />
                                     <span className="flex items-center gap-1">
-                                        {hasBeenBoosted ? 'Đẩy thêm' : 'Đẩy tin'}
+                                        {hasBeenBoosted ? 'Extra boost' : 'Boost new'}
                                     </span>
                                 </Button>
                             )
@@ -383,15 +382,15 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/${row.original._id}`) }}>
                                     <Eye className="mr-2 h-4 w-4" />
-                                    Xem chi tiết
+                                    View details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { navigate(`/properties/${row.original._id}`) }}>
                                     <Eye className="mr-2 h-4 w-4" />
-                                    Xem trang công khai
+                                    View public
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { navigate(`/dashboard/posts/edit/${row.original._id}`) }}>
                                     <Pencil className="mr-2 h-4 w-4" />
-                                    Chỉnh sửa
+                                    Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -399,7 +398,7 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
                                     onClick={() => handleDeleteProps(row.original._id)}
                                 >
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    Xóa
+                                    Delete
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

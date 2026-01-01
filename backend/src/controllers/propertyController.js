@@ -1552,13 +1552,22 @@ const deleteProperty = async (req, res, next) => {
         const { id: propertyId } = req.params
         const userId = req.jwtDecoded._id
 
-        await propertyService.deleteProperty(propertyId, userId)
+        console.log('[deleteProperty] Request to delete property:', {
+            propertyId,
+            userId,
+            userIdType: typeof userId
+        })
+
+        const result = await propertyService.deleteProperty(propertyId, userId)
+
+        console.log('[deleteProperty] Delete result:', result ? 'Success' : 'Failed')
 
         return res.status(StatusCodes.OK).json({
             success: true,
             message: "Property deleted successfully"
         })
     } catch (error) {
+        console.error('[deleteProperty] Error:', error)
         next(error)
     }
 }
