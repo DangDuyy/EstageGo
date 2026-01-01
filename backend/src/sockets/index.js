@@ -19,10 +19,25 @@ export const isUserViewingConversation = (userId, conversationId) => {
 
 // Emit a generic event to a specific user's personal room
 export const emitToUser = (userId, event, payload) => {
-  if (!ioInstance || !userId) return
+  if (!ioInstance) {
+    console.error(`[Socket] ioInstance is null, cannot emit ${event} to user ${userId}`)
+    return
+  }
+  if (!userId) {
+    console.error(`[Socket] userId is null, cannot emit ${event}`)
+    return
+  }
+  
   const uid = String(userId)
   const room = `user:${uid}`
-  console.log(`[Socket] Emitting ${event} to ${room}`)
+  
+  console.log(`[Socket] Emitting ${event} to room ${room}`)
+  console.log(`[Socket] Payload:`, payload)
+  
+  // Get room members for debugging
+  const roomMembers = ioInstance.sockets.adapter.rooms.get(room)
+  console.log(`[Socket] Room ${room} has ${roomMembers?.size || 0} member(s)`)
+  
   ioInstance.to(room).emit(event, payload)
 }
 
@@ -60,8 +75,20 @@ const registerChatEvents = (io) => {
     if (userId) {
       const room = `user:${String(userId)}`
       socket.join(room)
-      console.log(`[Socket] Joined room: ${room}`)
+      console.log(`[Socket] Connected: User ${userId} joined room: ${room}`)
+    } else {
+      console.log(`[Socket] Connected but no userId found in auth`)
     }
+
+    // ===== User explicitly joins their room (for reconnection) =====
+    socket.on('user:join', ({ userId: explicitUserId }) => {
+      const uid = explicitUserId || socket.user?.id
+      if (uid) {
+        const room = `user:${String(uid)}`
+        socket.join(room)
+        console.log(`[Socket] User ${uid} explicitly joined room: ${room}`)
+      }
+    })
 
     // ===== Chat rooms & typing (existing) =====
     socket.on('conversation:join', ({ conversationId }) => {
@@ -130,7 +157,7 @@ const registerChatEvents = (io) => {
         })
       }
     })
-  })
+  });
 }
 
 // Initialize Socket.IO

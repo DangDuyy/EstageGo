@@ -73,4 +73,8 @@ router.route('/:propertyId/status')
 router.route('/:propertyId/visibility')
   .patch(authMiddleware.isAuthorized, propertyController.updatePropertyVisibility)
 
+// Debug endpoint: Test socket notification delivery
+router.route('/debug/test-notification/:userId')
+  .post(propertyController.testNotificationToUser)
+
 export const propertyRoutes = router
