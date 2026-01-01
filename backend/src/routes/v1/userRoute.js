@@ -58,10 +58,16 @@ Router.route('/remove-agent')
 // Phone verification endpoints
 // ✅ Không cần auth cho registration, có auth cho profile update
 Router.route('/phone/send-code')
-  .post(userController.sendPhoneVerification)
+  .post(authMiddleware.isAuthorized, userController.sendPhoneVerification)
 
 Router.route('/phone/verify')
   .post(authMiddleware.isAuthorized, userController.verifyPhoneCode)
+
+Router.route('/email/send-verification')
+  .post(authMiddleware.isAuthorized, userController.sendEmailVerification)
+
+Router.route('/email/verify')
+  .get(userController.verifyEmailToken) // Route công khai cho link trong email
 
 Router.route('/upgrade-membership')
   .post(authMiddleware.isAuthorized, userController.upgradeMembership)

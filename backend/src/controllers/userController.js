@@ -5,6 +5,8 @@ import ms from "ms"
 import { env } from "~/config/environment"
 import TwilioProvider from "~/providers/TwilioProvider"
 import paymentService from '~/services/paymentService'
+import twilio from 'twilio'
+import { randomBytes } from 'crypto'
 
 // Register - hỗ trợ email và phone
 const createNew = async (req, res, next) => {
@@ -303,9 +305,10 @@ const getCurrentUser = async (req, res, next) => {
   }
 }
 
-// ✅ Send phone verification (for profile update)
+// ✅ Send phone verification code
 const sendPhoneVerification = async (req, res, next) => {
   try {
+    const userId = req.jwtDecoded._id
     const { phone } = req.body
 
     if (!phone) {
@@ -314,19 +317,15 @@ const sendPhoneVerification = async (req, res, next) => {
       })
     }
 
-    await TwilioProvider.sendVerificationCode(phone)
+    const result = await userService.sendPhoneVerificationCode(userId, phone)
 
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: 'Verification code sent to your phone'
-    })
+    res.status(StatusCodes.OK).json(result)
   } catch (error) {
-    console.error('❌ Send phone verification error:', error)
     next(error)
   }
 }
 
-// ✅ Verify phone code (for profile update)
+// ✅ Verify phone code
 const verifyPhoneCode = async (req, res, next) => {
   try {
     const userId = req.jwtDecoded._id
@@ -334,28 +333,58 @@ const verifyPhoneCode = async (req, res, next) => {
 
     if (!phone || !code) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        message: 'Phone and code are required'
+        message: 'Phone and verification code are required'
       })
     }
 
-    const check = await TwilioProvider.checkVerificationCode(phone, code)
-
-    if (check.status !== 'approved') {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Invalid verification code'
-      })
-    }
-
-    const result = await userService.updatePhone(userId, phone)
+    const user = await userService.verifyPhoneCode(userId, phone, code)
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Phone verified and updated successfully',
-      user: result
+      message: 'Phone verified successfully',
+      user
     })
   } catch (error) {
-    console.error('❌ Verify phone code error:', error)
+    next(error)
+  }
+}
+
+// ✅ Send email verification
+const sendEmailVerification = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    const { email } = req.body
+
+    if (!email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Email is required'
+      })
+    }
+
+    const result = await userService.sendEmailVerificationLink(userId, email)
+
+    res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+// ✅ Verify email token (public route - from email link)
+const verifyEmailToken = async (req, res, next) => {
+  try {
+    const { token, email } = req.query
+
+    if (!token || !email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'Token and email are required'
+      })
+    }
+
+    await userService.verifyEmailToken(email, token)
+
+    // Redirect to profile with success message
+    res.redirect(`${env.WEBSITE_DOMAIN_DEVELOPMENT}/dashboard/profile?emailVerified=true`)
+  } catch (error) {
     next(error)
   }
 }
@@ -618,5 +647,7 @@ export const userController = {
   requestForgotPassword,
   verifyResetCode,
   resetPassword,
-  updateAvatar
+  updateAvatar,
+  sendEmailVerification,
+  verifyEmailToken
 }

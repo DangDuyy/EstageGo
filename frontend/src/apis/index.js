@@ -510,14 +510,12 @@ export const clearImageTagsAPI = async (propertyId, imageId) => {
 // Send phone verification code (for profile update)
 export const sendPhoneVerificationAPI = async (phone) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/send-code`, { phone })
-  toast.success('Verification code sent to your phone!')
   return response.data
 }
 
 // Verify phone with code (for profile update)
 export const verifyPhoneAPI = async (phone, code) => {
   const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/phone/verify`, { phone, code })
-  toast.success('Phone verified successfully!')
   return response.data
 }
 

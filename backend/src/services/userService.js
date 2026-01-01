@@ -15,6 +15,7 @@ import mongoose from 'mongoose'
 import userMembershipService from './userMembershipService'
 import SystemConfig from '~/models/systemConfig'
 import { cloudinary } from '~/config/cloudinary'
+import TwilioProvider from '~/providers/TwilioProvider'
 
 /**
  * Generate random fullName
@@ -188,7 +189,6 @@ const verifyAccount = async (reqBody) => {
     const existUser = await userModel.findOne({ email })
 
     if (!existUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Account not found')
-    if (existUser.isActive) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Account is already active')
     if (token !== existUser.verifyToken) throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Token is invalid')
 
     if (existUser.verifyTokenExpires && existUser.verifyTokenExpires < Date.now()) {
@@ -196,10 +196,13 @@ const verifyAccount = async (reqBody) => {
     }
 
     const updateData = {
-      isActive: true,
       isEmailVerified: true,
       verifyToken: null,
       verifyTokenExpires: null
+    }
+
+    if (!existUser.isActive) {
+      updateData.isActive = true
     }
 
     const updateUser = await userModel.findByIdAndUpdate(existUser._id, { $set: updateData }, { new: true })
@@ -891,6 +894,156 @@ const updateAvatar = async (userId, file) => {
   }
 }
 
+/**
+ * Send phone verification code via Twilio
+ */
+const sendPhoneVerificationCode = async (userId, phone) => {
+  try {
+    // Check if phone already exists (excluding current user)
+    const existingPhone = await userModel.findOne({
+      phone,
+      _id: { $ne: userId },
+      isPhoneVerified: true
+    })
+
+    if (existingPhone) {
+      throw new ApiError(StatusCodes.CONFLICT, 'This phone number is already in use by another account')
+    }
+
+    // Update user's phone (mark as unverified)
+    await userModel.findByIdAndUpdate(userId, {
+      phone,
+      isPhoneVerified: false
+    })
+
+    // Send verification code via Twilio Verify Service
+    await TwilioProvider.sendVerificationCode(phone)
+
+    console.log('✅ Phone verification code sent to:', phone)
+
+    return { success: true, message: 'Verification code sent successfully' }
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Verify phone code via Twilio
+ */
+const verifyPhoneCode = async (userId, phone, code) => {
+  try {
+    const user = await userModel.findById(userId)
+
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    // Check if phone matches
+    if (user.phone !== phone) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Phone number does not match')
+    }
+
+    // Verify with Twilio Verify Service
+    const check = await TwilioProvider.checkVerificationCode(phone, code)
+
+    if (check.status !== 'approved') {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or expired verification code')
+    }
+
+    // Update user as verified
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { isPhoneVerified: true },
+      { new: true }
+    ).select('-password -verifyToken')
+
+    console.log('✅ Phone verified successfully:', phone)
+
+    return pickUser(updatedUser)
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Send email verification link
+ */
+const sendEmailVerificationLink = async (userId, email) => {
+  try {
+    // Check if email already exists (excluding current user)
+    const existingEmail = await userModel.findOne({
+      email,
+      _id: { $ne: userId },
+      isEmailVerified: true
+    })
+
+    if (existingEmail) {
+      throw new ApiError(StatusCodes.CONFLICT, 'This email is already in use by another account')
+    }
+
+    // Get user for userName
+    const user = await userModel.findById(userId)
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+    }
+
+    // Generate verification token (sử dụng verifyToken có sẵn)
+    const verifyToken = randomBytes(32).toString('hex')
+    const verifyTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    // Update user's email and token (mark as unverified)
+    await userModel.findByIdAndUpdate(userId, {
+      email,
+      verifyToken,
+      verifyTokenExpires,
+      isEmailVerified: false
+    })
+
+    // Send verification email - sử dụng route /verify-account giống đăng ký
+    const verifyLink = `${env.WEBSITE_DOMAIN_DEVELOPMENT}/verify-account?token=${verifyToken}&email=${encodeURIComponent(email)}`
+
+    await sendVerificationEmail({
+      to: email,
+      verifyLink,
+      userName: user.fullName || user.userName
+    })
+
+    return { success: true, message: 'Verification email sent successfully' }
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Verify email token (from email link)
+ */
+const verifyEmailToken = async (email, token) => {
+  try {
+    const user = await userModel.findOne({
+      email,
+      verifyToken: token,
+      verifyTokenExpires: { $gt: Date.now() }
+    })
+
+    if (!user) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or expired verification token')
+    }
+
+    // Update user as verified and clear token
+    await userModel.findByIdAndUpdate(user._id, {
+      isEmailVerified: true,
+      verifyToken: null,
+      verifyTokenExpires: null
+    })
+
+    console.log('✅ Email verified successfully:', email)
+
+    return { success: true, message: 'Email verified successfully' }
+  } catch (error) {
+    throw error
+  }
+}
+
 export const userService = {
   createNew,
   verifyAccount,
@@ -915,4 +1068,8 @@ export const userService = {
   generateResetToken,
   resetPassword,
   updateAvatar,
+  sendPhoneVerificationCode,
+  verifyPhoneCode,
+  sendEmailVerificationLink,
+  verifyEmailToken
 }

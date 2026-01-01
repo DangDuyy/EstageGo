@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { X } from 'lucide-react'
+import { X, CheckCircle, AlertCircle } from 'lucide-react'
 import { selectCurrentUser, updateUser } from '@/redux/user/userSlice'
 import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { updateUserProfileAPI, changePasswordAPI, requestAgentRoleAPI, removeAgentRoleAPI, getCurrentUserAPI } from '@/apis'
+import { updateUserProfileAPI, changePasswordAPI, requestAgentRoleAPI, removeAgentRoleAPI, getCurrentUserAPI, sendPhoneVerificationAPI, verifyPhoneAPI } from '@/apis'
 import { toast } from 'react-toastify'
 import authorizeAxiosInstance from '@/utils/authorizeAxios'
 import { API_ROOT } from '@/utils/constants'
@@ -25,6 +25,13 @@ export default function Profile() {
   const [loading, setLoading] = useState(false)
   const [avatarLoading, setAvatarLoading] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  
+  // Verification states
+  const [phoneVerificationCode, setPhoneVerificationCode] = useState('')
+  const [isPhoneVerifying, setIsPhoneVerifying] = useState(false)
+  const [isEmailVerifying, setIsEmailVerifying] = useState(false)
+  const [phoneCodeSent, setPhoneCodeSent] = useState(false)
+  const [emailCodeSent, setEmailCodeSent] = useState(false)
   
   // Support services list
   const SUPPORT_SERVICES = [
@@ -45,6 +52,8 @@ export default function Profile() {
     fullName: '',
     gender: 'male',
     address: '',
+    phone: '',
+    email: '',
     // Agent fields
     companyName: '',
     bio: '',
@@ -81,6 +90,8 @@ export default function Profile() {
         fullName: user.fullName || '',
         gender: user.gender || 'male',
         address: user.address || '',
+        phone: user.phone || '',
+        email: user.email || '',
         companyName: user.companyName || '',
         bio: user.bio || '',
         experience: user.experience || '',
@@ -99,7 +110,7 @@ export default function Profile() {
         }
       })
     }
-  }, [user]) // Bỏ isDirty khỏi dependencies
+  }, [user])
 
   // Poll for user data updates - CHỈ khi form KHÔNG dirty
   useEffect(() => {
@@ -122,7 +133,7 @@ export default function Profile() {
 
     const interval = setInterval(pollUserData, 5000)
     return () => clearInterval(interval)
-  }, [isDirty, user, dispatch]) // Thêm isDirty vào dependencies
+  }, [isDirty, user, dispatch])
 
   // Cleanup preview URL when component unmounts
   useEffect(() => {
@@ -192,6 +203,75 @@ export default function Profile() {
       toast.error(error.response?.data?.message || 'Failed to upload avatar')
     } finally {
       setAvatarLoading(false)
+    }
+  }
+
+  // Send phone verification code
+  const handleSendPhoneCode = async () => {
+    if (!profileData.phone || profileData.phone.trim() === '') {
+      toast.error('Please enter a phone number')
+      return
+    }
+
+    try {
+      setIsPhoneVerifying(true)
+      await sendPhoneVerificationAPI(profileData.phone)
+      setPhoneCodeSent(true)
+      toast.success('Verification code sent to your phone!')
+    } catch (error) {
+      console.error('Send phone code error:', error)
+      toast.error(error.response?.data?.message || 'Failed to send verification code')
+    } finally {
+      setIsPhoneVerifying(false)
+    }
+  }
+
+  // Verify phone code
+  const handleVerifyPhone = async () => {
+    if (!phoneVerificationCode || phoneVerificationCode.trim() === '') {
+      toast.error('Please enter the verification code')
+      return
+    }
+
+    try {
+      setIsPhoneVerifying(true)
+      await verifyPhoneAPI(profileData.phone, phoneVerificationCode)
+      
+      // Refresh user data
+      const updatedUser = await getCurrentUserAPI()
+      dispatch(updateUser(updatedUser))
+      
+      setPhoneVerificationCode('')
+      setPhoneCodeSent(false)
+      toast.success('Phone verified successfully!')
+    } catch (error) {
+      console.error('Verify phone error:', error)
+      toast.error(error.response?.data?.message || 'Failed to verify phone')
+    } finally {
+      setIsPhoneVerifying(false)
+    }
+  }
+
+  // Send email verification
+  const handleSendEmailCode = async () => {
+    if (!profileData.email || profileData.email.trim() === '') {
+      toast.error('Please enter an email address')
+      return
+    }
+
+    try {
+      setIsEmailVerifying(true)
+      // Call API to send email verification
+      await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/email/send-verification`, { 
+        email: profileData.email 
+      })
+      setEmailCodeSent(true)
+      toast.success('Verification link sent to your email!')
+    } catch (error) {
+      console.error('Send email verification error:', error)
+      toast.error(error.response?.data?.message || 'Failed to send verification email')
+    } finally {
+      setIsEmailVerifying(false)
     }
   }
 
@@ -483,8 +563,8 @@ export default function Profile() {
             />
           </span>
           
-          <div className="flex flex-row gap-12">
-            <span className='flex flex-row gap-5'>
+          <div className="flex flex-col gap-6">
+            <span className='flex flex-row gap-5 items-center'>
               <p>Gender:*</p>
               <RadioGroup 
                 value={profileData.gender}
@@ -507,16 +587,147 @@ export default function Profile() {
                 </div>
               </RadioGroup> 
             </span>
-            <span>
-              <p>Phone: (Cannot be changed)</p>
-              <Input 
-                type="text" 
-                value={user?.phone || 'Not set'}
-                disabled
-                className="bg-gray-100 cursor-not-allowed"
-              />
-            </span>
+
+            {/* Phone Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <p>Phone:</p>
+                {user?.isPhoneVerified && (
+                  <Badge variant="success" className="bg-green-100 text-green-800 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Verified
+                  </Badge>
+                )}
+                {!user?.isPhoneVerified && user?.phone && (
+                  <Badge variant="warning" className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Not Verified
+                  </Badge>
+                )}
+              </div>
+
+              {user?.isPhoneVerified ? (
+                <Input 
+                  type="text" 
+                  value={profileData.phone || 'Not set'}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input 
+                      type="tel" 
+                      placeholder="Enter phone number..."
+                      value={profileData.phone}
+                      onChange={(e) => {
+                        setProfileData({ ...profileData, phone: e.target.value })
+                        setIsDirty(true)
+                      }}
+                      disabled={phoneCodeSent}
+                    />
+                    {!phoneCodeSent && (
+                      <Button
+                        type="button"
+                        onClick={handleSendPhoneCode}
+                        disabled={isPhoneVerifying || !profileData.phone}
+                        className="whitespace-nowrap"
+                      >
+                        {isPhoneVerifying ? 'Sending...' : 'Send Code'}
+                      </Button>
+                    )}
+                  </div>
+
+                  {phoneCodeSent && (
+                    <div className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-1">
+                        <Input 
+                          type="text" 
+                          placeholder="Enter verification code..."
+                          value={phoneVerificationCode}
+                          onChange={(e) => setPhoneVerificationCode(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-500">Check your phone for the verification code</p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleVerifyPhone}
+                        disabled={isPhoneVerifying || !phoneVerificationCode}
+                      >
+                        {isPhoneVerifying ? 'Verifying...' : 'Verify'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setPhoneCodeSent(false)
+                          setPhoneVerificationCode('')
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Email Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <p>Email:</p>
+                {user?.isEmailVerified && (
+                  <Badge variant="success" className="bg-green-100 text-green-800 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Verified
+                  </Badge>
+                )}
+                {!user?.isEmailVerified && user?.email && (
+                  <Badge variant="warning" className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Not Verified
+                  </Badge>
+                )}
+              </div>
+
+              {user?.isEmailVerified ? (
+                <Input 
+                  type="text" 
+                  value={profileData.email || 'Not set'}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input 
+                      type="email" 
+                      placeholder="Enter email address..."
+                      value={profileData.email}
+                      onChange={(e) => {
+                        setProfileData({ ...profileData, email: e.target.value })
+                        setIsDirty(true)
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSendEmailCode}
+                      disabled={isEmailVerifying || !profileData.email}
+                      className="whitespace-nowrap"
+                    >
+                      {isEmailVerifying ? 'Sending...' : 'Send Verification'}
+                    </Button>
+                  </div>
+                  {emailCodeSent && (
+                    <p className="text-sm text-green-600">
+                      Verification link sent! Please check your email and click the link to verify.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
           <span>
             <p>Location:</p>
             <Input 
