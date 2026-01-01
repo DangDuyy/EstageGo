@@ -30,3 +30,5 @@ export const uploadVerificationDocs = upload.fields([
   { name: 'idDocs', maxCount: 5 },
   { name: 'houseDocs', maxCount: 5 }
 ])
+
+export const uploadAvatar = upload.single('avatar')

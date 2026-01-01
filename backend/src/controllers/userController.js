@@ -571,6 +571,28 @@ const resetPassword = async (req, res, next) => {
   }
 }
 
+const updateAvatar = async (req, res, next) => {
+  try {
+    const userId = req.jwtDecoded._id
+    
+    if (!req.file) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        message: 'No file uploaded'
+      })
+    }
+
+    const result = await userService.updateAvatar(userId, req.file)
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Avatar updated successfully',
+      user: result
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 // Export
 export const userController = {
   createNew,
@@ -595,5 +617,6 @@ export const userController = {
   getListingStats,
   requestForgotPassword,
   verifyResetCode,
-  resetPassword
+  resetPassword,
+  updateAvatar
 }

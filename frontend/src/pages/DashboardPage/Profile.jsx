@@ -14,12 +14,16 @@ import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { updateUserProfileAPI, changePasswordAPI, requestAgentRoleAPI, removeAgentRoleAPI, getCurrentUserAPI } from '@/apis'
 import { toast } from 'react-toastify'
+import authorizeAxiosInstance from '@/utils/authorizeAxios'
+import { API_ROOT } from '@/utils/constants'
 
 export default function Profile() {
   const dispatch = useDispatch()
   const user = useSelector(selectCurrentUser)
   const [files, setFiles] = useState()
+  const [previewUrl, setPreviewUrl] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [avatarLoading, setAvatarLoading] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   
   // Support services list
@@ -70,9 +74,9 @@ export default function Profile() {
     confirmPassword: ''
   })
 
-  // Initialize form with user data
+  // Initialize form with user data - CHỈ chạy khi user thay đổi VÀ form không dirty
   useEffect(() => {
-    if (user) {
+    if (user && !isDirty) {
       setProfileData({
         fullName: user.fullName || '',
         gender: user.gender || 'male',
@@ -95,15 +99,20 @@ export default function Profile() {
         }
       })
     }
-  }, [user])
+  }, [user]) // Bỏ isDirty khỏi dependencies
 
-  // Poll for user data updates every 5 seconds to catch role changes from admin actions
+  // Poll for user data updates - CHỈ khi form KHÔNG dirty
   useEffect(() => {
+    // Nếu đang edit thì không poll
+    if (isDirty) {
+      return
+    }
+
     const pollUserData = async () => {
       try {
         const updatedUser = await getCurrentUserAPI()
-        // Only update Redux if data actually changed AND form is not being edited
-        if (updatedUser && !isDirty && JSON.stringify(updatedUser) !== JSON.stringify(user)) {
+        // Chỉ update nếu có thay đổi thực sự
+        if (updatedUser && JSON.stringify(updatedUser) !== JSON.stringify(user)) {
           dispatch(updateUser(updatedUser))
         }
       } catch (error) {
@@ -111,13 +120,79 @@ export default function Profile() {
       }
     }
 
-    const interval = setInterval(pollUserData, 5000) // Changed from 1000ms to 5000ms
+    const interval = setInterval(pollUserData, 5000)
     return () => clearInterval(interval)
-  }, [user, dispatch, isDirty])
+  }, [isDirty, user, dispatch]) // Thêm isDirty vào dependencies
 
-  const handleDrop = (files) => {
-    console.log(files)
-    setFiles(files)
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
+
+  const handleDrop = (droppedFiles) => {
+    console.log(droppedFiles)
+    setFiles(droppedFiles)
+    
+    // Create preview URL
+    if (droppedFiles && droppedFiles.length > 0) {
+      // Revoke old preview URL if exists
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+      // Create new preview URL
+      const newPreviewUrl = URL.createObjectURL(droppedFiles[0])
+      setPreviewUrl(newPreviewUrl)
+    }
+  }
+
+  const handleCancelUpload = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    setFiles(null)
+    setPreviewUrl(null)
+  }
+
+  // Upload avatar function
+  const handleUploadAvatar = async () => {
+    if (!files || files.length === 0) {
+      toast.error('Please select an image first')
+      return
+    }
+
+    try {
+      setAvatarLoading(true)
+      
+      const formData = new FormData()
+      formData.append('avatar', files[0])
+
+      const response = await authorizeAxiosInstance.put(
+        `${API_ROOT}/v1/users/avatar`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
+
+      // Update user in Redux
+      if (response.data.user) {
+        dispatch(updateUser(response.data.user))
+        // Clear preview and files
+        handleCancelUpload()
+        toast.success('Avatar updated successfully!')
+      }
+    } catch (error) {
+      console.error('Upload avatar error:', error)
+      toast.error(error.response?.data?.message || 'Failed to upload avatar')
+    } finally {
+      setAvatarLoading(false)
+    }
   }
 
   const handleProfileSubmit = async (e) => {
@@ -170,6 +245,7 @@ export default function Profile() {
         newPassword: '',
         confirmPassword: ''
       })
+      toast.success('Password changed successfully!')
     } catch (error) {
       console.error('Change password error:', error)
       toast.error(error.response?.data?.message || 'Failed to change password')
@@ -183,6 +259,7 @@ export default function Profile() {
       setLoading(true)
       const updatedUser = await requestAgentRoleAPI()
       dispatch(updateUser(updatedUser))
+      toast.success('Agent request submitted!')
     } catch (error) {
       console.error('Request agent error:', error)
       toast.error(error.response?.data?.message || 'Failed to request agent role')
@@ -200,6 +277,7 @@ export default function Profile() {
       setLoading(true)
       const updatedUser = await removeAgentRoleAPI()
       dispatch(updateUser(updatedUser))
+      toast.success('Agent role removed!')
     } catch (error) {
       console.error('Remove agent error:', error)
       toast.error(error.response?.data?.message || 'Failed to remove agent role')
@@ -290,34 +368,71 @@ export default function Profile() {
 
       <div className="mt-10 flex flex-col gap-5">
         <p className='font-semibold text-2xl'>Avatar</p>
-        <div className="flex flex-row gap-10">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Avatar className="size-50 cursor-pointer hover:opacity-80 transition">
-                <AvatarImage
-                  src={user.avatar}
-                  className="h-full w-full object-cover"
-                />
-                <AvatarFallback className="text-xl">
-                  {user.fullName}
-                </AvatarFallback>
-              </Avatar>
-            </DialogTrigger>
+        <div className="flex flex-row gap-10 items-start">
+          {/* Current Avatar */}
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-sm text-gray-600">Current Avatar</p>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Avatar className="w-32 h-32 cursor-pointer hover:opacity-80 transition">
+                  <AvatarImage
+                    src={user.avatar}
+                    className="h-full w-full object-cover"
+                  />
+                  <AvatarFallback className="text-xl">
+                    {user.fullName}
+                  </AvatarFallback>
+                </Avatar>
+              </DialogTrigger>
 
-            <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none">
-              <img
-                src={user.avatar}
-                alt="Zoomed Avatar"
-                className="max-w-full max-h-[85vh] object-contain rounded-lg"
-              />
-            </DialogContent>
-          </Dialog>
-          <div className="">
-            <p>Upload a new avatar</p>
+              <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none">
+                <img
+                  src={user.avatar}
+                  alt="Zoomed Avatar"
+                  className="max-w-full max-h-[85vh] object-contain rounded-lg"
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Upload Section */}
+          <div className="flex-1 max-w-md">
+            <p className="mb-2 font-medium">Upload a new avatar</p>
+            <p className="text-sm text-gray-500 mb-3">Recommended: Square image, at least 500x500px, max 5MB</p>
+            
+            {/* Preview */}
+            {previewUrl && (
+              <div className="mb-4 p-4 border-2 border-dashed rounded-lg bg-gray-50">
+                <div className="flex items-center gap-4">
+                  <img 
+                    src={previewUrl} 
+                    alt="Preview" 
+                    className="w-24 h-24 object-cover rounded-lg"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm mb-1">Preview</p>
+                    <p className="text-xs text-gray-600">{files[0]?.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {(files[0]?.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelUpload}
+                    disabled={avatarLoading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Dropzone
               accept={{ 'image/*': [] }}
-              maxFiles={10}
-              maxSize={1024 * 1024 * 10}
+              maxFiles={1}
+              maxSize={1024 * 1024 * 5}
               minSize={1024}
               onDrop={handleDrop}
               onError={console.error}
@@ -326,6 +441,27 @@ export default function Profile() {
               <DropzoneEmptyState />
               <DropzoneContent />
             </Dropzone>
+            
+            {files && files.length > 0 && (
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  onClick={handleUploadAvatar}
+                  disabled={avatarLoading}
+                  className="flex-1 rounded-3xl"
+                >
+                  {avatarLoading ? 'Uploading...' : 'Upload Avatar'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelUpload}
+                  disabled={avatarLoading}
+                  className="rounded-3xl"
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -339,7 +475,10 @@ export default function Profile() {
               type="text" 
               placeholder="Type your full name..."
               value={profileData.fullName}
-              onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+              onChange={(e) => {
+                setProfileData({ ...profileData, fullName: e.target.value })
+                setIsDirty(true)
+              }}
               required
             />
           </span>
@@ -349,7 +488,10 @@ export default function Profile() {
               <p>Gender:*</p>
               <RadioGroup 
                 value={profileData.gender}
-                onValueChange={(value) => setProfileData({ ...profileData, gender: value })}
+                onValueChange={(value) => {
+                  setProfileData({ ...profileData, gender: value })
+                  setIsDirty(true)
+                }}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="male" id="male" />
@@ -381,7 +523,10 @@ export default function Profile() {
               type="text" 
               placeholder="Type your address..."
               value={profileData.address}
-              onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+              onChange={(e) => {
+                setProfileData({ ...profileData, address: e.target.value })
+                setIsDirty(true)
+              }}
             />
           </span>
 
@@ -398,7 +543,10 @@ export default function Profile() {
                       type="text" 
                       placeholder="Your company name..."
                       value={profileData.companyName}
-                      onChange={(e) => setProfileData({ ...profileData, companyName: e.target.value })}
+                      onChange={(e) => {
+                        setProfileData({ ...profileData, companyName: e.target.value })
+                        setIsDirty(true)
+                      }}
                     />
                   </span>
 
@@ -423,7 +571,10 @@ export default function Profile() {
                     <Textarea 
                       placeholder="Tell clients about yourself, your experience, and what makes you unique..."
                       value={profileData.bio}
-                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                      onChange={(e) => {
+                        setProfileData({ ...profileData, bio: e.target.value })
+                        setIsDirty(true)
+                      }}
                       rows={5}
                     />
                   </span>
@@ -453,7 +604,10 @@ export default function Profile() {
                         type="text" 
                         placeholder="Your license number..."
                         value={profileData.licenseNumber}
-                        onChange={(e) => setProfileData({ ...profileData, licenseNumber: e.target.value })}
+                        onChange={(e) => {
+                          setProfileData({ ...profileData, licenseNumber: e.target.value })
+                          setIsDirty(true)
+                        }}
                       />
                     </span>
                   </div>
@@ -519,7 +673,10 @@ export default function Profile() {
                       type="url" 
                       placeholder="https://yourwebsite.com"
                       value={profileData.website}
-                      onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                      onChange={(e) => {
+                        setProfileData({ ...profileData, website: e.target.value })
+                        setIsDirty(true)
+                      }}
                     />
                   </span>
 
@@ -532,10 +689,13 @@ export default function Profile() {
                           type="url" 
                           placeholder="https://facebook.com/yourprofile"
                           value={profileData.socialLinks.facebook}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            socialLinks: { ...profileData.socialLinks, facebook: e.target.value }
-                          })}
+                          onChange={(e) => {
+                            setProfileData({ 
+                              ...profileData, 
+                              socialLinks: { ...profileData.socialLinks, facebook: e.target.value }
+                            })
+                            setIsDirty(true)
+                          }}
                         />
                       </span>
                       <span>
@@ -544,10 +704,13 @@ export default function Profile() {
                           type="url" 
                           placeholder="https://linkedin.com/in/yourprofile"
                           value={profileData.socialLinks.linkedin}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            socialLinks: { ...profileData.socialLinks, linkedin: e.target.value }
-                          })}
+                          onChange={(e) => {
+                            setProfileData({ 
+                              ...profileData, 
+                              socialLinks: { ...profileData.socialLinks, linkedin: e.target.value }
+                            })
+                            setIsDirty(true)
+                          }}
                         />
                       </span>
                       <span>
@@ -556,10 +719,13 @@ export default function Profile() {
                           type="url" 
                           placeholder="https://twitter.com/yourhandle"
                           value={profileData.socialLinks.twitter}
-                          onChange={(e) => setProfileData({ 
-                            ...profileData, 
-                            socialLinks: { ...profileData.socialLinks, twitter: e.target.value }
-                          })}
+                          onChange={(e) => {
+                            setProfileData({ 
+                              ...profileData, 
+                              socialLinks: { ...profileData.socialLinks, twitter: e.target.value }
+                            })
+                            setIsDirty(true)
+                          }}
                         />
                       </span>
                     </div>
