@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, X, ChevronLeft, ChevronRight, Film } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,8 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
         id: Date.now() + Math.random(),
         url: URL.createObjectURL(file),
         name: file.name,
-        file: file
+        file: file,
+        type: file.type.startsWith('video/') ? 'video' : 'image'
     })) || [];
     
     const [images, setImages] = useState(initialImages)
@@ -34,7 +35,8 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
             id: Date.now() + Math.random(),
             url: URL.createObjectURL(file),
             name: file.name,
-            file: file
+            file: file,
+            type: file.type.startsWith('video/') ? 'video' : 'image'
         }));
         setImages(prev => [...prev, ...newImages].slice(0, 10));
     };
@@ -149,11 +151,11 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                                 onClick={handleUploadClick}
                             >
                                 <Upload size={20} />
-                                Select photos
+                                Select photos & videos
                             </Button>
                             <p className="text-gray-500 mt-4">
-                                or drag photos here<br />
-                                <span className="text-sm">(Up to 10 photos)</span>
+                                or drag photos/videos here<br />
+                                <span className="text-sm">(Up to 10 files, max 100MB per video)</span>
                             </p>
                         </div>
 
@@ -162,16 +164,14 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                             name="files"
                             render={() => (
                                 <FormItem>
-                                    {/* <FormLabel>Upload Files</FormLabel> */}
                                     <FormControl>
                                         <Input
                                             type="file"
                                             ref={fileInputRef}
                                             multiple
+                                            accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/x-msvideo"
                                             onChange={(e) => {
-                                                // Lấy file list và set vào form
                                                 handleFileInputChange(e)
-                                                // field.onChange(e.target.files);
                                             }}
                                             className="hidden"
                                         />
@@ -182,12 +182,12 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                         />
                     </div>
 
-                    {/* Image Gallery */}
+                    {/* Image/Video Gallery */}
                     {images.length > 0 && (
                         <div className="relative">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-medium text-gray-800">
-                                    Uploaded Images ({images.length}/10)
+                                    Uploaded Media ({images.length}/10)
                                 </h2>
                                 <div className="flex gap-2">
                                     <button
@@ -226,12 +226,27 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                                         onDragEnd={handleDragEnd}
                                     >
                                         <div className="w-48 h-36 bg-gray-200 relative group">
-                                            <img
-                                                src={image.url}
-                                                alt={image.name}
-                                                className="w-full h-full object-cover"
-                                                draggable={false}
-                                            />
+                                            {image.type === 'video' ? (
+                                                <>
+                                                    <video
+                                                        src={image.url}
+                                                        className="w-full h-full object-cover"
+                                                        draggable={false}
+                                                    />
+                                                    {/* Video indicator badge */}
+                                                    <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white rounded px-2 py-1 flex items-center gap-1">
+                                                        <Film size={14} />
+                                                        <span className="text-xs">Video</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <img
+                                                    src={image.url}
+                                                    alt={image.name}
+                                                    className="w-full h-full object-cover"
+                                                    draggable={false}
+                                                />
+                                            )}
 
                                             {/* Delete button */}
                                             <button
@@ -266,7 +281,7 @@ const ImageUploadComponent = ({ form, onChange, className }) => {
                     {/* Instructions */}
                     {images.length > 1 && (
                         <p className="text-sm text-gray-500 mt-4 text-center">
-                            Drag and drop images to reorder them
+                            Drag and drop to reorder media files
                         </p>
                     )}
                 </div>

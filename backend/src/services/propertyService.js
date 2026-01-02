@@ -102,22 +102,23 @@ const canCreateProperty = async (userId) => {
   return true
 }
 
-const addMediaToProperty = async (propertyId, mediaItems) => {
+const addMediaToProperty = async (propertyId, mediaItems, options = {}) => {
+  const { session } = options
+  
   try {
-    const property = await propertyModel.findOne({ _id: propertyId })
+    const property = await propertyModel.findOne({ _id: propertyId }).session(session)
 
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
     }
 
-    // Add new media item
     property.media.push(...mediaItems)
+    const updateProperty = await property.save({ session })
 
-    const updateProperty = await property.save()
     return updateProperty
-  }
-  catch (error) {
-    throw errors
+  } catch (error) {
+    console.error('Error in addMediaToProperty:', error)
+    throw error
   }
 }
 
@@ -342,8 +343,6 @@ export const getProperties = async (page, itemsPerPage, queryFilter = {}) => {
     // 4c: createdAt tie-break cuối cùng
     sort["createdAt"] = -1
 
-    console.log("Final sort object:", sort)
-
     // ---------------------------
     // 5️⃣ Pipeline
     const pipeline = []
@@ -519,8 +518,6 @@ const getPropertiesWithMapv1 = async (query) => {
     }
   }
 
-  console.log(filter)
-
   const properties = await propertyModel.find(filter)
 
   return properties
@@ -645,8 +642,6 @@ const getPropertiesWithMap = async (query) => {
   sort["priority"] = -1         // hạng tin
   sort["createdAt"] = -1        // tie-break cuối
 
-  console.log("Final sort:", sort)
-
   /* =======================
       3️⃣ LIST
   ======================== */
@@ -680,8 +675,6 @@ const getPropertiesWithMap = async (query) => {
   // 2.4 Paging
   pipeline.push({ $skip: skip })
   pipeline.push({ $limit: limitParam })
-
-  console.log("Final sort Map", sort)
 
   const listPromise = Promise.all([
     propertyModel.aggregate(pipeline),
@@ -832,9 +825,6 @@ const getPropertiesByFilters = async (filters) => {
         ...otherFilters
       }
     }
-
-    // Log để debug
-    console.log("Final match filters:", JSON.stringify(finalMatch, null, 2))
 
     const pipeline = [
       { $match: finalMatch },
@@ -1168,5 +1158,5 @@ export const propertyService = {
   updatePropertyStatus,
   updatePropertyVisibility,
   deleteProperty,
-  updateUser
+  updateUser,
 }

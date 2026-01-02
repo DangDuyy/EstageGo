@@ -155,9 +155,10 @@ const createProperty = async (req, res, next) => {
         
         if (files.length && mediaService?.uploadPropertyImage) {
             const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id);
+
             finalProperty = await propertyService.addMediaToProperty(
                 newProperty._id, 
-                uploadResult.flat(),
+                uploadResult, 
                 { session }
             );
         }
@@ -526,9 +527,7 @@ const uploadPropertyMedia = async (req, res, next) => {
     }
 
     const uploadResult = await mediaService.uploadPropertyImage(files, property._id)
-    const mediaItems = uploadResult.flat()
-
-    const updateProperty = await propertyService.addMediaToProperty(property._id, mediaItems)
+    const updateProperty = await propertyService.addMediaToProperty(property._id, uploadResult)
 
     res.status(StatusCodes.OK).json({
         success: true,
@@ -604,8 +603,6 @@ const getProperties = async (req, res, next) => {
                     metadata: { keyword: queryFilter.q }
                 })
             } catch (activityError) {
-                console.error('Error recording search activity:', activityError)
-                // Don't fail the request if activity logging fails
             }
         }
 
@@ -641,8 +638,6 @@ const getPropertyDetails = async (req, res, next) => {
                 metadata: {}
             })
         } catch (activityError) {
-            console.error('Error recording property view:', activityError)
-            // Don't fail the request if activity logging fails
         }
         
         const result = await propertyService.getPropertyDetails(propertyId)
@@ -1448,13 +1443,8 @@ const updateProperty = async (req, res, next) => {
         // Handle new image uploads
         if (req.files && req.files.length > 0) {
             const uploadedMedia = await mediaService.uploadPropertyImage(req.files, propertyId)
-            const mediaItems = uploadedMedia.map(item => ({
-                url: item.url,
-                publicId: item.publicId,
-                type: 'image'
-            }))
-            
-            updatedProperty = await propertyService.addMediaToProperty(propertyId, mediaItems)
+            // ✅ uploadedMedia already has correct type and metadata, use it directly!
+            updatedProperty = await propertyService.addMediaToProperty(propertyId, uploadedMedia)
         }
 
         return res.status(StatusCodes.OK).json({

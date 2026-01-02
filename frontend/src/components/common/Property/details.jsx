@@ -101,18 +101,32 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
       <div className="relative overflow-hidden rounded-lg border">
         <Carousel setApi={setApi} className="w-full">
           <CarouselContent>
-            {images.map((src, i) => (
-              <CarouselItem key={i}>
-                <div className="aspect-[16/9] w-full overflow-hidden bg-muted">
-                  <img
-                    src={src}
-                    alt={`property-${i + 1}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              </CarouselItem>
-            ))}
+            {images.map((item, i) => {
+              const src = typeof item === 'string' ? item : item.url;
+              const type = typeof item === 'string' ? 'image' : item.type;
+              
+              return (
+                <CarouselItem key={i}>
+                  <div className="aspect-[16/9] w-full overflow-hidden bg-muted">
+                    {type === 'video' ? (
+                      <video
+                        src={src}
+                        controls
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <img
+                        src={src}
+                        alt={`property-${i + 1}`}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
 
           <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2" />
@@ -125,28 +139,49 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
       </div>
 
       <div className="mt-3 grid grid-cols-8 gap-2">
-        {images.map((src, i) => {
+        {images.map((item, i) => {
+          const src = typeof item === 'string' ? item : item.url;
+          const type = typeof item === 'string' ? 'image' : item.type;
           const isActive = current - 1 === i;
+          
           return (
             <button
               key={i}
               type="button"
               onClick={() => handleThumbClick(i)}
               className={cn(
-                "group overflow-hidden rounded-md border focus:outline-none",
+                "group overflow-hidden rounded-md border focus:outline-none relative",
                 isActive ? "ring-2 ring-primary" : "hover:opacity-90"
               )}
             >
               <div className="aspect-[4/3] w-full bg-muted">
-                <img
-                  src={src}
-                  alt={`thumb-${i + 1}`}
-                  className={cn(
-                    "h-full w-full object-cover transition",
-                    isActive ? "scale-100" : "group-hover:scale-105"
-                  )}
-                  loading="lazy"
-                />
+                {type === 'video' ? (
+                  <>
+                    <video
+                      src={src}
+                      alt={`thumb-${i + 1}`}
+                      className={cn(
+                        "h-full w-full object-cover transition pointer-events-none",
+                        isActive ? "scale-100" : "group-hover:scale-105"
+                      )}
+                      loading="lazy"
+                    />
+                    {/* Video badge on thumbnail */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Play className="h-5 w-5 text-white fill-white" />
+                    </div>
+                  </>
+                ) : (
+                  <img
+                    src={src}
+                    alt={`thumb-${i + 1}`}
+                    className={cn(
+                      "h-full w-full object-cover transition",
+                      isActive ? "scale-100" : "group-hover:scale-105"
+                    )}
+                    loading="lazy"
+                  />
+                )}
               </div>
             </button>
           );
@@ -336,11 +371,21 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
       property.address?.country,
     ].filter(Boolean).join(", ");
 
-  const mediaImages = Array.isArray(property.media) && property.media.length
+  const mediaFiles = Array.isArray(property.media) && property.media.length
     ? property.media
-      .filter((m) => m?.url && (m.type === "image" || !m.type))
-      .map((m) => m.url)
-    : defaultImages;
+        .filter((m) => m?.url)
+        .sort((a, b) => {
+          // Sắp xếp: image trước, video sau
+          if (a.type === 'image' && b.type === 'video') return -1;
+          if (a.type === 'video' && b.type === 'image') return 1;
+          return 0;
+        })
+    : [];
+
+  // Nếu không có media nào, dùng default images
+  const displayMedia = mediaFiles.length > 0 
+    ? mediaFiles 
+    : defaultImages.map(url => ({ url, type: 'image' }));
 
   const [lng, lat] = property.address?.location?.coordinates || [];
   const gmapSrc = (lng != null && lat != null)
@@ -426,7 +471,7 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
       {/* Gallery */}
       <div className="container mx-auto px-4 lg:px-8 xl:px-12 py-6">
-        <ImagesCarousel images={mediaImages} />
+        <ImagesCarousel images={displayMedia} />
       </div>
 
       <div className="container mx-auto grid grid-cols-1 gap-6 px-4 lg:px-8 xl:px-12 pb-10 lg:grid-cols-12">

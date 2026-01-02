@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
-import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles, Plus, X } from 'lucide-react'
+import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles, Plus, X, Film } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -255,13 +255,13 @@ export default function EditPost() {
                 setVisibility(data.visibility || 'public')
                 setStatus(data.status || 'active')
                 
-                // Load existing images with type marker
+                // Load existing media (images and videos)
                 const existingImages = (data.media || [])
-                    .filter(m => m.type === 'image')
                     .map((media, index) => ({
                         id: `existing-${media._id || index}`,
                         url: media.url,
                         type: 'existing',
+                        mediaType: media.type || 'image',  // ✅ Lấy type từ backend (image/video)
                         mediaId: media._id
                     }))
                 setAllImages(existingImages)
@@ -540,11 +540,11 @@ export default function EditPost() {
                 id: `new-${Date.now()}-${Math.random()}`,
                 url: URL.createObjectURL(file),
                 type: 'new',
-                file: file
+                file: file,
+                mediaType: file.type.startsWith('video/') ? 'video' : 'image' // THÊM DÒNG NÀY
             }))
             setAllImages(prev => [...prev, ...newImages])
             
-            // Update form files
             const newFiles = newImages.map(img => img.file)
             const currentFiles = form.getValues('files') || []
             form.setValue('files', [...currentFiles, ...newFiles])
@@ -795,7 +795,7 @@ export default function EditPost() {
                                     <input
                                         ref={fileInputRef}
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/x-msvideo"
                                         multiple
                                         onChange={handleFileInputChange}
                                         className="hidden"
@@ -806,11 +806,27 @@ export default function EditPost() {
                                             {allImages.map((image) => (
                                                 <div key={image.id} className="relative group">
                                                     <div className="relative h-32 bg-muted rounded-lg overflow-hidden border-2 border-border">
-                                                        <img
-                                                            src={image.url}
-                                                            alt="Property"
-                                                            className="w-full h-full object-cover"
-                                                        />
+                                                        {image.mediaType === 'video' ? (
+                                                            <video
+                                                                src={image.url}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <img
+                                                                src={image.url}
+                                                                alt="Property"
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        )}
+                                                        
+                                                        {/* Video badge */}
+                                                        {image.mediaType === 'video' && (
+                                                            <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white rounded px-2 py-1 flex items-center gap-1">
+                                                                <Film className="w-3 h-3" />
+                                                                <span className="text-xs">Video</span>
+                                                            </div>
+                                                        )}
+                                                        
                                                         {/* Overlay with delete button */}
                                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <Button
@@ -823,6 +839,7 @@ export default function EditPost() {
                                                                 <X className="h-4 w-4" />
                                                             </Button>
                                                         </div>
+                                                        
                                                         {/* Badge for existing images */}
                                                         {image.type === 'existing' && (
                                                             <div className="absolute bottom-2 left-2">

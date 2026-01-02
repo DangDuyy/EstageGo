@@ -7,17 +7,24 @@ const uploadPropertyImage = async (files, propertyId) => {
     }
 
     const uploadResults = await cloudinaryProvider.uploadMultiple(files, uploadOptions)
-    console.log(uploadResults)
-
-    return uploadResults.map((result, index) => ({
-        url: result.url,
-        type: result.resource_type,
-        metadata: {
-          filename: files[index].originalname,
-          size: result.bytes,
-          mimetype: files[index].mimetype
+    
+    const mapped = uploadResults.map((result, index) => {
+        const file = files[index]
+        const type = file.mimetype.startsWith('video/') ? 'video' : 'image'
+        
+        return {
+            url: result.url,
+            publicId: result.public_id,
+            type: type,
+            metadata: {
+                filename: file.originalname,
+                size: result.bytes,
+                mimetype: file.mimetype
+            }
         }
-      }))
+    })
+    
+    return mapped
 }
 
 const uploadReviewImages = async (files, userId) => {
@@ -27,7 +34,6 @@ const uploadReviewImages = async (files, userId) => {
     }
 
     const uploadResults = await cloudinaryProvider.uploadMultiple(files, uploadOptions)
-    console.log(uploadResults)
 
     return uploadResults.map((result, index) => ({
         url: result.url,
