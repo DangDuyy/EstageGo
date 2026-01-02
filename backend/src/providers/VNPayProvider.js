@@ -120,9 +120,22 @@ const getResponseMessage = (code) => {
   }
   return messages[code] || 'Lỗi không xác định'
 }
+/**
+ * Get bank list supported by VNPay
+ */
+const getBankList = async () => {
+  try {
+    const bankList = await vnpay.getBankList()
+    return bankList
+  } catch (error) {
+    console.error('❌ VNPay: Get bank list error:', error.message)
+    throw error
+  }
+}
 
 export default {
   createPaymentUrl,
   verifyReturnUrl,
-  getResponseMessage
+  getResponseMessage,
+  getBankList
 }

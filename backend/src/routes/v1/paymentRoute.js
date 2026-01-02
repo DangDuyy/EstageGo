@@ -12,4 +12,7 @@ Router.get('/balance', authMiddleware.isAuthorized, paymentController.getBalance
 // Public route (VNPay callback - no auth required)
 Router.get('/vnpay-return', paymentController.vnpayReturn)
 
+// Get bank list
+Router.get('/banks', authMiddleware.isAuthorized, paymentController.getBankList)
+
 export const paymentRoute = Router

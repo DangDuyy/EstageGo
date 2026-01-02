@@ -631,6 +631,12 @@ export const getTransactionDetailAPI = async (transactionId) => {
   return response.data
 }
 
+// Get bank list supported by VNPay
+export const getBankListAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/payment/banks`)
+  return response.data
+}
+
 // ========== NOTIFICATION APIs ==========
 
 export const getNotificationsAPI = async (page = 1, limit = 20) => {

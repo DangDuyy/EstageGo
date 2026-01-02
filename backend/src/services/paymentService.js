@@ -243,11 +243,25 @@ const deductBalance = async ({ userId, amount, description, referenceId }) => {
   }
 }
 
+/**
+ * Get bank list supported by VNPay
+ */
+const getBankList = async () => {
+  try {
+    const bankList = await VNPayProvider.getBankList()
+    return bankList
+  } catch (error) {
+    console.error('❌ Get bank list error:', error)
+    throw error
+  }
+}
+
 export default {
   createPayment,
   handleVNPayReturn,
   getTransactionHistory,
   getBalance,
   getTransactionDetail,
-  deductBalance
+  deductBalance,
+  getBankList
 }
