@@ -106,10 +106,31 @@ const getTransactionDetail = async (req, res, next) => {
   }
 }
 
+/**
+ * Get bank list supported by VNPay
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+const getBankList = async (req, res, next) => {
+  try {
+    const bankList = await paymentService.getBankList()
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: bankList
+    })
+  } catch (error) {
+    console.error('❌ Get bank list error:', error)
+    next(error)
+  }
+}
+
 export const paymentController = {
   createPayment,
   vnpayReturn,
   getTransactionHistory,
   getBalance,
-  getTransactionDetail
+  getTransactionDetail,
+  getBankList
 }

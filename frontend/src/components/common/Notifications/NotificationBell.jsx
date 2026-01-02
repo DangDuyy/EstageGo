@@ -47,7 +47,7 @@ export default function NotificationBell() {
         if (parts.length === 2) return parts.pop().split(';').shift()
       }
       const token = getCookie('accessToken') || localStorage.getItem('accessToken')
-      if (token) connectSocket(token)
+      if (token) connectSocket(token, currentUser._id)
     }
 
     const off = onNotification((payload) => {

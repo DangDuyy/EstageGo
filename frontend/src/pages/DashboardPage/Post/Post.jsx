@@ -35,6 +35,14 @@ export default function Post() {
       
       const searchParams = new URLSearchParams(location.search)
       searchParams.set('owner', currentUser._id)
+      
+      // Add status filter based on activeTab
+      if (activeTab !== 'all') {
+        searchParams.set('status', activeTab)
+      } else {
+        searchParams.delete('status')
+      }
+      
       if (!searchParams.get('page')) searchParams.set('page', `${currentPage}`)
       if (!searchParams.get('itemsPerPage')) searchParams.set('itemsPerPage', `${currentPageSize}`)
 
@@ -44,7 +52,7 @@ export default function Post() {
     }
 
     callAPI()
-  }, [location.search, currentUser?._id])
+  }, [location.search, currentUser?._id, activeTab])
 
   // Hàm xử lý search
   const handleSearch = () => {
@@ -95,7 +103,7 @@ export default function Post() {
                 value={searchValue} 
                 onChange={(e) => setSearchValue(e.target.value)} 
                 onKeyDown={handleKeyDown} 
-                placeholder="Nhập tiêu đề hoặc địa chỉ..." 
+                placeholder="Search by title or address..." 
                 className="pl-10" 
               />
             </div>
@@ -120,7 +128,7 @@ export default function Post() {
 
       {/* Tabs */}
       <div className="mt-6 flex gap-3">
-        {["all", "drafts", "published", "archived"].map(tab => (
+        {["all", "active", "draft", "hidden", "rented", "sold"].map(tab => (
           <Button
             key={tab}
             variant={activeTab === tab ? "default" : "outline"}
@@ -133,16 +141,13 @@ export default function Post() {
 
       {/* Nội dung tab */}
       <div className="mt-6">
-        {activeTab === "all" && (
+        {(activeTab === "all" || activeTab === "active" || activeTab === "draft" || activeTab === "hidden" || activeTab === "rented" || activeTab === "sold") && (
           <PropertyTable
             data={propertiesData}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
           />
         )}
-        {activeTab === "drafts" && <p>Danh sách các bài viết nháp ở đây...</p>}
-        {activeTab === "published" && <p>Danh sách các bài viết đã xuất bản ở đây...</p>}
-        {activeTab === "archived" && <p>Danh sách các bài viết đã lưu trữ ở đây...</p>}
       </div>
     </ContentLayout>
   )

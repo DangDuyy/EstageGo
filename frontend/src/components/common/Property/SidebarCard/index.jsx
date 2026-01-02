@@ -95,10 +95,10 @@ export default function SidebarCard() {
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
-  
+
   const page = parseInt(query.get("page") || "1", 10);
   const itemsPerPage = parseInt(query.get("itemsPerPage") || "8", 10);
-  
+
   const [view, setView] = useState("grid");
   const [sort, setSort] = useState("default"); // "default" | "asc" | "desc"
 
@@ -165,32 +165,32 @@ export default function SidebarCard() {
       list.sort((a, b) => {
         const priorityA = getPropertyPriority(a);
         const priorityB = getPropertyPriority(b);
-        
+
         if (priorityA !== priorityB) {
           return priorityB - priorityA; // Higher priority first
         }
-        
+
         // If same priority, sort by bumpedAt (newest boost first)
         const bumpedAtA = a?.bumpedAt ? new Date(a.bumpedAt).getTime() : 0;
         const bumpedAtB = b?.bumpedAt ? new Date(b.bumpedAt).getTime() : 0;
         if (bumpedAtA !== bumpedAtB) {
           return bumpedAtB - bumpedAtA;
         }
-        
+
         // Then by createdAt (newest first)
         const createdAtA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
         const createdAtB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
         return createdAtB - createdAtA;
       });
     }
-    
+
     // Backend handles pagination
     return list;
   }, [properties, sort]);
-  
+
   // Calculate total pages
   const totalPages = totalProperties > 0 ? Math.ceil(totalProperties / itemsPerPage) : 0;
-  
+
   // Navigate to different page
   const goToPage = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -198,7 +198,7 @@ export default function SidebarCard() {
     params.set("page", String(newPage));
     navigate(`${location.pathname}?${params.toString()}`);
   };
-  
+
   // Change items per page
   const changeItemsPerPage = (value) => {
     const params = new URLSearchParams(location.search);
@@ -206,12 +206,12 @@ export default function SidebarCard() {
     params.set("page", "1");
     navigate(`${location.pathname}?${params.toString()}`);
   };
-  
+
   // Get page numbers array for display
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -227,7 +227,7 @@ export default function SidebarCard() {
       if (end < totalPages - 1) pages.push("...");
       if (totalPages > 1) pages.push(totalPages);
     }
-    
+
     return pages;
   };
 
@@ -236,31 +236,31 @@ export default function SidebarCard() {
     updateStateData(res)
   }
 
-  if (loading) {
-    return (
-      <section className="container mx-auto px-40 py-10">
-        <div className="mb-6 flex items-center justify-between">
-          <Skeleton className="h-[36px] w-[220px] rounded-md" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-9 rounded-md" />
-            <Skeleton className="h-9 w-[120px] rounded-md" />
-            <Skeleton className="h-9 w-[180px] rounded-md" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <aside className="lg:col-span-4">
-            <Skeleton className="h-[300px] w-full rounded-xl" />
-          </aside>
-          <div className="lg:col-span-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-[260px] w-full rounded-xl" />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <section className="container mx-auto px-40 py-10">
+  //       <div className="mb-6 flex items-center justify-between">
+  //         <Skeleton className="h-[36px] w-[220px] rounded-md" />
+  //         <div className="flex gap-2">
+  //           <Skeleton className="h-9 w-9 rounded-md" />
+  //           <Skeleton className="h-9 w-9 rounded-md" />
+  //           <Skeleton className="h-9 w-[120px] rounded-md" />
+  //           <Skeleton className="h-9 w-[180px] rounded-md" />
+  //         </div>
+  //       </div>
+  //       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+  //         <aside className="lg:col-span-4">
+  //           <Skeleton className="h-[300px] w-full rounded-xl" />
+  //         </aside>
+  //         <div className="lg:col-span-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+  //           {Array.from({ length: 4 }).map((_, i) => (
+  //             <Skeleton key={i} className="h-[260px] w-full rounded-xl" />
+  //           ))}
+  //         </div>
+  //       </div>
+  //     </section>
+  //   );
+  // }
 
   return (
     <section className="container mx-auto px-40 py-10">
@@ -290,7 +290,7 @@ export default function SidebarCard() {
           )}
         </div>
       )}
-      
+
       {/* Header */}
       <div className="mb-6 flex justify-between">
         <h3 className="text-3xl font-bold">Property Listing</h3>
@@ -338,90 +338,112 @@ export default function SidebarCard() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-      {/* Sidebar */}
-      <aside className="lg:col-span-4">
-        <FiltersPanel onInstantResults={handleInstantResults} />
+        {/* Sidebar */}
+        <aside className="lg:col-span-4">
+          <FiltersPanel onInstantResults={handleInstantResults} />
 
-        <div className="mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <h5 className="mb-4 text-base font-semibold">Latest Properties</h5>
-              <ul className="space-y-4">
-                {LATEST.map((p) => <LatestItem key={p.id} p={p} />)}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </aside>
+          <div className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                <h5 className="mb-4 text-base font-semibold">Latest Properties</h5>
+                <ul className="space-y-4">
+                  {LATEST.map((p) => <LatestItem key={p.id} p={p} />)}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </aside>
 
         {/* Main content */}
-        <div className="lg:col-span-8">
-          {view === "grid" ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {filtered.map((p, idx) => (
-                <PropertyCard
-                  key={p.id ?? p._id ?? p.slug ?? p.href ?? idx}
-                  item={p}
-                />
-              ))}
+        {loading ? (
+          <section className="lg:col-span-8 container mx-auto">
+            <div className="grid gap-8">
+              <div className="lg:col-span-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[260px] w-full rounded-xl" />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) :
+
+          filtered.length > 0 ? (
+            <div className="lg:col-span-8">
+              {view === "grid" ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {filtered.map((p, idx) => (
+                    <PropertyCard
+                      key={p.id ?? p._id ?? p.slug ?? p.href ?? idx}
+                      item={p}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {filtered.map((p, idx) => (
+                    <PropertyCard
+                      key={p.id ?? p._id ?? p.slug ?? p.href ?? idx}
+                      item={p}
+                      variant="list"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 0 && (
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-600">
+                    Page {page} of {totalPages} ({totalProperties} total)
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Prev page"
+                      onClick={() => goToPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    {getPageNumbers().map((n, idx) => (
+                      n === "..." ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 flex items-center">...</span>
+                      ) : (
+                        <Button
+                          key={`page-${n}`}
+                          variant={n === page ? "default" : "outline"}
+                          onClick={() => goToPage(n)}
+                        >
+                          {n}
+                        </Button>
+                      )
+                    ))}
+
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Next page"
+                      onClick={() => goToPage(page + 1)}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="space-y-6">
-              {filtered.map((p, idx) => (
-                <PropertyCard
-                  key={p.id ?? p._id ?? p.slug ?? p.href ?? idx}
-                  item={p}
-                  variant="list"
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 0 && (
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-600">
-                Page {page} of {totalPages} ({totalProperties} total)
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  aria-label="Prev page"
-                  onClick={() => goToPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                {getPageNumbers().map((n, idx) => (
-                  n === "..." ? (
-                    <span key={`ellipsis-${idx}`} className="px-2 flex items-center">...</span>
-                  ) : (
-                    <Button
-                      key={`page-${n}`}
-                      variant={n === page ? "default" : "outline"}
-                      onClick={() => goToPage(n)}
-                    >
-                      {n}
-                    </Button>
-                  )
-                ))}
-                
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  aria-label="Next page"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+            <div className="flex lg:col-span-8 items-center justify-center h-64">
+              <div className="text-center">
+                <p className="text-lg text-gray-500">No properties found</p>
+                <p className="text-sm text-gray-400 mt-2">Try adjusting your search filters</p>
               </div>
             </div>
-          )}
-        </div>
+          )
+        }
       </div>
     </section>
   );

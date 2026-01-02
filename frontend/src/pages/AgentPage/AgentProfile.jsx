@@ -441,6 +441,10 @@ export default function AgentProfile() {
           currentUser={currentUser}
           enableFollow={isAgent}
           enableReviews={isAgent}
+          followersDialogOpen={followersDialogOpen}
+          setFollowersDialogOpen={setFollowersDialogOpen}
+          followers={followers}
+          loadingFollowers={loadingFollowers}
         />
       ) : (
         // Default Profile View

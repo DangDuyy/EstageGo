@@ -24,7 +24,7 @@ export const updateSocketToken = (newAccessToken) => {
   socket.auth = { token: newAccessToken }
 }
 
-export const connectSocket = (accessToken) => {
+export const connectSocket = (accessToken, userId) => {
   // Reuse the singleton even if not connected yet
   if (socket) {
     if (!socket.connected) {
@@ -56,7 +56,7 @@ export const connectSocket = (accessToken) => {
   console.log('[Socket] Connecting to:', API_ROOT)
   socket = io(API_ROOT.replace('/api', ''), {
     withCredentials: true,
-    auth: { token: accessToken },
+    auth: { token: accessToken, userId: userId },
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 500
@@ -82,7 +82,16 @@ export const connectSocket = (accessToken) => {
   socket.on('notification:new', notificationDispatch)
   socket.on('presence:update', presenceDispatch)
 
-  socket.on('connect', () => console.log('[Socket] Connected:', socket.id))
+  socket.on('connect', () => {
+    console.log('[Socket] Connected:', socket.id)
+    // Explicitly join user room on connect
+    const userId = socket.auth?.userId
+    if (userId) {
+      socket.emit('user:join', { userId }, (ack) => {
+        console.log('[Socket] user:join ack:', ack)
+      })
+    }
+  })
   socket.on('connect_error', (err) => console.error('[Socket] Connection error:', err?.message || err))
   socket.on('disconnect', (reason) => console.log('[Socket] Disconnected:', reason))
 

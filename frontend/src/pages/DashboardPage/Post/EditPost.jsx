@@ -698,25 +698,19 @@ export default function EditPost() {
                                 <div className="flex items-center gap-2">
                                     <Label className="text-sm">Status</Label>
                                     <div className="rounded-full border p-1">
-                                        <div className="flex gap-1">
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant={status === "active" ? "default" : "ghost"}
-                                                onClick={() => setStatus("active")}
-                                                className="rounded-full"
-                                            >
-                                                Active
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant={status === "draft" ? "default" : "ghost"}
-                                                onClick={() => setStatus("draft")}
-                                                className="rounded-full"
-                                            >
-                                                Draft
-                                            </Button>
+                                        <div className="flex gap-1 flex-wrap">
+                                            {["active", "draft", "hidden", "rented", "sold"].map((s) => (
+                                                <Button
+                                                    key={s}
+                                                    type="button"
+                                                    size="sm"
+                                                    variant={status === s ? "default" : "ghost"}
+                                                    onClick={() => setStatus(s)}
+                                                    className="rounded-full"
+                                                >
+                                                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                                                </Button>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>

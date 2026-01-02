@@ -32,6 +32,10 @@ export function usePresenceText({ isOnline, lastActiveAt }, opts) {
   const relative = useRelativeTime(lastActiveAt, opts)
   if (isOnline) return 'Online'
   else if (relative === 'Just now') return 'Away'
-  else if (lastActiveAt) return `Online ${relative} ago`
+  else if (lastActiveAt) {
+    // Don't add "ago" if it's Yesterday or date format (DD/MM or DD/MM/YYYY)
+    const needsAgo = !relative.includes('/') && relative !== 'Yesterday' && relative !== 'Just now'
+    return `Online ${relative}${needsAgo ? ' ago' : ''}`
+  }
   return 'Offline'
 }

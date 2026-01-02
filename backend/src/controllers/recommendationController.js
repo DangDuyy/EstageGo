@@ -63,7 +63,7 @@ const trackActivity = async (req, res, next) => {
     const { sessionId, eventType, propertyId, metadata } = req.body
 
     // Validate eventType
-    const validEventTypes = ['VIEW', 'SEARCH', 'FILTER', 'WISHLIST_ADD', 'WISHLIST_REMOVE', 'CONTACT', 'CLICK']
+    const validEventTypes = ['VIEW', 'SEARCH', 'FILTER', 'WISHLIST_ADD', 'WISHLIST_REMOVE', 'CONTACT', 'CLICK', 'SHARE']
     if (!validEventTypes.includes(eventType)) {
       throw new ApiError(StatusCodes.BAD_REQUEST, `Invalid eventType. Must be one of: ${validEventTypes.join(', ')}`)
     }

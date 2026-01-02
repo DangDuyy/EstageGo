@@ -14,23 +14,15 @@ import membershipConfigService from "~/services/membershipConfigService"
 import userMembershipService from "~/services/userMembershipService"
 import mongoose from "mongoose"
 import userActivityModel from "~/models/userActivity"
+import { agentFollowService } from "~/services/agentFollowService"
+import { createAndEmitNotification } from "~/services/notificationService"
+import agentFollowModel from "~/models/agentFollows"
 
 const safeParse = (v) => {
     if (typeof v === 'string') {
         try { return JSON.parse(v) } catch { return v }
     }
     return v
-}
-
-const computeSaleBase = (v) => {
-    if (v < 500_000_000) return 300_000
-    if (v <= 2_000_000_000) return 600_000
-    return 1_000_000
-}
-const computeRentBase = (v) => {
-    if (v < 10_000_000) return 150_000
-    if (v <= 30_000_000) return 300_000
-    return 600_000
 }
 
 const createProperty = async (req, res, next) => {
@@ -166,6 +158,49 @@ const createProperty = async (req, res, next) => {
         // Commit transaction
         await session.commitTransaction();
 
+        // Notify followers about new post
+        try {
+            console.log(`[createProperty] Fetching followers for user ${owner}...`);
+            const followers = await agentFollowModel
+                .find({ agent: owner, _destroy: false })
+                .select('follower')
+                .lean();
+            
+            console.log(`[createProperty] Found ${followers?.length || 0} followers`);
+            
+            if (followers && followers.length > 0) {
+                const userWithDetails = await propertyService.getUserById(owner);
+                const userName = userWithDetails?.fullName || userWithDetails?.userName || 'User';
+                
+                console.log(`[createProperty] Sending notifications to ${followers.length} followers...`);
+                
+                for (const follow of followers) {
+                    console.log(`[createProperty] Sending notification to follower ${follow.follower}`);
+                    
+                    await createAndEmitNotification(follow.follower, {
+                        type: 'NEW_POST',
+                        title: 'New Property Posted',
+                        message: `${userName} posted a new property: ${finalProperty.title}`,
+                        meta: {
+                            propertyId: finalProperty._id,
+                            userId: owner,
+                            userName: userName,
+                            propertyTitle: finalProperty.title
+                        }
+                    });
+                    
+                    console.log(`[createProperty] Notification sent to follower ${follow.follower}`);
+                }
+                
+                console.log(`[createProperty] All notifications sent`);
+            } else {
+                console.log(`[createProperty] No followers to notify`);
+            }
+        } catch (notifError) {
+            console.error('[createProperty] Error notifying followers:', notifError);
+            // Don't fail the property creation if notification fails
+        }
+
         res.status(StatusCodes.CREATED).json({
             success: true,
             message: "Property created successfully",
@@ -183,127 +218,6 @@ const createProperty = async (req, res, next) => {
         session.endSession();
     }
 };
-
-// const createProperty = async (req, res, next) => {
-//     try {
-//         // Normalize complex fields from multipart
-//         const body = { ...req.body }
-//         body.price = safeParse(body.price)
-//         body.address = safeParse(body.address)
-//         body.rooms = safeParse(body.rooms)
-
-//         // res.status(StatusCodes.OK).json(body)
-//         // return
-
-//         const owner = req.jwtDecoded?._id
-//         if (!owner) return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: "Unauthorized" })
-
-//         const user = await propertyService.getUserById(owner)
-//         if (!user) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "User not found" })
-
-//         const membership = user.membershipLevel || 'basic'
-//         const purpose = body.purpose === 'rent' ? 'rent' : 'sale'
-//         const propertyPriceValue = Number(body?.price?.value || 0)
-
-//         const baseFee = purpose === 'rent' ? computeRentBase(propertyPriceValue) : computeSaleBase(propertyPriceValue)
-//         const discountPercent = membership === 'premium' ? 30 : membership === 'standard' ? 10 : 0
-//         const feeAfterDiscount = Math.round(baseFee * (1 - discountPercent / 100))
-
-//         let postType = 'normal'
-//         let expireDays
-//         if (membership === 'premium') { postType = 'vip'; expireDays = 15 }
-//         else if (membership === 'standard') { expireDays = purpose === 'rent' ? 14 : 7 }
-//         else { expireDays = purpose === 'rent' ? 7 : 3 }
-//         // const expireAt = new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000)
-
-//         const tierConfig = await ListingTierConfig.findOne({ tierName: body.tierType })
-
-//         // Kiểm tra xem ngừi dùng có gói đăng ký nào không
-//         const activeMembership = await userMembershipService.getActiveMembership(owner)
-
-//         if (!tierConfig) {
-//             throw new Error('Listing tier config not found')
-//         }
-
-//         let priority = tierConfig.priority
-
-//         const duration = tierConfig.durations.find(
-//             (d) => d._id.toString() === body.durationId
-//         )
-
-//         if (!duration) {
-//             throw new Error('Invalid listing duration')
-//         }
-
-//         let expireAt = new Date(
-//             Date.now() + duration.days * 24 * 60 * 60 * 1000
-//         )
-
-//         let listingFee = duration.price
-//         if (activeMembership && activeMembership.includedListings.remaining > 0 && duration.days === 30) {
-//             listingFee = 0
-//             await userMembershipService.useIncludedListing(owner)
-//         }
-
-//         let isFeatured = tierConfig.features.featuredListing
-
-//         if (user.balance < listingFee) {
-//             return res.status(StatusCodes.PAYMENT_REQUIRED).json({
-//                 success: false,
-//                 message: "Insufficient balance to pay listing fee",
-//                 required: listingFee,
-//                 currentBalance: user.balance
-//             })
-//         }
-
-//         const propertyData = {
-//             ...body,
-//             tier: tierConfig._id,
-//             owner,
-//             postType,
-//             listingFee,
-//             priority,
-//             isFeatured,
-//             expireAt,
-//             visibility: 'public'
-//         }
-
-//         const newProperty = await propertyService.createProperty(propertyData)
-
-//         if (listingFee > 0) {
-//             await paymentService.deductBalance({
-//                 userId: owner,
-//                 amount: listingFee,
-//                 description: `Listing fee (${purpose}) - ${newProperty.title}`,
-//                 referenceId: newProperty._id.toString()
-//             })
-//         }
-
-//         const files = req.files || []
-//         let updateProperty = newProperty
-//         if (files.length && mediaService?.uploadPropertyImage) {
-//             const uploadResult = await mediaService.uploadPropertyImage(files, newProperty._id)
-//             updateProperty = await propertyService.addMediaToProperty(newProperty._id, uploadResult.flat())
-//         }
-
-//         res.status(StatusCodes.CREATED).json({
-//             success: true,
-//             message: "Property created successfully",
-//             data: updateProperty,
-//             feeCharged: feeAfterDiscount,
-//             discountPercent,
-//             postType,
-//             expireAt
-//         })
-//     } catch (error) {
-//         console.error("Error createProperty:", error)
-//         // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-//         //     success: false,
-//         //     message: error?.message || "Internal Server Error"
-//         // })
-//         next(error)
-//     }
-// }
 
 function buildPrompt(property, tone) {
     const rooms = JSON.parse(property.rooms || "{}");
@@ -1496,13 +1410,22 @@ const deleteProperty = async (req, res, next) => {
         const { id: propertyId } = req.params
         const userId = req.jwtDecoded._id
 
-        await propertyService.deleteProperty(propertyId, userId)
+        console.log('[deleteProperty] Request to delete property:', {
+            propertyId,
+            userId,
+            userIdType: typeof userId
+        })
+
+        const result = await propertyService.deleteProperty(propertyId, userId)
+
+        console.log('[deleteProperty] Delete result:', result ? 'Success' : 'Failed')
 
         return res.status(StatusCodes.OK).json({
             success: true,
             message: "Property deleted successfully"
         })
     } catch (error) {
+        console.error('[deleteProperty] Error:', error)
         next(error)
     }
 }
@@ -1831,6 +1754,73 @@ const purchaseBoostPackage = async (req, res, next) => {
     }
 }
 
+// Debug endpoint: test notification delivery to specific user
+const testNotificationToUser = async (req, res, next) => {
+    try {
+        const { userId } = req.params
+        const { message = 'Test notification' } = req.body
+        
+        if (!userId) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: "userId parameter is required"
+            })
+        }
+        
+        console.log(`[testNotification] Sending test notification to user: ${userId}`)
+        
+        await createAndEmitNotification(userId, {
+            type: 'TEST',
+            title: 'Test Notification',
+            message: message,
+            meta: { test: true, sentAt: new Date().toISOString() }
+        })
+        
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            message: "Test notification sent",
+            targetUserId: userId
+        })
+    } catch (error) {
+        console.error("Error in testNotificationToUser:", error)
+        next(error)
+    }
+}
+
+// Get property statistics (views, contacts, shares, wishlist count)
+const getPropertyStatistics = async (req, res, next) => {
+    try {
+        const { propertyId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(propertyId)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                success: false,
+                message: 'Invalid property ID'
+            });
+        }
+
+        // Count different activity types from UserActivity collection
+        const [viewCount, contactCount, shareCount, wishlistCount] = await Promise.all([
+            userActivityModel.countDocuments({ propertyId, eventType: 'VIEW' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'CONTACT' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'SHARE' }),
+            userActivityModel.countDocuments({ propertyId, eventType: 'WISHLIST_ADD' })
+        ]);
+
+        return res.status(StatusCodes.OK).json({
+            success: true,
+            data: {
+                views: viewCount,
+                contacts: contactCount,
+                shares: shareCount,
+                likes: wishlistCount // Using wishlist count as "likes"
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export const propertyController = {
     createProperty,
     generateTitleDescription,
@@ -1856,5 +1846,7 @@ export const propertyController = {
     updatePropertyStatus,
     updatePropertyVisibility,
     getPropertiesGroupedByProvince,
-    deleteProperty
+    deleteProperty,
+    testNotificationToUser,
+    getPropertyStatistics
 }
