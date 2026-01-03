@@ -114,7 +114,7 @@ function PropertyImagesCarousel({ images = defaultImages, className }) {
                       <video
                         src={src}
                         controls
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain bg-black"
                         loading="lazy"
                       />
                     ) : (

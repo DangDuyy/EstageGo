@@ -1178,21 +1178,28 @@ export default function AddPropertyWizard() {
                                             variant="outline"
                                             size="sm"
                                             onClick={async () => {
-                                                if (!localImages.length) return;
+                                                const imagesToAnalyze = localImages.filter(img => img.file?.type?.startsWith('image/'));
+                                                if (!imagesToAnalyze.length) return;
                                                 try {
                                                     setAnalyzingImages(true);
                                                     const updated = [];
                                                     for (let i = 0; i < localImages.length; i++) {
                                                         const img = localImages[i];
-                                                        try {
-                                                            const result = await analyzeTemporaryImageAPI(img.file);
-                                                            updated.push({
-                                                                ...img,
-                                                                tags: result?.data?.tags || img.tags || [],
-                                                                detectedObjects: result?.data?.detectedObjects || img.detectedObjects || [],
-                                                                analyzed: true,
-                                                            });
-                                                        } catch (e) {
+                                                        // Only analyze images, skip videos
+                                                        if (img.file?.type?.startsWith('image/')) {
+                                                            try {
+                                                                const result = await analyzeTemporaryImageAPI(img.file);
+                                                                updated.push({
+                                                                    ...img,
+                                                                    tags: result?.data?.tags || img.tags || [],
+                                                                    detectedObjects: result?.data?.detectedObjects || img.detectedObjects || [],
+                                                                    analyzed: true,
+                                                                });
+                                                            } catch (e) {
+                                                                updated.push(img);
+                                                            }
+                                                        } else {
+                                                            // Keep videos as-is
                                                             updated.push(img);
                                                         }
                                                     }
@@ -1205,7 +1212,7 @@ export default function AddPropertyWizard() {
                                                     setAnalyzingImages(false);
                                                 }
                                             }}
-                                            disabled={analyzingImages || !localImages.length}
+                                            disabled={analyzingImages || !localImages.some(img => img.file?.type?.startsWith('image/'))}
                                         >
                                             <Sparkles className="h-4 w-4 mr-2" />
                                             Analyze All
@@ -1213,145 +1220,151 @@ export default function AddPropertyWizard() {
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    {localImages.length === 0 ? (
+                                    {localImages.filter(img => img.file?.type?.startsWith('image/')).length === 0 ? (
                                         <p className="text-sm text-muted-foreground">Upload photos above to tag and analyze.</p>
                                     ) : (
                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                            {localImages.map((image, idx) => (
-                                                <div key={image.id} className="relative group">
-                                                    <img src={image.url} alt={image.filename} className="w-full h-48 object-cover rounded-lg" />
-                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2 flex-col">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="secondary"
-                                                            onClick={async (e) => {
-                                                                e.stopPropagation();
-                                                                try {
-                                                                    setAnalyzingImages(true);
-                                                                    const result = await analyzeTemporaryImageAPI(image.file);
-                                                                    setLocalImages((prev) => prev.map((im, i) => i === idx ? {
-                                                                        ...im,
-                                                                        tags: result?.data?.tags || im.tags || [],
-                                                                        detectedObjects: result?.data?.detectedObjects || im.detectedObjects || [],
-                                                                        analyzed: true,
-                                                                    } : im));
-                                                                    toast.success('Image analyzed');
-                                                                } catch (error) {
-                                                                    console.error('Analyze error:', error);
-                                                                    toast.error('Failed to analyze image');
-                                                                } finally {
-                                                                    setAnalyzingImages(false);
-                                                                }
-                                                            }}
-                                                            disabled={analyzingImages}
-                                                        >
-                                                            <Sparkles className="h-4 w-4 mr-2" />
-                                                            {image.analyzed ? 'Re-analyze' : 'Analyze'}
-                                                        </Button>
-                                                        {image.tags && image.tags.length > 0 && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setLocalImages((prev) => prev.map((im, i) => i === idx ? { ...im, tags: [], detectedObjects: [], analyzed: false } : im));
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 mr-2" />
-                                                                Clear Tags
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                    {image.analyzed && (
-                                                        <Badge className="absolute top-2 right-2" variant="default">✓ Analyzed</Badge>
-                                                    )}
-                                                    {image.tags && image.tags.length > 0 && (
-                                                        <div className="absolute bottom-2 left-2 right-2">
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {image.tags.slice(0, 3).map((tag, tIdx) => (
-                                                                    <Badge
-                                                                        key={`${image.id}_tag_${tIdx}`}
-                                                                        variant={tag.source === 'ai' ? 'default' : 'secondary'}
-                                                                        className="text-xs flex items-center gap-1 cursor-pointer"
-                                                                        onClick={async () => {
-                                                                            try {
-                                                                                const result = await searchPropertiesByTagAPI(tag.label, 1, 50);
-                                                                                if (result.success && result.data?.properties) {
-                                                                                    navigate('/listing/grid', {
-                                                                                        state: {
-                                                                                            properties: result.data.properties,
-                                                                                            query: tag.label,
-                                                                                            filters: { tag: tag.label },
-                                                                                            isAISearch: true,
-                                                                                            isTagSearch: true
-                                                                                        }
-                                                                                    });
-                                                                                } else {
-                                                                                    toast.error('Không tìm thấy bất động sản với tag này');
-                                                                                }
-                                                                            } catch (error) {
-                                                                                console.error('Error searching by tag:', error);
-                                                                                toast.error('Lỗi khi tìm kiếm theo tag');
-                                                                            }
+                                            {localImages
+                                                .filter(img => img.file?.type?.startsWith('image/'))
+                                                .map((image, originalIdx) => {
+                                                    // Find the original index in the full localImages array
+                                                    const idx = localImages.findIndex(img => img.id === image.id);
+                                                    return (
+                                                        <div key={image.id} className="relative group">
+                                                            <img src={image.url} alt={image.filename} className="w-full h-48 object-cover rounded-lg" />
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2 flex-col">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="secondary"
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            setAnalyzingImages(true);
+                                                                            const result = await analyzeTemporaryImageAPI(image.file);
+                                                                            setLocalImages((prev) => prev.map((im, i) => i === idx ? {
+                                                                                ...im,
+                                                                                tags: result?.data?.tags || im.tags || [],
+                                                                                detectedObjects: result?.data?.detectedObjects || im.detectedObjects || [],
+                                                                                analyzed: true,
+                                                                            } : im));
+                                                                            toast.success('Image analyzed');
+                                                                        } catch (error) {
+                                                                            console.error('Analyze error:', error);
+                                                                            toast.error('Failed to analyze image');
+                                                                        } finally {
+                                                                            setAnalyzingImages(false);
+                                                                        }
+                                                                    }}
+                                                                    disabled={analyzingImages}
+                                                                >
+                                                                    <Sparkles className="h-4 w-4 mr-2" />
+                                                                    {image.analyzed ? 'Re-analyze' : 'Analyze'}
+                                                                </Button>
+                                                                {image.tags && image.tags.length > 0 && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="destructive"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setLocalImages((prev) => prev.map((im, i) => i === idx ? { ...im, tags: [], detectedObjects: [], analyzed: false } : im));
                                                                         }}
                                                                     >
-                                                                        {tag.label}
-                                                                        {tag.source === 'ai' && <span className="text-xs">🤖</span>}
-                                                                        <X
-                                                                            className="h-3 w-3 cursor-pointer hover:text-destructive"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setLocalImages((prev) => prev.map((im, i) => {
-                                                                                    if (i !== idx) return im;
-                                                                                    const newTags = (im.tags || []).filter((_, j) => j !== tIdx);
-                                                                                    return { ...im, tags: newTags };
-                                                                                }));
-                                                                            }}
-                                                                        />
-                                                                    </Badge>
-                                                                ))}
-                                                                {image.tags.length > 3 && (
-                                                                    <Badge variant="secondary" className="text-xs">+{image.tags.length - 3}</Badge>
+                                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                                        Clear Tags
+                                                                    </Button>
                                                                 )}
                                                             </div>
+                                                            {image.analyzed && (
+                                                                <Badge className="absolute top-2 right-2" variant="default">✓ Analyzed</Badge>
+                                                            )}
+                                                            {image.tags && image.tags.length > 0 && (
+                                                                <div className="absolute bottom-2 left-2 right-2">
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {image.tags.slice(0, 3).map((tag, tIdx) => (
+                                                                            <Badge
+                                                                                key={`${image.id}_tag_${tIdx}`}
+                                                                                variant={tag.source === 'ai' ? 'default' : 'secondary'}
+                                                                                className="text-xs flex items-center gap-1 cursor-pointer"
+                                                                                onClick={async () => {
+                                                                                    try {
+                                                                                        const result = await searchPropertiesByTagAPI(tag.label, 1, 50);
+                                                                                        if (result.success && result.data?.properties) {
+                                                                                            navigate('/listing/grid', {
+                                                                                                state: {
+                                                                                                    properties: result.data.properties,
+                                                                                                    query: tag.label,
+                                                                                                    filters: { tag: tag.label },
+                                                                                                    isAISearch: true,
+                                                                                                    isTagSearch: true
+                                                                                                }
+                                                                                            });
+                                                                                        } else {
+                                                                                            toast.error('Không tìm thấy bất động sản với tag này');
+                                                                                        }
+                                                                                    } catch (error) {
+                                                                                        console.error('Error searching by tag:', error);
+                                                                                        toast.error('Lỗi khi tìm kiếm theo tag');
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {tag.label}
+                                                                                {tag.source === 'ai' && <span className="text-xs">🤖</span>}
+                                                                                <X
+                                                                                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setLocalImages((prev) => prev.map((im, i) => {
+                                                                                            if (i !== idx) return im;
+                                                                                            const newTags = (im.tags || []).filter((_, j) => j !== tIdx);
+                                                                                            return { ...im, tags: newTags };
+                                                                                        }));
+                                                                                    }}
+                                                                                />
+                                                                            </Badge>
+                                                                        ))}
+                                                                        {image.tags.length > 3 && (
+                                                                            <Badge variant="secondary" className="text-xs">+{image.tags.length - 3}</Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {/* Add tag input */}
+                                                            <div className="mt-2 flex gap-2">
+                                                                <Input
+                                                                    placeholder="Add tag..."
+                                                                    value={newTagInputs[idx] || ''}
+                                                                    onChange={(e) => setNewTagInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            const label = (newTagInputs[idx] || '').trim();
+                                                                            if (!label) return;
+                                                                            setLocalImages((prev) => prev.map((im, i) => i === idx ? {
+                                                                                ...im,
+                                                                                tags: [...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' }]
+                                                                            } : im));
+                                                                            setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        const label = (newTagInputs[idx] || '').trim();
+                                                                        if (!label) return;
+                                                                        setLocalImages((prev) => prev.map((im, i) => i === idx ? {
+                                                                            ...im,
+                                                                            tags: [...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' }]
+                                                                        } : im));
+                                                                        setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
+                                                                    }}
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                    {/* Add tag input */}
-                                                    <div className="mt-2 flex gap-2">
-                                                        <Input
-                                                            placeholder="Add tag..."
-                                                            value={newTagInputs[idx] || ''}
-                                                            onChange={(e) => setNewTagInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    const label = (newTagInputs[idx] || '').trim();
-                                                                    if (!label) return;
-                                                                    setLocalImages((prev) => prev.map((im, i) => i === idx ? {
-                                                                        ...im,
-                                                                        tags: [...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' }]
-                                                                    } : im));
-                                                                    setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                const label = (newTagInputs[idx] || '').trim();
-                                                                if (!label) return;
-                                                                setLocalImages((prev) => prev.map((im, i) => i === idx ? {
-                                                                    ...im,
-                                                                    tags: [...(im.tags || []), { label: label.toLowerCase(), confidence: 1, source: 'manual' }]
-                                                                } : im));
-                                                                setNewTagInputs((prev) => ({ ...prev, [idx]: '' }));
-                                                            }}
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                    );
+                                            })}
                                         </div>
                                     )}
                                 </CardContent>

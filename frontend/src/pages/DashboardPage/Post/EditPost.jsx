@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
-import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles, Plus, X, Film } from 'lucide-react'
+import { Archive, Eye, EyeOff, Save, Trash2, Building2, Car, CookingPot, ShieldCheck, Sofa, Sparkles, Plus, X, Film, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -536,22 +536,49 @@ export default function EditPost() {
 
     const handleFileInputChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
-            const newImages = Array.from(e.target.files).map(file => ({
+            const newFiles = Array.from(e.target.files)
+            
+            // Count current videos
+            const currentVideos = allImages.filter(img => img.mediaType === 'video')
+            const newVideos = newFiles.filter(file => file.type.startsWith('video/'))
+            
+            // Validate: Max 2 videos total
+            if (currentVideos.length + newVideos.length > 2) {
+                        toast.error('Only up to 2 videos are allowed')
+                return
+            }
+            
+            const newImages = newFiles.map(file => ({
                 id: `new-${Date.now()}-${Math.random()}`,
                 url: URL.createObjectURL(file),
                 type: 'new',
                 file: file,
-                mediaType: file.type.startsWith('video/') ? 'video' : 'image' // THÊM DÒNG NÀY
+                mediaType: file.type.startsWith('video/') ? 'video' : 'image'
             }))
+            
             setAllImages(prev => [...prev, ...newImages])
             
-            const newFiles = newImages.map(img => img.file)
-            const currentFiles = form.getValues('files') || []
-            form.setValue('files', [...currentFiles, ...newFiles])
+            const currentFormFiles = form.getValues('files') || []
+            form.setValue('files', [...currentFormFiles, ...newFiles])
         }
     }
 
     const handleRemoveImage = (imageId, imageType) => {
+        // Count current images and videos
+        const images = allImages.filter(img => img.mediaType !== 'video')
+        const videos = allImages.filter(img => img.mediaType === 'video')
+        
+        const imageToRemove = allImages.find(img => img.id === imageId)
+        
+        // Validate: Must keep at least 1 image
+        if (imageToRemove?.mediaType !== 'video' && images.length <= 1) {
+            toast.error('At least 1 image must be kept for display')
+            return
+        }
+        
+        // Validate: Max 2 videos (when removing image, not video)
+        // This check is actually for adding, not removing
+        
         setAllImages(prev => prev.filter(img => img.id !== imageId))
         
         if (imageType === 'existing') {
@@ -754,10 +781,6 @@ export default function EditPost() {
                                     <Archive className="w-4 h-4 mr-2" />
                                     Archive
                                 </Button>
-                                <Button type="button" variant="destructive" size="sm" onClick={handleDelete}>
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -797,54 +820,62 @@ export default function EditPost() {
                                     
                                     {allImages.length > 0 ? (
                                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                            {allImages.map((image) => (
-                                                <div key={image.id} className="relative group">
-                                                    <div className="relative h-32 bg-muted rounded-lg overflow-hidden border-2 border-border">
-                                                        {image.mediaType === 'video' ? (
-                                                            <video
-                                                                src={image.url}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <img
-                                                                src={image.url}
-                                                                alt="Property"
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        )}
-                                                        
-                                                        {/* Video badge */}
-                                                        {image.mediaType === 'video' && (
-                                                            <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white rounded px-2 py-1 flex items-center gap-1">
-                                                                <Film className="w-3 h-3" />
-                                                                <span className="text-xs">Video</span>
+                                            {allImages.map((image) => {
+                                                // Calculate if this image can be deleted
+                                                const images = allImages.filter(img => img.mediaType !== 'video')
+                                                const canDelete = image.mediaType === 'video' || images.length > 1
+                                                
+                                                return (
+                                                    <div key={image.id} className="relative group">
+                                                        <div className="relative h-32 bg-muted rounded-lg overflow-hidden border-2 border-border">
+                                                            {image.mediaType === 'video' ? (
+                                                                <video
+                                                                    src={image.url}
+                                                                    className="w-full h-full object-contain bg-black"
+                                                                />
+                                                            ) : (
+                                                                <img
+                                                                    src={image.url}
+                                                                    alt="Property"
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            )}
+                                                            
+                                                            {/* Video badge */}
+                                                            {image.mediaType === 'video' && (
+                                                                <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white rounded px-2 py-1 flex items-center gap-1">
+                                                                    <Film className="w-3 h-3" />
+                                                                    <span className="text-xs">Video</span>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Overlay with delete button */}
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="destructive"
+                                                                    size="icon"
+                                                                    className="absolute top-2 right-2 h-8 w-8"
+                                                                    onClick={() => handleRemoveImage(image.id, image.type)}
+                                                                    disabled={!canDelete}
+                                                                    title={!canDelete ? 'Phải giữ ít nhất 1 ảnh' : ''}
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </Button>
                                                             </div>
-                                                        )}
-                                                        
-                                                        {/* Overlay with delete button */}
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button
-                                                                type="button"
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                className="absolute top-2 right-2 h-8 w-8"
-                                                                onClick={() => handleRemoveImage(image.id, image.type)}
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </Button>
+                                                            
+                                                            {/* Badge for existing images */}
+                                                            {image.type === 'existing' && (
+                                                                <div className="absolute bottom-2 left-2">
+                                                                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                                                        Existing
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        
-                                                        {/* Badge for existing images */}
-                                                        {image.type === 'existing' && (
-                                                            <div className="absolute bottom-2 left-2">
-                                                                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                                                    Existing
-                                                                </span>
-                                                            </div>
-                                                        )}
                                                     </div>
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
@@ -860,6 +891,12 @@ export default function EditPost() {
                                             </Button>
                                         </div>
                                     )}
+
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <p className="text-sm text-muted-foreground">
+                                            {allImages.filter(img => img.mediaType !== 'video').length} image, {allImages.filter(img => img.mediaType === 'video').length}/2 video
+                                        </p>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>

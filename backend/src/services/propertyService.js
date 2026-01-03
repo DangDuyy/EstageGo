@@ -102,22 +102,21 @@ const canCreateProperty = async (userId) => {
   return true
 }
 
-const addMediaToProperty = async (propertyId, mediaItems, options = {}) => {
-  const { session } = options
-  
+const addMediaToProperty = async (propertyId, mediaItems) => {
   try {
-    const property = await propertyModel.findOne({ _id: propertyId }).session(session)
+    const property = await propertyModel.findOne({ _id: propertyId })
 
     if (!property) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Property not found")
     }
 
+    // Add new media item
     property.media.push(...mediaItems)
-    const updateProperty = await property.save({ session })
 
+    const updateProperty = await property.save()
     return updateProperty
-  } catch (error) {
-    console.error('Error in addMediaToProperty:', error)
+  }
+  catch (error) {
     throw error
   }
 }
