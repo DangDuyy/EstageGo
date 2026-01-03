@@ -64,7 +64,21 @@ export const propertySchema = z.object({
 
   files: z
     .any()
-    .refine((files) => files?.length > 0, "At least one file is required"), // validate file
+    .refine((files) => files?.length > 0, "At least one file is required")
+    .refine((files) => {
+      if (!files || !Array.isArray(files)) return true;
+      return files.length <= 10;
+    }, "Maximum 10 files allowed")
+    .refine((files) => {
+      if (!files || !Array.isArray(files)) return true;
+      const images = files.filter(f => f.type?.startsWith('image/'));
+      return images.length >= 1;
+    }, "At least 1 image is required")
+    .refine((files) => {
+      if (!files || !Array.isArray(files)) return true;
+      const videos = files.filter(f => f.type?.startsWith('video/'));
+      return videos.length <= 2;
+    }, "Maximum 2 videos allowed"),
   
   tour_link: z.string().url("Link không hợp lệ. Vui lòng nhập đúng URL.").optional()
 });
