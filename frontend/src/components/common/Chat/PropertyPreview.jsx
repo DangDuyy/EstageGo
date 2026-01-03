@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, MapPin, Bed, Bath, Ruler, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { fetchPropertyDetail } from '@/apis'
+import { getFirstImageUrl } from '@/utils/helper';
 
 export default function PropertyPreview({ propertyId, onClose }) {
   const [property, setProperty] = useState(null)
@@ -48,7 +49,7 @@ export default function PropertyPreview({ propertyId, onClose }) {
   }
 
   // Get main image from property data
-  const mainImage = property.media?.[0]?.url || property.images?.[0] || property.image || '/images/placeholder.jpg'
+  const mainImage = getFirstImageUrl(property.media, property.images?.[0] || property.image || '/images/placeholder.jpg');
   const title = property.title || property.name || 'Untitled Property'
   
   // Handle price - could be nested in price object

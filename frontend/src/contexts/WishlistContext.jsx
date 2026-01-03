@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useSelector } from 'react-redux';
 import { getWishlistAPI, toggleWishlistAPI, trackActivityAPI, clearAllWishlistAPI, removeFromWishlistAPI } from '@/apis';
 import { toast } from 'react-toastify';
+import { getFirstImageUrl } from '@/utils/helper';
 
 const WishlistContext = createContext();
 
@@ -65,7 +66,7 @@ export function WishlistProvider({ children }) {
             id: property._id,
             name: property.title,
             title: property.title,
-            image: property.media?.[0]?.url || '/placeholder.jpg',
+            image: getFirstImageUrl(property.media, '/placeholder.jpg'),
             address: property.address?.fullAddress || `${property.address?.ward}, ${property.address?.district}, ${property.address?.province}`,
             price: property.price?.value,
             href: `/properties/${property._id}`
@@ -104,7 +105,7 @@ export function WishlistProvider({ children }) {
             id: property._id,
             name: property.title,
             title: property.title,
-            image: property.media?.[0]?.url || '/placeholder.jpg',
+            image: getFirstImageUrl(property.media, '/placeholder.jpg'),
             address: property.address?.fullAddress || `${property.address?.ward}, ${property.address?.district}, ${property.address?.province}`,
             price: property.price?.value,
             href: `/properties/${property._id}`
@@ -195,10 +196,7 @@ export function WishlistProvider({ children }) {
       } catch (error) {
         const errorMessage = error.response?.data?.message || error.message || '';
         const errorStatus = error.response?.status;
-        const isNotFoundError = errorStatus === 404 || 
-                                errorMessage.includes('not found') || 
-                                errorMessage.includes('No matching document');
-        
+       
         // If clearAll API doesn't exist (404) or has "not found" error, fallback to removing items one by one
         if (errorStatus === 404 && !errorMessage.includes('No matching document')) {
           // API endpoint doesn't exist (404 without specific error message)

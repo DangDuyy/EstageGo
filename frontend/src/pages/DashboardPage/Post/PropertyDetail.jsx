@@ -39,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { getFirstImageUrl } from '@/utils/helper';
 
 export default function PropertyDetail() {
   const { propertyId } = useParams();
@@ -233,9 +234,9 @@ export default function PropertyDetail() {
             <Card>
               <CardContent className="p-0">
                 <div className="relative h-96 bg-muted rounded-t-lg overflow-hidden">
-                  {property.media?.find(m => m.type === 'image') ? (
+                  {property.media && Array.isArray(property.media) && property.media.length > 0 ? (
                     <img
-                      src={property.media.find(m => m.type === 'image').url}
+                      src={getFirstImageUrl(property.media)}
                       alt={property.title}
                       className="w-full h-full object-cover"
                     />

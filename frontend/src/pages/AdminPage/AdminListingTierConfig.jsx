@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Loader2, Edit, Home, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getListingTiers, getListingTierUsageStats, updateListingTierPricing, getListingTierProperties } from '@/apis';
+import { getFirstImageUrl } from '@/utils/helper';
 
 export default function AdminListingTierConfig() {
   const [tiers, setTiers] = useState([]);
@@ -302,8 +303,8 @@ export default function AdminListingTierConfig() {
                 <div key={p._id} className="border rounded-lg p-4 flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4 flex-1">
                     <div className="w-24 h-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                      {p.media?.[0]?.url ? (
-                        <img src={p.media[0].url} alt={p.title} className="w-full h-full object-cover" />
+                      {p.media && Array.isArray(p.media) && p.media.length > 0 ? (
+                        <img src={getFirstImageUrl(p.media)} alt={p.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">No image</div>
                       )}

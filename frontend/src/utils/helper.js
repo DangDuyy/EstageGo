@@ -16,9 +16,36 @@ export function createPropertyMarker(property) {
     type: property.type,
     status: property.status,
     purpose: property.purpose,
-    image: property.media?.[0]?.url,
+    image: getFirstImageUrl(property.media),
     slug: property.slug
   };
+}
+
+/**
+ * Lấy URL của ảnh đầu tiên từ media array, bỏ qua video
+ * @param {Array} media - Mảng media từ property
+ * @param {string} fallback - URL ảnh mặc định nếu không tìm thấy
+ * @returns {string} URL của ảnh đầu tiên hoặc fallback
+ */
+export function getFirstImageUrl(media, fallback = '/images/placeholder.jpg') {
+  if (!media || !Array.isArray(media) || media.length === 0) {
+    return fallback;
+  }
+  
+  const firstImage = media.find(m => m?.type === 'image');
+  return firstImage?.url || fallback;
+}
+
+/**
+ * Lấy tất cả images từ media array, bỏ qua video
+ * @param {Array} media - Mảng media từ property
+ * @returns {Array} Mảng các image media
+ */
+export function getImageMediaOnly(media) {
+  if (!media || !Array.isArray(media)) {
+    return [];
+  }
+  return media.filter(m => m?.type === 'image');
 }
 
 // Tạo nhiều markers từ danh sách properties

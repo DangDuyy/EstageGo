@@ -409,7 +409,8 @@ export default function DashboardPage() {
                       {property.media?.find((m) => m.type === "image")?.url ? (
                         <img
                           src={
-                            property.media.find((m) => m.type === "image").url
+                            property.media.find((m) => m.type === "image")?.url || 
+                            "/images/placeholder.jpg"
                           }
                           alt={property.title}
                           className="w-full h-full object-cover"

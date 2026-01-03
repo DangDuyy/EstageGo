@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import CarouselDots from "../../Dots/CarouselDots";
+import { getFirstImageUrl, getImageMediaOnly } from "@/utils/helper";
 
 /** Small stat component (Beds, Baths, Sqft...) */
 function Stat({ icon: Icon, label, value, iconClass = "h-4 w-4", className = "" }) {
@@ -33,7 +34,7 @@ export default function PropertyCard({ item, variant = "grid", className }) {
   const propertyId = item._id || item.id;
   const inWishlist = isInWishlist(propertyId);
 
-  const imageUrl = item.image || item.media?.[0]?.url || "/images/placeholder.jpg";
+  const imageUrl = item.image || getFirstImageUrl(item.media);
   const locationText = item.address?.fullAddress ||
                         [item.address?.street, item.address?.ward, item.address?.district, item.address?.province]
                         .filter(Boolean)
@@ -117,7 +118,7 @@ export default function PropertyCard({ item, variant = "grid", className }) {
           <div className="relative">
             <Carousel setApi={setApi} className="w-full relative group">
               <CarouselContent>
-                {item.media.map((media, index) => (
+                {getImageMediaOnly(item.media).map((media, index) => (
                   <CarouselItem key={index}>
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
                       <img
@@ -131,7 +132,7 @@ export default function PropertyCard({ item, variant = "grid", className }) {
               </CarouselContent>
 
               {/* Prev button */}
-              {item.media.length > 1 && (
+              {getImageMediaOnly(item.media).length > 1 && (
                 <CarouselPrevious
                   className="
         absolute left-2 top-1/2 -translate-y-1/2
@@ -142,7 +143,7 @@ export default function PropertyCard({ item, variant = "grid", className }) {
               )}
 
               {/* Next button */}
-              {item.media.length > 1 && (
+              {getImageMediaOnly(item.media).length > 1 && (
                 <CarouselNext
                   className="
         absolute right-2 top-1/2 -translate-y-1/2
@@ -165,8 +166,8 @@ export default function PropertyCard({ item, variant = "grid", className }) {
           </div>
           } */}
 
-            {item.media.length > 1 &&
-              <CarouselDots total={item.media.length} current={current - 1} />
+            {item.media.filter(m => m.type === 'image').length > 1 &&
+              <CarouselDots total={getImageMediaOnly(item.media).length} current={current - 1} />
             }
           </div>
         }

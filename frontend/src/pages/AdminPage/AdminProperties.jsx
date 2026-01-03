@@ -48,6 +48,7 @@ import {
   Legend,
   Cell
 } from "recharts";
+import { getFirstImageUrl } from '@/utils/helper';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'];
 
@@ -285,9 +286,9 @@ export default function AdminProperties() {
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              {property.media && (
+                              {property.media && Array.isArray(property.media) && property.media.length > 0 && (
                                 <img
-                                  src={property.media.url}
+                                  src={getFirstImageUrl(property.media)}
                                   alt={property.title}
                                   className="w-12 h-12 object-cover rounded"
                                 />
@@ -603,9 +604,9 @@ export default function AdminProperties() {
                             <TableRow key={property._id}>
                               <TableCell>
                                 <div className="flex items-center gap-3">
-                                  {property.media && property.media[0] && (
+                                  {property.media && property.media.find(m => m.type === 'image') && (
                                     <img
-                                      src={property.media[0].url}
+                                      src={property.media.find(m => m.type === 'image').url}
                                       alt={property.title}
                                       className="w-16 h-16 object-cover rounded"
                                     />
