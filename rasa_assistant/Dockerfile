@@ -1,28 +1,43 @@
+# FROM rasa/rasa-pro:3.15.4
+
+# WORKDIR /app
+# COPY . /app
+
+# ARG RASA_LICENSE
+# ARG QDRANT_API_KEY
+# ARG QDRANT_HOST
+# ARG GEMINI_API_KEY
+# ARG GROQ_API_KEY
+# ARG API_ROOT
+# ARG FRONTEND_URL
+
+# ENV QDRANT_API_KEY=$QDRANT_API_KEY
+# ENV QDRANT_HOST=$QDRANT_HOST
+# ENV GEMINI_API_KEY=$GEMINI_API_KEY
+# ENV GROQ_API_KEY=$GROQ_API_KEY
+# ENV API_ROOT=$API_ROOT
+# ENV FRONTEND_URL=$FRONTEND_URL
+# ENV RASA_LICENSE=$RASA_LICENSE
+# ENV MPLCONFIGDIR=/tmp/matplotlib
+
+# # Train model khi build
+# RUN rasa train
+
+# EXPOSE 5005
+
+# CMD ["run", "--enable-api", "--cors", "*", "-i", "0.0.0.0", "-p", "5005"]
+
 FROM rasa/rasa-pro:3.15.4
 
 WORKDIR /app
 COPY . /app
 
-ARG RASA_LICENSE
-ARG QDRANT_API_KEY
-ARG QDRANT_HOST
-ARG GEMINI_API_KEY
-ARG GROQ_API_KEY
-ARG API_ROOT
-ARG FRONTEND_URL
-
-ENV QDRANT_API_KEY=$QDRANT_API_KEY
-ENV QDRANT_HOST=$QDRANT_HOST
-ENV GEMINI_API_KEY=$GEMINI_API_KEY
-ENV GROQ_API_KEY=$GROQ_API_KEY
-ENV API_ROOT=$API_ROOT
-ENV FRONTEND_URL=$FRONTEND_URL
-ENV RASA_LICENSE=$RASA_LICENSE
 ENV MPLCONFIGDIR=/tmp/matplotlib
-
-# Train model khi build
-RUN rasa train
 
 EXPOSE 5005
 
-CMD ["run", "--enable-api", "--cors", "*", "-i", "0.0.0.0", "-p", "5005"]
+# Override entrypoint của image gốc
+ENTRYPOINT ["/bin/bash", "-c"]
+
+# Train rồi run
+CMD ["rasa train && rasa run --enable-api --cors '*' -i 0.0.0.0 -p 5005"]
