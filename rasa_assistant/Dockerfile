@@ -23,6 +23,8 @@ ENV MPLCONFIGDIR=/tmp/matplotlib
 # Train model khi build
 RUN rasa train
 
+RUN rasa run --enable-api --cors "*"
+
 EXPOSE 5005
 
 CMD ["run", "--enable-api", "--cors", "*", "-i", "0.0.0.0", "-p", "5005"]
