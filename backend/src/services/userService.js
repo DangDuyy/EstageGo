@@ -624,27 +624,6 @@ const updatePhone = async (userId, phone) => {
   return updated
 }
 
-const updateMembership = async (userId, membershipLevel, billingCycle) => {
-  try {
-    const durationDays = billingCycle === 'yearly' ? 365 : 30
-    const membershipExpireAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
-
-    const user = await userModel.findByIdAndUpdate(
-      userId,
-      {
-        membershipLevel,
-        membershipExpireAt,
-        membershipBillingCycle: billingCycle
-      },
-      { new: true }
-    ).select('-password -verifyToken')
-
-    return user
-  } catch (error) {
-    throw error
-  }
-}
-
 const getAgentDashboardStats = async (userId) => {
   try {
     const user = await userModel.findById(userId)
@@ -1059,7 +1038,6 @@ export const userService = {
   getAgentById,
   getUserProfileById,
   updatePhone,
-  updateMembership,
   getAgentDashboardStats,
   getListingStats,
   markUserStatus,

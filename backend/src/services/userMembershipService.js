@@ -250,6 +250,34 @@ class UserMembershipService {
     }
   }
 
+  // Lấy thông tin membership hiển thị cho UI (phục vụ BoostPackages)
+  async getMembershipInfo(userId) {
+    try {
+      const activeMembership = await this.getActiveMembership(userId);
+      
+      if (!activeMembership) {
+        return {
+          membershipType: 'basic',
+          hasActiveMembership: false,
+          includedListings: null,
+          startDate: null,
+          endDate: null
+        };
+      }
+
+      return {
+        membershipType: activeMembership.membershipType,
+        hasActiveMembership: true,
+        includedListings: activeMembership.includedListings,
+        startDate: activeMembership.startDate,
+        endDate: activeMembership.endDate,
+        daysRemaining: Math.ceil((activeMembership.endDate - new Date()) / (1000 * 60 * 60 * 24))
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Tự động kiểm tra và cập nhật trạng thái (chạy định kỳ)
   async checkExpiredMemberships() {
     try {

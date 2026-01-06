@@ -1,5 +1,5 @@
 import { LayoutGrid, LogOut, User, ShieldCheck, Crown } from "lucide-react";
-
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,11 +20,30 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentUser, logoutUserAPI } from "@/redux/user/userSlice";
+import { getMembershipInfoAPI } from "@/apis";
 
 export function UserNav() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const currentUser = useSelector(selectCurrentUser)
+  const [membershipType, setMembershipType] = useState('basic')
+
+  useEffect(() => {
+    const fetchMembershipInfo = async () => {
+      try {
+        const response = await getMembershipInfoAPI();
+        if (response.success && response.data) {
+          setMembershipType(response.data.membershipType || 'basic');
+        }
+      } catch (error) {
+        console.error('Failed to fetch membership info:', error);
+      }
+    };
+    
+    if (currentUser) {
+      fetchMembershipInfo();
+    }
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -65,14 +84,14 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <div className="flex items-center gap-2">
               <p className="text-sm font-medium leading-none">{currentUser.fullName}</p>
-              {currentUser.membershipLevel === 'premium' && (
+              {membershipType === 'advanced' && (
                 <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
-                  Premium
+                  Advanced
                 </span>
               )}
-              {currentUser.membershipLevel === 'standard' && (
+              {membershipType === 'boosted' && (
                 <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-blue-400 to-blue-600 text-white">
-                  Standard
+                  Boosted
                 </span>
               )}
             </div>

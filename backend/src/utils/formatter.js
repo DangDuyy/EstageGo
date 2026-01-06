@@ -11,7 +11,7 @@ export const pickUser = (user) => {
     // Broker page
     'brokerPage',
     // Membership fields
-    'agentRequestStatus', 'membershipLevel', 'membershipExpireAt', 'membershipBillingCycle', 
+    'agentRequestStatus',
     // Account fields
     'balance', 'boostCredits', 'isEmailVerified', 'isPhoneVerified'
   ])

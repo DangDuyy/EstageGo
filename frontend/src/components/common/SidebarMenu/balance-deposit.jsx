@@ -9,12 +9,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getBalanceAPI } from '@/apis';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectCurrentUser } from '@/redux/user/userSlice';
 
 export default function BalanceAndDeposit({ currency = 'đ' }) {
     const navigate = useNavigate();
-    const [currentBalance, setCurrentBalance] = useState(0);
+    const currentUser = useSelector(selectCurrentUser);
     const [loading, setLoading] = useState(false);
 
+    // Use balance from Redux instead of local state
+    const currentBalance = currentUser?.balance || 0;
+
+    // Still fetch balance on mount to sync with server if needed
     useEffect(() => {
         fetchBalance();
     }, []);
@@ -23,9 +29,7 @@ export default function BalanceAndDeposit({ currency = 'đ' }) {
         try {
             setLoading(true);
             const response = await getBalanceAPI();
-            if (response.success) {
-                setCurrentBalance(response.balance || 0);
-            }
+            // Balance will be updated via Redux by getCurrentUserAPI
         } catch (error) {
             console.error('Failed to fetch balance:', error);
         } finally {

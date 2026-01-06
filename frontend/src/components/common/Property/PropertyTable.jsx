@@ -1,4 +1,4 @@
-import { boostPropertyAPI, deletePropertyAPI } from "@/apis"
+import { boostPropertyAPI, deletePropertyAPI, getMembershipInfoAPI } from "@/apis"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -56,7 +56,7 @@ import {
     Trash2,
     Zap
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
@@ -69,9 +69,28 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     const [selectedDuration, setSelectedDuration] = useState(24)
     const [boosting, setBoosting] = useState(false)
     const [deletedIds, setDeletedIds] = useState(new Set())
+    const [membershipType, setMembershipType] = useState('basic')
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const currentUser = useSelector(selectCurrentUser)
+
+    // Fetch membership from UserMembership model
+    useEffect(() => {
+        const fetchMembership = async () => {
+            try {
+                const result = await getMembershipInfoAPI()
+                if (result?.data?.membershipType) {
+                    setMembershipType(result.data.membershipType)
+                }
+            } catch (error) {
+                console.error('Failed to fetch membership:', error)
+                setMembershipType('basic')
+            }
+        }
+        if (currentUser) {
+            fetchMembership()
+        }
+    }, [currentUser])
 
     const formatPrice = (value, currency) => {
         if (!value) return "N/A"
@@ -88,10 +107,9 @@ export default function PropertyTable({ data, onPageChange, onPageSizeChange }) 
     }
 
     const getBoostPrice = (durationHours = 24) => {
-        const membership = currentUser?.membershipLevel || 'basic'
         let basePrice = 100000 // basic
-        if (membership === 'premium') basePrice = 50000
-        else if (membership === 'standard') basePrice = 75000
+        if (membershipType === 'advanced') basePrice = 50000
+        else if (membershipType === 'boosted') basePrice = 75000
         
         // Pricing based on duration
         if (durationHours === 24) return basePrice
