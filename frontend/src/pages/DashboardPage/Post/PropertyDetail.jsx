@@ -26,7 +26,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { boostPropertyAPI, getPropertyStatisticsAPI } from "@/apis";
+import { boostPropertyAPI, getPropertyStatisticsAPI, getMembershipInfoAPI } from "@/apis";
 import authorizeAxiosInstance from "@/utils/authorizeAxios";
 import { API_ROOT } from "@/utils/constants";
 import {
@@ -53,6 +53,25 @@ export default function PropertyDetail() {
   const [boosting, setBoosting] = useState(false);
   const [boostHours, setBoostHours] = useState(48);
   const [statistics, setStatistics] = useState({ views: 0, contacts: 0, shares: 0, likes: 0 });
+  const [membershipType, setMembershipType] = useState('basic');
+
+  // Fetch membership from UserMembership model
+  useEffect(() => {
+    const fetchMembership = async () => {
+      try {
+        const result = await getMembershipInfoAPI();
+        if (result?.data?.membershipType) {
+          setMembershipType(result.data.membershipType);
+        }
+      } catch (error) {
+        console.error('Failed to fetch membership:', error);
+        setMembershipType('basic');
+      }
+    };
+    if (currentUser) {
+      fetchMembership();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -95,10 +114,9 @@ export default function PropertyDetail() {
   };
 
   const getBoostPrice = (durationHours = 24) => {
-    const membership = currentUser?.membershipLevel || 'basic';
     let basePrice = 100000; 
-    if (membership === 'premium') basePrice = 50000;
-    else if (membership === 'standard') basePrice = 75000;
+    if (membershipType === 'advanced') basePrice = 50000;
+    else if (membershipType === 'boosted') basePrice = 75000;
     
     if (durationHours === 24) return basePrice;
     if (durationHours === 48) return Math.floor(basePrice * 1.8);
@@ -173,10 +191,16 @@ export default function PropertyDetail() {
       const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/properties/${propertyId}`);
       setProperty(response.data?.data || response.data || null);
       
-      // Deduct credits from user if they were used
+      // Update user balance/credits in Redux
       if (useCredits) {
+        // Deduct credits from user if they were used
         const updatedCredits = (currentUser?.boostCredits || 0) - creditsNeeded;
         dispatch(updateUser({ boostCredits: updatedCredits }));
+      } else {
+        // Deduct balance - calculate the fee
+        const boostFee = getBoostPrice(boostHours);
+        const updatedBalance = (currentUser?.balance || 0) - boostFee;
+        dispatch(updateUser({ balance: updatedBalance }));
       }
       
       setBoostDialogOpen(false);
@@ -445,7 +469,7 @@ export default function PropertyDetail() {
                               {getBoostCreditsNeeded(boostHours)} credit{getBoostCreditsNeeded(boostHours) > 1 ? 's' : ''}
                             </span>
                           ) : (
-                            formatPrice(getBoostPrice(boostHours), 'USD')
+                            formatPrice(getBoostPrice(boostHours), 'VND')
                           )}
                         </span>
                       </div>
@@ -530,7 +554,7 @@ export default function PropertyDetail() {
                       Listing Fee
                     </div>
                     <span className="text-sm font-medium">
-                      {formatPrice(property.listingFee || 0, 'USD')}
+                      {formatPrice(property.listingFee || 0, 'VND')}
                     </span>
                   </div>
                 </CardContent>
@@ -541,134 +565,123 @@ export default function PropertyDetail() {
       </div>
 
       <AlertDialog open={boostDialogOpen} onOpenChange={setBoostDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-orange-500" />
-              Confirm Boost
+              Boost Listing
             </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4 mt-4">
-                <p className="text-foreground">
-                  {isBoostActive() 
-                    ? `This listing is currently boosted. Select duration to extend:`
-                    : `Are you sure you want to boost this listing to the top?`}
-                </p>
-                
-                <div className="p-4 bg-muted rounded-lg space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Listing:</span>
-                    <span className="font-medium truncate ml-2">{property.title}</span>
-                  </div>
-                  
-                  {property.bumpedAt && (
-                    <div className="flex justify-between text-sm">
-                      <span>Last Boost:</span>
-                      <span className="font-medium">{getTimeSinceBoost(property.bumpedAt)}</span>
+          </AlertDialogHeader>
+          <AlertDialogDescription asChild>
+            <div className="space-y-4">
+              {!property ? null : (
+                <div className="space-y-4">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <div className="font-semibold text-foreground mb-2">
+                      {property.title}
                     </div>
-                  )}
-                  
-                  {isBoostActive() && (
-                    <div className="flex justify-between text-sm bg-green-50 p-2 rounded">
-                      <span className="text-green-700">Remaining Time:</span>
-                      <span className="font-semibold text-green-600">{getTimeRemaining(property.boostExpiresAt)}</span>
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Select {isBoostActive() ? 'extension' : 'boost'} duration:</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[24, 48, 72].map(h => {
-                        const creditsNeeded = getBoostCreditsNeeded(h);
-                        return (
-                          <button
-                            key={h}
-                            type="button"
-                            onClick={() => setBoostHours(h)}
-                            className={`p-3 rounded-lg border-2 transition-all ${
-                              boostHours === h
-                                ? 'border-orange-500 bg-orange-50 shadow-sm'
-                                : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="font-bold text-foreground">{h}h</div>
-                            <div className={`text-xs mt-1 ${
-                              (currentUser?.boostCredits || 0) >= creditsNeeded
-                                ? 'text-purple-600 font-medium'
-                                : 'text-muted-foreground'
-                            }`}>
-                              {(currentUser?.boostCredits || 0) >= creditsNeeded
-                                ? `${creditsNeeded} credit${creditsNeeded > 1 ? 's' : ''}`
-                                : formatPrice(getBoostPrice(h), 'USD')
-                              }
-                            </div>
-                          </button>
-                        );
-                      })}
+                    <div className="text-xs text-muted-foreground">
+                      {property.address?.fullAddress}
                     </div>
                   </div>
 
-                  {isBoostActive() && (
-                    <div className="bg-blue-50 border border-blue-200 rounded p-3 space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-blue-700">
-                        <span className="font-medium">ℹ️ Total time after boost:</span>
-                      </div>
-                      <div className="text-lg font-bold text-blue-600">
-                        {getNewTotalTime()}
-                      </div>
-                      <div className="text-xs text-blue-600">
-                        ({getRemainingHours()}h left + {boostHours}h new = {getRemainingHours() + boostHours}h)
-                      </div>
-                    </div>
-                  )}
-
-                  {(currentUser?.boostCredits || 0) >= getBoostCreditsNeeded(boostHours) ? (
-                    <div className="bg-purple-50 p-3 rounded-lg space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">Using:</span>
-                        <span className="font-semibold text-purple-600">{getBoostCreditsNeeded(boostHours)} Boost Credit{getBoostCreditsNeeded(boostHours) > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Credits remaining:</span>
-                        <span>{(currentUser?.boostCredits || 0) - getBoostCreditsNeeded(boostHours)}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-orange-50 p-3 rounded-lg">
-                      <div className="flex justify-between text-sm">
-                        <div>
-                          <div className="font-medium">Boost Fee ({boostHours}h):</div>
-                          {boostHours > 24 && (
-                            <div className="text-xs text-green-600 mt-1">
-                              Save {Math.round(((getBoostPrice(24) * (boostHours/24)) - getBoostPrice(boostHours)) / 1000)}k!
-                            </div>
-                          )}
-                        </div>
-                        <span className="font-bold text-lg text-orange-600">
-                          {formatPrice(getBoostPrice(boostHours), 'USD')}
+                  <div className="space-y-3 text-sm">
+                    <p className="text-foreground">
+                      {isBoostActive() 
+                        ? 'This listing is currently boosted. Select duration to extend:'
+                        : 'Are you sure you want to boost this listing to the top?'}
+                    </p>
+                    
+                    {property.bumpedAt && (
+                      <div className="flex items-center justify-between text-xs bg-blue-50 p-2 rounded">
+                        <span className="text-muted-foreground">Last Boost:</span>
+                        <span className="font-medium text-foreground">
+                          {getTimeSinceBoost(property.bumpedAt)}
                         </span>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
 
-                <div className="text-sm text-muted-foreground">
-                  <p>✨ Your listing will:</p>
-                  <ul className="list-disc list-inside mt-2 space-y-1 ml-2">
-                    <li>Appear in the first position</li>
-                    <li>Be prioritized in visibility</li>
-                    <li>Increase chances of being viewed by buyers</li>
-                    {isBoostActive() 
-                      ? <li className="font-medium text-blue-600">Duration will be extended by {boostHours}h</li>
-                      : <li>Valid for {boostHours} hours</li>
-                    }
-                  </ul>
+                    {isBoostActive() && (
+                      <div className="flex items-center justify-between text-xs bg-green-50 p-2 rounded">
+                        <span className="text-muted-foreground">Remaining Time:</span>
+                        <span className="font-semibold text-green-600">
+                          {getTimeRemaining(property.boostExpiresAt)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Duration Selection */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Select {isBoostActive() ? 'extension' : 'boost'} duration:</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[24, 48, 72].map((hours) => {
+                          const creditsNeeded = getBoostCreditsNeeded(hours)
+                          return (
+                            <button
+                              key={hours}
+                              type="button"
+                              onClick={() => setBoostHours(hours)}
+                              className={`p-3 rounded-lg border-2 transition-all ${
+                                boostHours === hours
+                                  ? 'border-orange-500 bg-orange-50 shadow-sm'
+                                  : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="font-bold text-foreground">{hours}h</div>
+                              <div className={`text-xs mt-1 ${
+                                (currentUser?.boostCredits || 0) >= creditsNeeded
+                                  ? 'text-purple-600 font-medium'
+                                  : 'text-muted-foreground'
+                              }`}>
+                                {(currentUser?.boostCredits || 0) >= creditsNeeded
+                                  ? `${creditsNeeded} credit${creditsNeeded > 1 ? 's' : ''}`
+                                  : formatPrice(getBoostPrice(hours), 'VND')
+                                }
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t space-y-2">
+                      {(currentUser?.boostCredits || 0) >= getBoostCreditsNeeded(boostHours) ? (
+                        <div className="space-y-1 bg-purple-50 p-3 rounded-lg">
+                          <div className="flex justify-between text-foreground">
+                            <span className="font-medium">Using:</span>
+                            <span className="font-semibold text-purple-600">{getBoostCreditsNeeded(boostHours)} Boost Credit{getBoostCreditsNeeded(boostHours) > 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span>Credits remaining:</span>
+                            <span className="font-medium">{(currentUser?.boostCredits || 0) - getBoostCreditsNeeded(boostHours)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-foreground bg-orange-50 p-3 rounded-lg">
+                          <div>
+                            <div className="font-medium">Boost Fee ({boostHours}h):</div>
+                            {boostHours > 24 && (
+                              <div className="text-xs text-green-600 mt-1">
+                                Save {Math.round(((getBoostPrice(24) * (boostHours/24)) - getBoostPrice(boostHours)) / 1000)}k!
+                              </div>
+                            )}
+                          </div>
+                          <span className="font-bold text-lg">
+                            {formatPrice(getBoostPrice(boostHours), 'VND')}
+                          </span>
+                        </div>
+                      )}
+                      {isBoostActive() && (
+                        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                          ℹ️ Duration will be extended by {boostHours}h
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+              )}
+            </div>
+          </AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={boosting}>Cancel</AlertDialogCancel>
             <AlertDialogAction

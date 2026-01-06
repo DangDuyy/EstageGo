@@ -7,7 +7,7 @@ import { Zap, Package, TrendingUp, Loader2, Sparkles } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentUser, updateUser } from "@/redux/user/userSlice";
 import { cn } from "@/lib/utils";
-import { purchaseBoostPackageAPI, getBalanceAPI } from "@/apis";
+import { purchaseBoostPackageAPI, getBalanceAPI, getMembershipInfoAPI } from "@/apis";
 import { toast } from "react-toastify";
 import {
   AlertDialog,
@@ -26,15 +26,15 @@ export default function BoostPackages() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [membershipType, setMembershipType] = useState('basic');
   
   const currentUser = useSelector(selectCurrentUser);
   const boostCredits = currentUser?.boostCredits || 0;
 
-  const membership = currentUser?.membershipLevel || 'basic';
-  const basePerBoostMap = { basic: 100000, standard: 75000, premium: 50000 };
-  const discountMap = { basic: 0, standard: 0.1, premium: 0.2 };
-  const basePerBoost = basePerBoostMap[membership];
-  const discountRate = discountMap[membership] || 0;
+  const basePerBoostMap = { basic: 100000, boosted: 75000, advanced: 50000 };
+  const discountMap = { basic: 0, boosted: 0.1, advanced: 0.2 };
+  const basePerBoost = basePerBoostMap[membershipType];
+  const discountRate = discountMap[membershipType] || 0;
 
   const packages = [
     {
@@ -73,6 +73,21 @@ export default function BoostPackages() {
       maximumFractionDigits: 0
     }).format(price);
   };
+
+  // Fetch membership info on mount
+  useEffect(() => {
+    const fetchMembershipInfo = async () => {
+      try {
+        const response = await getMembershipInfoAPI();
+        if (response.success && response.data) {
+          setMembershipType(response.data.membershipType || 'basic');
+        }
+      } catch (error) {
+        console.error('Failed to fetch membership info:', error);
+      }
+    };
+    fetchMembershipInfo();
+  }, []);
 
   const handlePurchaseClick = async (pkg) => {
     setSelectedPackage(pkg);
@@ -309,21 +324,21 @@ export default function BoostPackages() {
                       </div>
                       <div className="flex justify-between">
                         <span className="font-semibold">Price:</span>
-                        <span className="font-semibold">{formatPrice(selectedPackage.price)}</span>
+                        <span className="font-semibold">{formatPrice(selectedPackage.effectivePrice || selectedPackage.price)}</span>
                       </div>
                       <div className="flex justify-between pt-2 border-t">
                         <span>Your Balance:</span>
                         <span className={cn(
                           "font-semibold",
-                          currentBalance < selectedPackage.price ? "text-red-600" : "text-green-600"
+                          currentBalance < (selectedPackage.effectivePrice || selectedPackage.price) ? "text-red-600" : "text-green-600"
                         )}>
                           {formatPrice(currentBalance)}
                         </span>
                       </div>
                     </div>
-                    {currentBalance < selectedPackage.price && (
+                    {currentBalance < (selectedPackage.effectivePrice || selectedPackage.price) && (
                       <p className="text-red-600 text-sm">
-                        Insufficient balance. Please deposit {formatPrice(selectedPackage.price - currentBalance)} more.
+                        Insufficient balance. Please deposit {formatPrice((selectedPackage.effectivePrice || selectedPackage.price) - currentBalance)} more.
                       </p>
                     )}
                   </div>
@@ -335,7 +350,7 @@ export default function BoostPackages() {
             <AlertDialogCancel disabled={purchasing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmPurchase}
-              disabled={purchasing || (selectedPackage && currentBalance < selectedPackage.price)}
+              disabled={purchasing || (selectedPackage && currentBalance < (selectedPackage.effectivePrice || selectedPackage.price))}
             >
               {purchasing ? (
                 <>

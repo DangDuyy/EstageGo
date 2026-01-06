@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import ImageUploadComponent from "@/components/common/Upload/uploadImage";
-import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI, analyzeTemporaryImageAPI, updateImageTagsAPI, getUserPropertiesWithMediaAPI, searchPropertiesByTagAPI, getListingStatsAPI } from "@/apis";
+import { createProperty, generateTitleDescription, getAllProvinces, getBalanceAPI, getDistrict, getListingTiers, getProvince, getWard, verifyPropertyDocumentsAPI, analyzeTemporaryImageAPI, updateImageTagsAPI, getUserPropertiesWithMediaAPI, searchPropertiesByTagAPI, getListingStatsAPI, getMembershipInfoAPI } from "@/apis";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { propertySchema } from "@/schemas/property.schema";
@@ -114,10 +114,10 @@ const ICONS = {
 // DỮ LIỆU MOCK CHO PLAN LISTING
 const planInfo = {
     basic: { label: 'Basic Listing', discount: 0, expirySale: 30, expiryRent: 15 },
-    standard: { label: 'Standard Listing', discount: 10, expirySale: 60, expiryRent: 30 },
-    premium: { label: 'Premium Listing', discount: 30, expirySale: 90, expiryRent: 45 },
+    boosted: { label: 'Boosted Listing', discount: 10, expirySale: 60, expiryRent: 30 },
+    advanced: { label: 'Advanced Listing', discount: 30, expirySale: 90, expiryRent: 45 },
 };
-const planOrder = { basic: 1, standard: 2, premium: 3 };
+const planOrder = { basic: 1, boosted: 2, advanced: 3 };
 
 
 // ----- Utils -----
@@ -203,7 +203,6 @@ const propertyDefaultValue = {
 export default function AddPropertyWizard() {
     const navigate = useNavigate();
     const currentUser = useSelector(selectCurrentUser)
-    const membershipLevel = currentUser.membershipLevel
     // 🚨 THÊM BALANCE CỦA NGƯỜI DÙNG TỪ REDUX
     const currentBalance = getBalanceAPI()
     const { loaded } = useContext(MapsContext);
@@ -219,6 +218,9 @@ export default function AddPropertyWizard() {
 
     // ----- Listing info (Step 1) -----
     const [visibility, setVisibility] = useState("public");
+
+    // Membership from UserMembership model
+    const [membershipLevel, setMembershipLevel] = useState('basic');
 
     // Image Tagging (local, pre-submit)
     const [localImages, setLocalImages] = useState([]);
@@ -243,7 +245,27 @@ export default function AddPropertyWizard() {
     const docsValid = Boolean(
         docsVerificationResult?.cccdVerified && docsVerificationResult?.houseDocVerified
     );
-    const [selectedPlan, setSelectedPlan] = useState(membershipLevel);
+    const [selectedPlan, setSelectedPlan] = useState('basic');
+
+    // Fetch membership from UserMembership model
+    useEffect(() => {
+        const fetchMembership = async () => {
+            try {
+                const result = await getMembershipInfoAPI();
+                if (result?.data?.membershipType) {
+                    setMembershipLevel(result.data.membershipType);
+                    setSelectedPlan(result.data.membershipType);
+                }
+            } catch (error) {
+                console.error('Failed to fetch membership:', error);
+                setMembershipLevel('basic');
+                setSelectedPlan('basic');
+            }
+        };
+        if (currentUser) {
+            fetchMembership();
+        }
+    }, [currentUser]);
 
     // 🚨 STATE MỚI CHO DIALOG LỖI THANH TOÁN
     const [depositDialogOpen, setDepositDialogOpen] = useState(false);
@@ -308,7 +330,7 @@ export default function AddPropertyWizard() {
         return 1_000_000;
     };
 
-    const discounts = { basic: 0, standard: 10, premium: 30 };
+    const discounts = { basic: 0, boosted: 10, advanced: 30 };
 
     // CẬP NHẬT LOGIC TÍNH PHÍ DỰA TRÊN selectedPlan
     const listingFee = useMemo(() => {
@@ -333,28 +355,7 @@ export default function AddPropertyWizard() {
         }
         addressFingerprintRef.current = addressFingerprint
     }, [addressFingerprint, docsVerificationResult])
-
-
-    // Utility functions for form and docs
-    const buildPropertyVerificationPayload = useCallback(() => {
-        const snapshot = form.getValues()
-        return {
-            title: snapshot.title,
-            area: snapshot.area,
-            purpose: snapshot.purpose,
-            price: snapshot.price,
-            address: snapshot.address || {}
-        }
-    }, [form])
-
-    function handleDocsChange(kind, files) {
-        if (!files) return;
-        const arr = Array.from(files);
-        if (kind === "house") setHouseDocs(arr);
-        else setIdDocs(arr);
-        setDocsVerificationResult(null);
-    }
-
+    
     // Google Maps utility functions
     const getAddressComponent = (components = [], type) =>
         components.find((c) => c.types.includes(type))?.long_name || "";
@@ -449,32 +450,6 @@ export default function AddPropertyWizard() {
         },
         [loaded, handleGeocodeSuccess]
     );
-
-    const handlePlaceSelected = (place) => {
-        if (!place?.geometry) return;
-        const location = place.geometry.location;
-        const lat = location.lat();
-        const lng = location.lng();
-        const formattedAddress = place.formatted_address || place.name || "";
-
-        setCenter({ lat, lng });
-        form.setValue("address.location.coordinates", [lng, lat], { shouldDirty: true });
-        setResults([
-            {
-                id: place.place_id || Date.now(),
-                lat,
-                lng,
-                address: formattedAddress,
-            },
-        ]);
-
-        // 🚨 Từ place select, cập nhật address fields
-        populateAddressFromComponents(place.address_components || [], formattedAddress);
-        if (formattedAddress) {
-            skipGeocodeRef.current = true;
-            setFullAddress(formattedAddress);
-        }
-    };
 
     const handleMapClick = (event) => {
         const lat = event?.latLng?.lat();
@@ -681,91 +656,6 @@ export default function AddPropertyWizard() {
 
         setStep(2);
     };
-
-
-
-    // Document verification API call
-    const handleVerifyDocuments = async () => {
-        if (!docsUploaded) {
-            toast.error("Please upload both ID and house documents before verifying.");
-            return;
-        }
-
-        try {
-            setIsVerifyingDocs(true);
-            setDocsVerificationResult(null);
-            const payload = new FormData();
-            idDocs.forEach(file => payload.append("idDocs", file));
-            houseDocs.forEach(file => payload.append("houseDocs", file));
-            payload.append("propertyData", JSON.stringify(buildPropertyVerificationPayload()));
-
-            const response = await verifyPropertyDocumentsAPI(payload);
-            const analysis = response?.data || {};
-            const cccdVerified = Boolean(
-                analysis.cccd?.verificationResult?.isUserMatch &&
-                analysis.cccd?.verificationResult?.isFormatValid
-            );
-            const houseDocVerified = Boolean(
-                analysis.houseDoc?.verificationResult?.isAddressMatch &&
-                analysis.houseDoc?.verificationResult?.isAreaMatch &&
-                analysis.houseDoc?.verificationResult?.isFormatValid
-            );
-
-            setDocsVerificationResult({
-                cccdVerified,
-                houseDocVerified,
-                cccd: analysis.cccd,
-                houseDoc: analysis.houseDoc,
-            });
-
-            if (cccdVerified && houseDocVerified) {
-                toast.success(response?.message || "Documents verified successfully.");
-            } else {
-                toast.warn("Verification completed with warnings. Check details below.");
-            }
-
-        } catch (error) {
-            console.error("Document verification failed:", error);
-            const apiData = error?.response?.data?.data;
-            setDocsVerificationResult({
-                cccdVerified: Boolean(apiData?.cccd?.verificationResult?.isUserMatch),
-                houseDocVerified: Boolean(
-                    apiData?.houseDoc?.verificationResult?.isAddressMatch &&
-                    apiData?.houseDoc?.verificationResult?.isAreaMatch
-                ),
-                cccd: apiData?.cccd,
-                houseDoc: apiData?.houseDoc,
-            });
-            toast.error(error?.response?.data?.message || "Failed to verify documents. Check details below.");
-        } finally {
-            setIsVerifyingDocs(false);
-        }
-    };
-
-    // Dummy SMS send function
-    function sendSms() {
-        if (!phone.trim()) {
-            toast.error("Please enter your phone number.");
-            return;
-        }
-        setIsSending(true);
-        // TODO: integrate real SMS API
-        setTimeout(() => {
-            setIsSending(false);
-            setIsPhoneVerified(true);
-            setPhoneModalOpen(false);
-            toast.success("SMS sent successfully. Phone verified.");
-        }, 900);
-    }
-
-    // HÀM XỬ LÝ CHỌN PLAN
-    const handleSelectPlan = (plan) => {
-        if (planOrder[plan] > planOrder[membershipLevel]) {
-            toast.warn(`Your current membership (${membershipLevel}) doesn't support the ${planInfo[plan].label} plan. Please upgrade first.`);
-        }
-        setSelectedPlan(plan);
-    };
-
 
     // cấu hình hiển thị lỗi
     const { showError } = useError()

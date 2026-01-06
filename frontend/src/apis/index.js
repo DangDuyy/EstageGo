@@ -295,14 +295,12 @@ export const changePasswordAPI = async (passwordData) => {
   return response.data
 }
 
-// Upgrade membership
-export const upgradeMembershipAPI = async (membershipLevel, billingCycle) => {
-  const response = await authorizeAxiosInstance.post(`${API_ROOT}/v1/users/upgrade-membership`, {
-    membershipLevel,
-    billingCycle
-  })
+// Get membership info from UserMembership model
+export const getMembershipInfoAPI = async () => {
+  const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/users/membership-info`)
   return response.data
 }
+
 
 // ========== AGENT APIs ==========
 

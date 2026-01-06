@@ -1491,19 +1491,20 @@ const boostProperty = async (req, res, next) => {
         const parsedHours = Number(durationHours)
         const boostDuration = !isNaN(parsedHours) && parsedHours > 0 ? parsedHours : 48
 
-        // Calculate boost fee based on membership and duration
-        const membership = user.membershipLevel || 'basic'
+        // Get active membership from UserMembership model
+        const activeMembership = await userMembershipService.getActiveMembership(userId)
+        const membership = activeMembership?.membershipType || 'basic'
         // Base fee is for 24h boost
         let base24hFee = 100000 // basic
-        if (membership === 'premium') base24hFee = 50000
-        else if (membership === 'standard') base24hFee = 75000
+        if (membership === 'advanced') base24hFee = 50000
+        else if (membership === 'boosted') base24hFee = 75000
 
         const creditsNeeded = Math.max(1, Math.ceil(boostDuration / 24))
-        // Duration multiplier: 24h=1.0, 48h=1.5, 72h=2.0
+        // Duration multiplier: 24h=1.0, 48h=1.8, 72h=2.5
         let durationMultiplier = 1
         if (boostDuration <= 24) durationMultiplier = 1
-        else if (boostDuration <= 48) durationMultiplier = 1.5
-        else durationMultiplier = 2
+        else if (boostDuration <= 48) durationMultiplier = 1.8
+        else durationMultiplier = 2.5
         const boostFee = Math.round(base24hFee * durationMultiplier)
 
         if (useCredits) {
@@ -1621,11 +1622,12 @@ const boostMultipleProperties = async (req, res, next) => {
             })
         }
 
-        // Calculate total fee with bulk discount
-        const membership = user.membershipLevel || 'basic'
+        // Get active membership from UserMembership model
+        const activeMembership = await userMembershipService.getActiveMembership(userId)
+        const membership = activeMembership?.membershipType || 'basic'
         let baseFee = 100000
-        if (membership === 'premium') baseFee = 50000
-        else if (membership === 'standard') baseFee = 75000
+        if (membership === 'advanced') baseFee = 50000
+        else if (membership === 'boosted') baseFee = 75000
 
         const count = propertyIds.length
         let discount = 0
@@ -1712,9 +1714,11 @@ const purchaseBoostPackage = async (req, res, next) => {
             })
         }
 
-        // Membership-based discount: basic 0%, standard 10%, premium 20%
-        const level = user.membershipLevel || 'basic'
-        const discountMap = { basic: 0, standard: 0.1, premium: 0.2 }
+        // Get active membership from UserMembership model
+        const activeMembership = await userMembershipService.getActiveMembership(userId)
+        const level = activeMembership?.membershipType || 'basic'
+        // Membership-based discount: basic 0%, boosted 10%, advanced 20%
+        const discountMap = { basic: 0, boosted: 0.1, advanced: 0.2 }
         const discountRate = discountMap[level] ?? 0
         const discountedPrice = Math.round(selectedPackage.price * (1 - discountRate))
 

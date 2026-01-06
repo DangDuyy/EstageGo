@@ -69,8 +69,8 @@ Router.route('/email/send-verification')
 Router.route('/email/verify')
   .get(userController.verifyEmailToken) // Route công khai cho link trong email
 
-Router.route('/upgrade-membership')
-  .post(authMiddleware.isAuthorized, userController.upgradeMembership)
+Router.route('/membership-info')
+  .get(authMiddleware.isAuthorized, userController.getMembershipInfo)
 
 // Thêm route mới sau các route khác
 Router.route('/agent/dashboard-stats')
