@@ -660,10 +660,10 @@ const getPropertiesWithMap = async (query) => {
   const skip = (pageParam - 1) * limitParam
   const pipeline = []
 
-  // 2.1 Match
+  // Match
   pipeline.push({ $match: baseFilter })
 
-  // 2.2 Tính boost priority
+  // Tính boost priority
   pipeline.push({
     $addFields: {
       _boostPriority: {
@@ -681,12 +681,33 @@ const getPropertiesWithMap = async (query) => {
     }
   })
 
-  // 2.3 Sort
+  // Sort
   pipeline.push({ $sort: sort })
 
-  // 2.4 Paging
+  // Paging
   pipeline.push({ $skip: skip })
   pipeline.push({ $limit: limitParam })
+
+  // ✅ Populate owner
+  pipeline.push({
+    $lookup: {
+      from: 'users',
+      localField: 'owner',
+      foreignField: '_id',
+      as: 'ownerInfo'
+    }
+  })
+
+  pipeline.push({
+    $unwind: { path: "$ownerInfo", preserveNullAndEmptyArrays: true }
+  })
+
+  pipeline.push({
+    $project: {
+      "ownerInfo.password": 0,
+      "ownerInfo.verifyToken": 0
+    }
+  })
 
   const listPromise = Promise.all([
     propertyModel.aggregate(pipeline),
@@ -744,9 +765,10 @@ const getPropertiesWithMap = async (query) => {
 
   mapResult.markers = await propertyModel
     .find(baseFilter)
-    .select("_id price address isFeatured")
+    .populate('owner', 'fullName userName avatar')
+    .select("_id price address isFeatured owner")
     .sort({ priority: -1 })
-    .limit(300) // HARD LIMIT chống lag
+    .limit(300)
 
   /* =======================
       5️⃣ RESPONSE

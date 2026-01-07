@@ -67,7 +67,7 @@ function AgentForm() {
         </div>
       </div>
 
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-10">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {isLoading ? (
           <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground">Loading agents...</p>
@@ -82,23 +82,24 @@ function AgentForm() {
               <img
                 src={member.imageUrl}
                 alt={member.name}
-                width={300}
-                height={300}
+                width={400}
+                height={400}
                 className="w-full aspect-square rounded-lg object-cover bg-secondary group-hover:opacity-90 transition-opacity"
                 loading="lazy"
               />
-              <h3 className="mt-3 text-sm font-semibold truncate" title={member.name}>{member.name}</h3>
-              <p className="text-muted-foreground text-xs truncate">{member.title.toUpperCase()}</p>
+              <h3 className="mt-3 text-base font-semibold truncate">{member.name}</h3>
+              <p className="text-muted-foreground text-sm truncate">{member.title.toUpperCase()}</p>
+              <p className="mt-2 text-sm line-clamp-2">{member.bio}</p>
 
-              <div className="mt-2 flex items-center gap-1.5">
+              <div className="mt-3 flex items-center gap-2">
                 {member.email && (
                   <Button
                     className="bg-accent hover:bg-accent text-muted-foreground shadow-none"
                     size="icon"
                     asChild
                   >
-                    <a href={`mailto:${member.email}`} aria-label="Email" className="w-7 h-7">
-                      <Twitter className="stroke-muted-foreground w-3.5 h-3.5" />
+                    <a href={`mailto:${member.email}`} aria-label="Email" className="w-8 h-8">
+                      <Twitter className="stroke-muted-foreground w-4 h-4" />
                     </a>
                   </Button>
                 )}
@@ -109,8 +110,8 @@ function AgentForm() {
                     size="icon"
                     asChild
                   >
-                    <a href={`tel:${member.phone}`} aria-label="Phone" className="w-7 h-7">
-                      <Instagram className="stroke-muted-foreground w-3.5 h-3.5" />
+                    <a href={`tel:${member.phone}`} aria-label="Phone" className="w-8 h-8">
+                      <Instagram className="stroke-muted-foreground w-4 h-4" />
                     </a>
                   </Button>
                 )}
@@ -120,8 +121,8 @@ function AgentForm() {
                   size="icon"
                   asChild
                 >
-                  <a href="#" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn" className="w-7 h-7">
-                    <Linkedin className="stroke-muted-foreground w-3.5 h-3.5" />
+                  <a href="#" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn" className="w-8 h-8">
+                    <Linkedin className="stroke-muted-foreground w-4 h-4" />
                   </a>
                 </Button>
               </div>

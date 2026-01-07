@@ -12,6 +12,8 @@ function PropertyMarker({ property }) {
 
     const getPropertyDetail = async () => {
         const res = await fetchPropertyDetail(property._id)
+        console.log('Property detail from API:', res)
+        console.log('Owner info:', res.ownerInfo)
         setPropertyDetail(res)
     }
 
@@ -50,7 +52,7 @@ function PropertyMarker({ property }) {
                         side="top"
                         sideOffset={10}
                     >
-                        {propertyDetail && <PropertyCard item={propertyDetail} />}
+                        {propertyDetail && <PropertyCard item={propertyDetail} view="grid" />}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

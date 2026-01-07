@@ -64,7 +64,24 @@ export function formatPrice(price) {
     const symbolMap = { USD: "$", VND: "₫", EUR: "€" };
     const symbol = symbolMap[currency] ?? (currency ? `${currency} ` : "");
     const num = Number(value ?? 0);
-    return `${symbol}${num.toLocaleString()}${period ? `/${period}` : ""}`;
+    
+    // Format VND với triệu/tỷ
+    let formattedValue;
+    if (currency === "VND") {
+      if (num >= 1_000_000_000) {
+        // Tỷ
+        formattedValue = `${(num / 1_000_000_000).toFixed(1)} tỷ`;
+      } else if (num >= 1_000_000) {
+        // Triệu
+        formattedValue = `${(num / 1_000_000).toFixed(0)} triệu`;
+      } else {
+        formattedValue = num.toLocaleString();
+      }
+    } else {
+      formattedValue = num.toLocaleString();
+    }
+    
+    return `${symbol}${formattedValue}${period ? `/${period}` : ""}`;
   }
   return String(price);
 }
