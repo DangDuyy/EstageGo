@@ -34,6 +34,12 @@ export default function PropertyCard({ item, variant = "grid", className }) {
   const propertyId = item._id || item.id;
   const inWishlist = isInWishlist(propertyId);
 
+  // Owner info - handle both ownerInfo and owner fields
+  const ownerData = item.ownerInfo || item.owner || {};
+  const ownerAvatar = ownerData.avatar;
+  const ownerName = ownerData.fullName || ownerData.userName;
+  const ownerInitial = ownerName?.[0] || "A";
+
   const imageUrl = item.image || getFirstImageUrl(item.media);
   const locationText = item.address?.fullAddress ||
                         [item.address?.street, item.address?.ward, item.address?.district, item.address?.province]
@@ -271,18 +277,20 @@ export default function PropertyCard({ item, variant = "grid", className }) {
             {/* Bottom row */}
             <div className="flex items-center justify-between">
               {/* Owner */}
-              <div className="flex items-center text-md gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={item.ownerInfo?.avatar} />
-                  <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
+              <div className="flex items-center text-md gap-3 min-w-0 flex-1">
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarImage src={ownerAvatar} />
+                  <AvatarFallback>{ownerInitial}</AvatarFallback>
                 </Avatar>
-                {item.ownerInfo?.fullName && (
-                  <span className="text-md text-muted-foreground">{item.ownerInfo.fullName}</span>
+                {ownerName && (
+                  <span className="text-md text-muted-foreground truncate max-w-[200px]" title={ownerName}>
+                    {ownerName}
+                  </span>
                 )}
               </div>
 
               {/* Price */}
-              {priceText && <div className="text-md font-semibold">{priceText}</div>}
+              {priceText && <div className="text-md font-semibold flex-shrink-0">{priceText}</div>}
             </div>
           </>
         ) : (
@@ -323,12 +331,14 @@ export default function PropertyCard({ item, variant = "grid", className }) {
             {/* Bottom Section */}
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={item.ownerInfo?.avatar} />
-                  <AvatarFallback>{item.ownerInfo?.fullName?.[0] ?? "A"}</AvatarFallback>
+                <Avatar className="h-6 w-6 flex-shrink-0">
+                  <AvatarImage src={ownerAvatar} />
+                  <AvatarFallback>{ownerInitial}</AvatarFallback>
                 </Avatar>
-                {item.ownerInfo?.fullName && (
-                  <span className="text-sm text-muted-foreground">{item.ownerInfo.fullName}</span>
+                {ownerName && (
+                  <span className="text-sm text-muted-foreground truncate max-w-[120px]" title={ownerName}>
+                    {ownerName}
+                  </span>
                 )}
               </div>
 

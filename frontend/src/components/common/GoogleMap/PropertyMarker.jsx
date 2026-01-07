@@ -45,7 +45,10 @@ function PropertyMarker({ property }) {
                     </DropdownMenuTrigger>
 
                     <DropdownMenuContent
-                        className="m-0 p-0 border-0"
+                        className="p-0 border-0 w-[320px] max-w-[90vw]"
+                        align="start"
+                        side="top"
+                        sideOffset={10}
                     >
                         {propertyDetail && <PropertyCard item={propertyDetail} />}
                     </DropdownMenuContent>
