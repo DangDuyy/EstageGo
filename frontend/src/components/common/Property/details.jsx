@@ -682,25 +682,31 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
                 return (
                   <div className="space-y-4">
                     <div className="flex flex-row items-center space-y-2 space-x-6">
-                      <Avatar className="h-20 w-20">
+                      <Avatar className="h-20 w-20 flex-shrink-0">
                         {ownerAvatar ? (
                           <AvatarImage src={ownerAvatar} alt={ownerName} />
                         ) : (
                           <AvatarFallback>{ownerName.slice(0, 1)}</AvatarFallback>
                         )}
                       </Avatar>
-                      <div>
-                        <div className="font-medium text-lg">{ownerName}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-lg truncate" title={ownerName}>
+                          {ownerName}
+                        </div>
                         {owner.phone && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-4 w-4" />
-                            <span>{owner.phone}</span>
+                            <Phone className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate" title={owner.phone}>
+                              {owner.phone}
+                            </span>
                           </div>
                         )}
                         {owner.email && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-4 w-4" />
-                            <span>{owner.email}</span>
+                            <Mail className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate" title={owner.email}>
+                              {owner.email}
+                            </span>
                           </div>
                         )}
                       </div>
