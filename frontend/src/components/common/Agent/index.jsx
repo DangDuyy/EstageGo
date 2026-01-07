@@ -134,7 +134,7 @@ function AgentForm() {
             variant="outline"
             onClick={() => setShowAll(!showAll)}
           >
-            {showAll ? "Thu gọn" : `Xem thêm (${agents.length - 6} agents)`}
+            {showAll ? "Show less" : `Load more (${agents.length - 6} agents)`}
           </Button>
         </div>
       )}
