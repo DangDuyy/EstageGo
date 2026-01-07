@@ -33,7 +33,7 @@ import {
   Upload,
   X
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export default function AgentDefaultProfile({
@@ -53,7 +53,6 @@ export default function AgentDefaultProfile({
   onShowFollowing,
   isChatLoading,
   isFollowLoading,
-  userReview,
   reviewForm,
   setReviewForm,
   reviewImagePreviews,
@@ -75,10 +74,8 @@ export default function AgentDefaultProfile({
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [showMenuId, setShowMenuId] = useState(null)
   
-  // Fetch presence status for this user
   const usersStatus = useSelector(selectUsersStatus)
   usePresenceSnapshot(user?._id ? [user._id] : [])
-  
   const agentPresence = user?._id ? usersStatus[user._id] : null
 
   const handleEditReview = (review) => {
@@ -110,580 +107,371 @@ export default function AgentDefaultProfile({
     }
   }
 
-  return (
-    <>
-      {/* User Header */}
-      <Card className="mb-8">
-        <CardContent className="p-8">
-          <div className="flex flex-col md:flex-row gap-8">
-            <Avatar className="h-32 w-32 shrink-0">
-              <AvatarImage src={user?.avatar} alt={user?.fullName} />
-              <AvatarFallback className="text-4xl">
-                {user?.fullName?.charAt(0) || user?.userName?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+  // Configuration based on role
+  const isProfessional = isAgent; // Only agents get the pro features (stats, reviews)
 
-            <div className="flex-1 relative">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h1 className="text-3xl font-bold">{user?.fullName || user?.userName}</h1>
-                    {isAdmin && (
-                      <Badge variant="destructive" className="text-sm">
-                        <Award className="h-3 w-3 mr-1" />
-                        Admin
-                      </Badge>
-                    )}
-                    {isAgent && (
-                      <Badge variant="default" className="text-sm">
-                        <Briefcase className="h-3 w-3 mr-1" />
-                        Agent
-                      </Badge>
-                    )}
-                    {!isAdmin && !isAgent && (
-                      <Badge variant="secondary" className="text-sm">
-                        <User className="h-3 w-3 mr-1" />
-                        Personal
-                      </Badge>
-                    )}
-                  </div>
-                  {/* Presence Status */}
-                  {!isOwnProfile && agentPresence && (
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 bg-gray-50/30">
+      {/* 1. Header Section */}
+      <Card className="border-none shadow-sm overflow-hidden bg-white">
+        <CardContent className="p-0">
+          <div className="flex flex-col md:flex-row">
+            {/* Left: Avatar & Stats & Status */}
+            <div className={`md:w-1/4 bg-slate-50 p-8 flex flex-col items-center border-r border-gray-100 ${!isProfessional && 'justify-center'}`}>
+              <div className="flex flex-col items-center gap-4 mb-2 text-center">
+                <Avatar className="h-40 w-40 shadow-xl border-4 border-white">
+                  <AvatarImage src={user?.avatar} alt={user?.fullName} className="object-cover" />
+                  <AvatarFallback className="text-4xl bg-orange-100 text-orange-600 font-bold">
+                    {user?.fullName?.charAt(0) || user?.userName?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                
+                {!isOwnProfile && agentPresence && (
+                  <div className="flex justify-center w-full">
                     <PresenceBadge 
                       isOnline={agentPresence.isOnline} 
-                      lastActiveAt={agentPresence.lastActiveAt}
+                      lastActiveAt={agentPresence.lastActiveAt} 
                     />
-                  )}
-                  {isAgent && user?.agentTitle && (
-                    <p className="text-lg text-muted-foreground mb-4">{user.agentTitle}</p>
-                  )}
-                </div>
-
-                {!isOwnProfile && currentUser && (
-                  <div className="flex gap-2 md:items-center md:mt-1 ml-auto">
-                    <Button 
-                      variant="default" 
-                      size="sm"
-                      onClick={onStartChat}
-                      disabled={isChatLoading}
-                    >
-                      {isChatLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Message
-                    </Button>
-                    {isAgent && (
-                      <Button 
-                        variant={isFollowing ? "outline" : "default"} 
-                        size="sm"
-                        onClick={onToggleFollow}
-                        disabled={isFollowLoading}
-                      >
-                        {isFollowLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : isFollowing ? (
-                          <HeartOff className="h-4 w-4 mr-2" />
-                        ) : (
-                          <Heart className="h-4 w-4 mr-2" />
-                        )}
-                        {isFollowing ? 'Unfollow' : 'Follow'}
-                      </Button>
-                    )}
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {isAgent && user?.companyName && (
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                    <span>{user.companyName}</span>
-                  </div>
-                )}
-                {user?.address && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <span>{user.address}</span>
-                  </div>
-                )}
-                {user?.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
-                    <a href={`tel:${user.phone}`} className="hover:text-primary">
-                      {user.phone}
-                    </a>
-                  </div>
-                )}
-                {user?.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <a href={`mailto:${user.email}`} className="hover:text-primary">
-                      {user.email}
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {(user?.website || user?.socialLinks) && (
-                <div className="flex gap-4 flex-wrap">
-                  {user?.website && (
-                    <a
-                      href={user.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-primary hover:underline"
-                    >
-                      <Globe className="h-4 w-4" />
-                      Website
-                    </a>
-                  )}
-                  {user?.socialLinks?.facebook && (
-                    <a
-                      href={user.socialLinks.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80"
-                    >
-                      <Facebook className="h-4 w-4" />
-                    </a>
-                  )}
-                  {user?.socialLinks?.linkedin && (
-                    <a
-                      href={user.socialLinks.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80"
-                    >
-                      <Linkedin className="h-4 w-4" />
-                    </a>
-                  )}
-                  {user?.socialLinks?.twitter && (
-                    <a
-                      href={user.socialLinks.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80"
-                    >
-                      <Twitter className="h-4 w-4" />
-                    </a>
-                  )}
+              {/* Followers/Following Stats - ONLY FOR AGENTS */}
+              {isProfessional && (
+                <div className="flex w-full justify-around pt-6 border-t border-gray-200 mt-4">
+                  <button 
+                    onClick={() => {setFollowersDialogOpen?.(true); onShowFollowers?.()}}
+                    className="text-center group"
+                  >
+                    <p className="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{followStats?.totalFollowers || 0}</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Followers</p>
+                  </button>
+                  <div className="w-px h-10 bg-gray-200" />
+                  <button 
+                    onClick={() => {setFollowingDialogOpen?.(true); onShowFollowing?.()}}
+                    className="text-center group"
+                  >
+                    <p className="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{followStats?.totalFollowing || 0}</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Following</p>
+                  </button>
                 </div>
               )}
+            </div>
+
+            {/* Right: Personal/Contact Info */}
+            <div className="flex-1 p-8 flex flex-col justify-between">
+              <div className="w-full">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{user?.fullName || user?.userName}</h1>
+                      <div className="flex gap-2">
+                        {isAdmin && <Badge variant="destructive" className="rounded-full shadow-sm"><Award className="h-3 w-3 mr-1" /> Admin</Badge>}
+                        {isAgent && <Badge variant="default" className="rounded-full bg-blue-600 shadow-sm"><Briefcase className="h-3 w-3 mr-1" /> Agent</Badge>}
+                        {!isAdmin && !isAgent && (
+                          <Badge variant="secondary" className="rounded-full bg-gray-200 text-gray-700 shadow-sm">
+                            <User className="h-3 w-3 mr-1" /> Personal
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {isAgent && user?.agentTitle && (
+                      <p className="text-lg font-medium text-blue-600/80">{user.agentTitle}</p>
+                    )}
+                  </div>
+
+                  {!isOwnProfile && currentUser && (
+                    <div className="flex gap-3 ml-auto">
+                      <Button onClick={onStartChat} disabled={isChatLoading} className="rounded-full px-6 shadow-md shadow-primary/20 transition-all hover:scale-105">
+                        {isChatLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageCircle className="h-4 w-4 mr-2" />}
+                        Message
+                      </Button>
+                      {isAgent && (
+                        <Button 
+                          variant={isFollowing ? "outline" : "secondary"} 
+                          onClick={onToggleFollow} 
+                          disabled={isFollowLoading}
+                          className={`rounded-full px-6 transition-all ${!isFollowing && 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}
+                        >
+                          {isFollowLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : isFollowing ? <HeartOff className="h-4 w-4 mr-2" /> : <Heart className="h-4 w-4 mr-2 fill-orange-600" />}
+                          {isFollowing ? 'Unfollow' : 'Follow'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Contact Information Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  <div className="flex items-center gap-4 group">
+                    <div className="p-2.5 bg-gray-100 rounded-xl text-gray-500 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors shrink-0">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Email</span>
+                      <a href={`mailto:${user?.email}`} className="text-sm font-semibold truncate hover:text-orange-600">{user?.email || 'Not provided'}</a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 group">
+                    <div className="p-2.5 bg-gray-100 rounded-xl text-gray-500 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors shrink-0">
+                      <Phone className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Phone</span>
+                      <a href={`tel:${user?.phone}`} className="text-sm font-semibold hover:text-orange-600">{user?.phone || 'Not provided'}</a>
+                    </div>
+                  </div>
+
+                  {isAgent && (
+                    <div className="flex items-center gap-4 group">
+                      <div className="p-2.5 bg-gray-100 rounded-xl text-gray-500 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors shrink-0">
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Agency</span>
+                        <span className="text-sm font-semibold">{user?.companyName || 'Freelance Agent'}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-4 group">
+                    <div className="p-2.5 bg-gray-100 rounded-xl text-gray-500 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors shrink-0">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Location</span>
+                      <span className="text-sm font-semibold truncate">{user?.address || 'Vietnam'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Bar */}
+              <div className="flex gap-4 mt-8 pt-6 border-t border-gray-50">
+                {user?.website && (
+                  <a href={user.website} target="_blank" className="p-2 rounded-full border hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm">
+                    <Globe className="h-4 w-4" />
+                  </a>
+                )}
+                {user?.socialLinks?.facebook && (
+                  <a href={user.socialLinks.facebook} target="_blank" className="p-2 rounded-full border hover:bg-slate-50 hover:text-blue-700 transition-all shadow-sm">
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                )}
+                {user?.socialLinks?.linkedin && (
+                  <a href={user.socialLinks.linkedin} target="_blank" className="p-2 rounded-full border hover:bg-slate-50 hover:text-blue-800 transition-all shadow-sm">
+                    <Linkedin className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* About Section */}
-      {user?.bio && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>About</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground whitespace-pre-wrap">{user.bio}</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* 2. Main Content Grid */}
+      <div className={`grid grid-cols-1 gap-8 ${isProfessional ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+        
+        {/* Left Column: Bio & Properties */}
+        <div className={`${isProfessional ? 'lg:col-span-2' : 'max-w-4xl mx-auto w-full'} space-y-8`}>
+          {user?.bio && (
+            <Card className="border-none shadow-sm">
+              <CardHeader><CardTitle className="text-xl font-bold flex items-center gap-2"><User className="h-5 w-5 text-orange-500" /> About</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap italic pl-4 border-l-4 border-orange-100">{user.bio}</p>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Experience */}
-      {isAgent && user?.experience !== null && user?.experience !== undefined && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Experience
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{user.experience} years in real estate</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Support Services */}
-      {isAgent && user?.supportServices && user.supportServices.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Services Provided</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {user.supportServices.map((service, idx) => (
-                <Badge key={idx} variant="secondary">
-                  {service}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Operating Areas */}
-      {isAgent && user?.operatingAreas && user.operatingAreas.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Operating Areas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {user.operatingAreas.map((area, idx) => (
-                <Badge key={idx} variant="outline">
-                  <MapPin className="h-3 w-3 mr-1" />
-                  {area}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Reviews Section */}
-      {isAgent && (
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Reviews</CardTitle>
-              {reviewStats && (
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
-                    <span className="text-2xl font-bold">{reviewStats.averageRating.toFixed(1)}</span>
+          {isProfessional && (
+            <Card className="border-none shadow-sm">
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                {user?.experience !== undefined && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tenure</h4>
+                    <p className="text-xl font-bold">{user.experience} Years <span className="text-sm font-normal text-muted-foreground">in Real Estate</span></p>
                   </div>
-                  <span className="text-muted-foreground">
-                    ({reviewStats.totalReviews} {reviewStats.totalReviews === 1 ? 'review' : 'reviews'})
-                  </span>
-                  {isAgent && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setFollowersDialogOpen && setFollowersDialogOpen(true)
-                          onShowFollowers && onShowFollowers()
-                        }}
-                        className="text-muted-foreground"
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        {followStats?.totalFollowers || 0} {followStats?.totalFollowers === 1 ? 'follower' : 'followers'}
-                      </Button>
-                      {currentUser && currentUser._id === user._id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setFollowingDialogOpen && setFollowingDialogOpen(true)
-                            onShowFollowing && onShowFollowing()
-                          }}
-                          className="text-muted-foreground"
-                        >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          {followStats?.totalFollowing || 0} Following
-                        </Button>
-                      )}
-                    </>
-                  )}
+                )}
+                {user?.operatingAreas?.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Service Areas</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {user.operatingAreas.map((area, idx) => (
+                        <Badge key={idx} variant="secondary" className="bg-orange-50 text-orange-600 border-none">{area}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Properties Section - Shown for Agents or if user has listings */}
+          {(isProfessional || (properties && properties.length > 0)) && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Building2 className="h-6 w-6 text-orange-600" /> Listings
+                </h3>
+                <Badge variant="outline" className="bg-white">{properties?.length || 0} Listed</Badge>
+              </div>
+
+              {!properties || properties.length === 0 ? (
+                <Card className="border-dashed border-2 py-12 text-center bg-gray-50/50">
+                  <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-muted-foreground">No properties currently listed</p>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {properties.filter(p => p && p._id).map((property) => (
+                    <PropertyCard key={property._id} item={property} />
+                  ))}
                 </div>
               )}
             </div>
-          </CardHeader>
-          <CardContent>
-            {!isOwnProfile && currentUser && (
-              <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                <h4 className="font-semibold mb-3">Write a Review</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Rating:</span>
-                    <div className="flex gap-1">
+          )}
+        </div>
+
+        {/* Right Sidebar: Reviews - ONLY FOR AGENTS */}
+        {isProfessional && (
+          <div className="space-y-8">
+            <Card className="border-none shadow-sm h-fit sticky top-8">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl">Rating</CardTitle>
+                  <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full text-yellow-700 font-bold border border-yellow-100">
+                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                    {reviewStats?.averageRating.toFixed(1) || "0.0"}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Review Form */}
+                {!isOwnProfile && currentUser && (
+                  <div className="mb-8 p-4 bg-gray-50 rounded-2xl space-y-4 border border-gray-100 shadow-inner text-center">
+                    <p className="text-sm font-bold">Post a Feedback</p>
+                    <div className="flex gap-1.5 justify-center py-2">
                       {[1, 2, 3, 4, 5].map((rating) => (
-                        <button
-                          key={rating}
-                          type="button"
-                          onClick={() => setReviewForm({ ...reviewForm, rating })}
-                          className="focus:outline-none"
-                        >
-                          <Star
-                            className={`h-6 w-6 cursor-pointer transition-colors ${
-                              rating <= reviewForm.rating
-                                ? 'text-yellow-500 fill-yellow-500'
-                                : 'text-gray-300 hover:text-yellow-400'
-                            }`}
-                          />
+                        <button key={rating} type="button" onClick={() => setReviewForm({ ...reviewForm, rating })}>
+                          <Star className={`h-8 w-8 transition-all ${rating <= reviewForm.rating ? 'text-yellow-500 fill-yellow-500 scale-110' : 'text-gray-200'}`} />
                         </button>
                       ))}
                     </div>
-                  </div>
-                  <Textarea
-                    placeholder="Share your experience..."
-                    value={reviewForm.comment}
-                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                    rows={3}
-                    className="bg-white"
-                  />
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Images (optional, max 5)</label>
+                    <Textarea 
+                      placeholder="Share your experience..." 
+                      value={reviewForm.comment} 
+                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                      className="bg-white resize-none"
+                    />
+                    
                     <div className="flex flex-wrap gap-2">
                       {reviewImagePreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={preview.preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-20 h-20 object-cover rounded border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => onRemoveReviewImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
+                        <div key={index} className="relative group shrink-0">
+                          <img src={preview.preview} alt="preview" className="w-12 h-12 object-cover rounded-md border" />
+                          <button onClick={() => onRemoveReviewImage(index)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><X className="h-3 w-3" /></button>
                         </div>
                       ))}
                       {reviewImagePreviews.length < 5 && (
-                        <label className="w-20 h-20 border-2 border-dashed rounded flex items-center justify-center cursor-pointer hover:border-orange-500 bg-white">
-                          <Upload className="h-6 w-6 text-gray-400" />
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={onReviewImageSelect}
-                            className="hidden"
-                          />
+                        <label className="w-12 h-12 border-2 border-dashed rounded-md flex items-center justify-center cursor-pointer hover:bg-white text-gray-400">
+                          <Upload className="h-5 w-5" /><Input type="file" accept="image/*" multiple onChange={onReviewImageSelect} className="hidden" />
                         </label>
                       )}
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={editingReviewId ? handleSubmitWithId : () => onSubmitReview()}
-                      className="flex-1 bg-orange-500 hover:bg-orange-600"
-                    >
-                      {editingReviewId ? 'Update Review' : 'Submit Review'}
+
+                    <Button onClick={editingReviewId ? handleSubmitWithId : () => onSubmitReview()} className="w-full bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-100">
+                      {editingReviewId ? 'Update' : 'Post Review'}
                     </Button>
-                    {editingReviewId && (
-                      <Button onClick={handleCancelEdit} variant="outline">
-                        Cancel
-                      </Button>
-                    )}
                   </div>
-                </div>
-              </div>
-            )}
+                )}
 
-            {loadingReviews ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : reviews && reviews.length > 0 ? (
-              <div className="space-y-6">
-                {reviews.map((review) => (
-                  <div
-                    key={review._id}
-                    className="border-b pb-6 last:border-b-0 last:pb-0 relative group"
-                    onMouseEnter={() => review.reviewer?._id === currentUser?._id && setShowMenuId(review._id)}
-                    onMouseLeave={() => setShowMenuId(null)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={review.reviewer?.avatar} />
-                        <AvatarFallback>
-                          {review.reviewer?.fullName?.charAt(0) || review.reviewer?.userName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="gap-1 mb-2">
-                          <button
-                            onClick={() => navigate(`/agents/${review.reviewer?._id}`)}
-                            className="font-semibold hover:text-primary transition-colors"
-                          >
-                            {review.reviewer?.fullName || review.reviewer?.userName}
-                          </button>
-                          <div className="flex gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating
-                                    ? 'fill-yellow-500 text-yellow-500'
-                                    : 'text-muted-foreground'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {review.comment && (
-                          <p className="text-sm text-muted-foreground mb-2 break-words">{review.comment}</p>
-                        )}
-                        {review.media && review.media.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {review.media.map((mediaItem, idx) => (
-                              mediaItem.type === 'image' && (
-                                <img
-                                  key={idx}
-                                  src={mediaItem.url}
-                                  alt={`Review image ${idx + 1}`}
-                                  className="w-24 h-24 object-cover rounded border cursor-pointer hover:opacity-80"
-                                  onClick={() => window.open(mediaItem.url, '_blank')}
-                                />
-                              )
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Menu 3 chấm cho review của mình */}
-                      {review.reviewer?._id === currentUser?._id && showMenuId === review._id && (
-                        <div className="absolute top-2 right-2">
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setShowMenuId(showMenuId === review._id ? null : review._id)
-                              }}
-                              className="p-1 hover:bg-gray-100 rounded"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
-                            <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border z-10">
-                              <button
-                                onClick={() => handleEditReview(review)}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(review._id)}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                              >
-                                Delete
-                              </button>
+                {/* Reviews List */}
+                <ScrollArea className="h-[400px] pr-4">
+                  {loadingReviews ? (
+                    <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>
+                  ) : reviews && reviews.length > 0 ? (
+                    <div className="space-y-6">
+                      {reviews.map((review) => (
+                        <div key={review._id} className="relative group border-b border-gray-50 pb-4 last:border-0">
+                          <div className="flex gap-3">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage src={review.reviewer?.avatar} />
+                              <AvatarFallback>{review.reviewer?.fullName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-1 min-w-0">
+                              <p className="text-sm font-bold truncate">{review.reviewer?.fullName || review.reviewer?.userName}</p>
+                              <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} className={`h-3 w-3 ${i < review.rating ? 'fill-yellow-500 text-yellow-500' : 'text-gray-200'}`} />
+                                ))}
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{review.comment}</p>
+                              <span className="text-[10px] text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</span>
                             </div>
+                            
+                            {review.reviewer?._id === currentUser?._id && (
+                              <button onClick={() => setShowMenuId(showMenuId === review._id ? null : review._id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 shrink-0"><MoreVertical className="h-4 w-4" /></button>
+                            )}
                           </div>
+                          {showMenuId === review._id && (
+                            <div className="absolute right-0 top-8 z-10 bg-white shadow-xl border rounded-lg p-1 text-xs w-24">
+                              <button onClick={() => handleEditReview(review)} className="w-full text-left p-2 hover:bg-slate-50 rounded font-medium">Edit</button>
+                              <button onClick={() => handleDelete(review._id)} className="w-full text-left p-2 hover:bg-red-50 text-red-600 rounded font-medium">Delete</button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
                     </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-10 text-sm italic">No reviews yet</p>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+
+      {/* Dialogs - Kept for Agent features */}
+      {isProfessional && (
+        <>
+          <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader><DialogTitle>Followers</DialogTitle></DialogHeader>
+              <ScrollArea className="max-h-[400px]">
+                {loadingFollowers ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : followers.length === 0 ? <p className="text-center py-8 text-muted-foreground">No followers found</p> : (
+                  <div className="space-y-2">
+                    {followers.map((follower) => (
+                      <button key={follower._id} onClick={() => {navigate(`/agents/${follower._id}`); setFollowersDialogOpen?.(false)}} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left">
+                        <Avatar><AvatarImage src={follower.avatar} /><AvatarFallback>{follower.fullName?.[0]}</AvatarFallback></Avatar>
+                        <div className="flex-1"><p className="font-semibold">{follower.fullName || follower.userName}</p>{follower.agentTitle && <p className="text-sm text-muted-foreground">{follower.agentTitle}</p>}</div>
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">No reviews yet</p>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader><DialogTitle>Following</DialogTitle></DialogHeader>
+              <ScrollArea className="max-h-[400px]">
+                {loadingFollowing ? <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : following.length === 0 ? <p className="text-center py-8 text-muted-foreground">Not following anyone</p> : (
+                  <div className="space-y-2">
+                    {following.map((person) => (
+                      <button key={person._id} onClick={() => {navigate(`/agents/${person._id}`); setFollowingDialogOpen?.(false)}} className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left">
+                        <Avatar><AvatarImage src={person.avatar} /><AvatarFallback>{person.fullName?.[0]}</AvatarFallback></Avatar>
+                        <div className="flex-1"><p className="font-semibold">{person.fullName || person.userName}</p>{person.agentTitle && <p className="text-sm text-muted-foreground">{person.agentTitle}</p>}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        </>
       )}
-
-      {/* Properties Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Property Listings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!properties || properties.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No properties listed yet
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.filter(p => p && p._id).map((property) => (
-                <PropertyCard key={property._id} item={property} />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-        {/* Followers Dialog */}
-        <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Followers</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[400px]">
-              {loadingFollowers ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : followers.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">No followers yet</p>
-              ) : (
-                <div className="space-y-2">
-                  {followers.map((follower) => (
-                    <button
-                      key={follower._id}
-                      onClick={() => {
-                        navigate(`/agents/${follower._id}`)
-                        setFollowersDialogOpen && setFollowersDialogOpen(false)
-                      }}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={follower.avatar} />
-                        <AvatarFallback>
-                          {follower.fullName?.charAt(0) || follower.userName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{follower.fullName || follower.userName}</p>
-                        {follower.agentTitle && (
-                          <p className="text-sm text-muted-foreground">{follower.agentTitle}</p>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-
-        {/* Following Dialog */}
-        <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Following</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[400px]">
-              {loadingFollowing ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : following.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">Not following anyone yet</p>
-              ) : (
-                <div className="space-y-2">
-                  {following.map((person) => (
-                    <button
-                      key={person._id}
-                      onClick={() => {
-                        navigate(`/agents/${person._id}`)
-                        setFollowingDialogOpen && setFollowingDialogOpen(false)
-                      }}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={person.avatar} />
-                        <AvatarFallback>
-                          {person.fullName?.charAt(0) || person.userName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{person.fullName || person.userName}</p>
-                        {person.agentTitle && (
-                          <p className="text-sm text-muted-foreground">{person.agentTitle}</p>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-    </>
+    </div>
   )
 }
