@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { updateUser } from '@/redux/user/userSlice';
+import { getCurrentUserAPI } from '@/apis';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
@@ -8,6 +11,7 @@ export default function PaymentResultPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
+  const dispatch = useDispatch();
   
   const success = searchParams.get('success') === 'true';
   const message = searchParams.get('message') || '';
@@ -19,8 +23,21 @@ export default function PaymentResultPage() {
       setStatus(success ? 'success' : 'failed');
     }, 1500);
 
+    // Refresh user/balance immediately after successful payment
+    const refreshUser = async () => {
+      if (success) {
+        try {
+          const user = await getCurrentUserAPI();
+          if (user) dispatch(updateUser(user));
+        } catch (err) {
+          console.warn('Failed to refresh user after payment:', err);
+        }
+      }
+    };
+    refreshUser();
+
     return () => clearTimeout(timer);
-  }, [success]);
+  }, [success, dispatch]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN').format(parseInt(amount));

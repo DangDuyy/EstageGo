@@ -681,7 +681,15 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
 
                 return (
                   <div className="space-y-4">
-                    <div className="flex flex-row items-center space-y-2 space-x-6">
+                    <div
+                      className="flex flex-row items-center space-y-2 space-x-6 cursor-pointer"
+                      onClick={() => {
+                        if (owner?._id) {
+                          navigate(`/agents/${owner._id}`)
+                        }
+                      }}
+                      title="View agent profile"
+                    >
                       <Avatar className="h-20 w-20 flex-shrink-0">
                         {ownerAvatar ? (
                           <AvatarImage src={ownerAvatar} alt={ownerName} />

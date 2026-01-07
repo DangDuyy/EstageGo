@@ -9,11 +9,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getBalanceAPI } from '@/apis';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '@/redux/user/userSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCurrentUser, updateUser } from '@/redux/user/userSlice';
 
 export default function BalanceAndDeposit({ currency = 'đ' }) {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const currentUser = useSelector(selectCurrentUser);
     const [loading, setLoading] = useState(false);
 
@@ -29,7 +30,11 @@ export default function BalanceAndDeposit({ currency = 'đ' }) {
         try {
             setLoading(true);
             const response = await getBalanceAPI();
-            // Balance will be updated via Redux by getCurrentUserAPI
+            // If API returns a numeric balance, sync it into Redux user
+            if (response && (typeof response.balance === 'number' || typeof response?.data?.balance === 'number')) {
+                const balanceValue = typeof response.balance === 'number' ? response.balance : response.data.balance;
+                dispatch(updateUser({ balance: balanceValue }));
+            }
         } catch (error) {
             console.error('Failed to fetch balance:', error);
         } finally {

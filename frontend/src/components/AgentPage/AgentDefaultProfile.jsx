@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { PresenceBadge } from '@/components/common/PresenceBadge'
 import { usePresenceSnapshot } from '@/hooks/usePresenceSnapshot'
 import { useSelector } from 'react-redux'
@@ -59,7 +61,15 @@ export default function AgentDefaultProfile({
   onReviewImageSelect,
   onRemoveReviewImage,
   onSubmitReview,
-  onDeleteReview
+  onDeleteReview,
+  followersDialogOpen = false,
+  setFollowersDialogOpen,
+  followers = [],
+  loadingFollowers = false,
+  followingDialogOpen = false,
+  setFollowingDialogOpen,
+  following = [],
+  loadingFollowing = false
 }) {
   const navigate = useNavigate()
   const [editingReviewId, setEditingReviewId] = useState(null)
@@ -350,7 +360,10 @@ export default function AgentDefaultProfile({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={onShowFollowers}
+                        onClick={() => {
+                          setFollowersDialogOpen && setFollowersDialogOpen(true)
+                          onShowFollowers && onShowFollowers()
+                        }}
                         className="text-muted-foreground"
                       >
                         <Users className="h-4 w-4 mr-2" />
@@ -360,11 +373,14 @@ export default function AgentDefaultProfile({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={onShowFollowing}
+                          onClick={() => {
+                            setFollowingDialogOpen && setFollowingDialogOpen(true)
+                            onShowFollowing && onShowFollowing()
+                          }}
                           className="text-muted-foreground"
                         >
                           <UserPlus className="h-4 w-4 mr-2" />
-                          Following
+                          {followStats?.totalFollowing || 0} Following
                         </Button>
                       )}
                     </>
@@ -580,6 +596,94 @@ export default function AgentDefaultProfile({
           )}
         </CardContent>
       </Card>
+
+        {/* Followers Dialog */}
+        <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Followers</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[400px]">
+              {loadingFollowers ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : followers.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">No followers yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {followers.map((follower) => (
+                    <button
+                      key={follower._id}
+                      onClick={() => {
+                        navigate(`/agents/${follower._id}`)
+                        setFollowersDialogOpen && setFollowersDialogOpen(false)
+                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={follower.avatar} />
+                        <AvatarFallback>
+                          {follower.fullName?.charAt(0) || follower.userName?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-semibold">{follower.fullName || follower.userName}</p>
+                        {follower.agentTitle && (
+                          <p className="text-sm text-muted-foreground">{follower.agentTitle}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        {/* Following Dialog */}
+        <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Following</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[400px]">
+              {loadingFollowing ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : following.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">Not following anyone yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {following.map((person) => (
+                    <button
+                      key={person._id}
+                      onClick={() => {
+                        navigate(`/agents/${person._id}`)
+                        setFollowingDialogOpen && setFollowingDialogOpen(false)
+                      }}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={person.avatar} />
+                        <AvatarFallback>
+                          {person.fullName?.charAt(0) || person.userName?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-semibold">{person.fullName || person.userName}</p>
+                        {person.agentTitle && (
+                          <p className="text-sm text-muted-foreground">{person.agentTitle}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
     </>
   )
 }

@@ -217,9 +217,15 @@ const getAgentFollowStats = async (agentId) => {
       _destroy: false
     })
 
+    const totalFollowing = await agentFollowModel.countDocuments({
+      follower: agentId,
+      _destroy: false
+    })
+
     return {
       success: true,
-      totalFollowers
+      totalFollowers,
+      totalFollowing
     }
   } catch (error) {
     throw error

@@ -427,6 +427,10 @@ export default function AgentProfile() {
             setFollowersDialogOpen(true)
             fetchFollowers()
           }}
+          onShowFollowing={() => {
+            setFollowingDialogOpen(true)
+            fetchFollowing()
+          }}
           isChatLoading={startingChat}
           isFollowLoading={togglingFollow}
           currentUserId={currentUser?._id}
@@ -445,6 +449,10 @@ export default function AgentProfile() {
           setFollowersDialogOpen={setFollowersDialogOpen}
           followers={followers}
           loadingFollowers={loadingFollowers}
+          followingDialogOpen={followingDialogOpen}
+          setFollowingDialogOpen={setFollowingDialogOpen}
+          following={following}
+          loadingFollowing={loadingFollowing}
         />
       ) : (
         // Default Profile View
@@ -482,6 +490,14 @@ export default function AgentProfile() {
               onRemoveReviewImage={handleRemoveReviewImage}
               onSubmitReview={handleSubmitReview}
               onDeleteReview={handleDeleteReview}
+              followersDialogOpen={followersDialogOpen}
+              setFollowersDialogOpen={setFollowersDialogOpen}
+              followers={followers}
+              loadingFollowers={loadingFollowers}
+              followingDialogOpen={followingDialogOpen}
+              setFollowingDialogOpen={setFollowingDialogOpen}
+              following={following}
+              loadingFollowing={loadingFollowing}
             />
 
             {/* Followers Dialog */}

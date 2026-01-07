@@ -33,6 +33,27 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PropertyCard from '../common/Property/FeatureCard/PropertyCard'
 
+const formatTimeAgo = (date) => {
+  if (!date) return 'Recently'
+  const now = new Date()
+  const reviewDate = new Date(date)
+  const secondsAgo = Math.floor((now - reviewDate) / 1000)
+  
+  if (secondsAgo < 60) return 'Just now'
+  const minutesAgo = Math.floor(secondsAgo / 60)
+  if (minutesAgo < 60) return `${minutesAgo}m ago`
+  const hoursAgo = Math.floor(minutesAgo / 60)
+  if (hoursAgo < 24) return `${hoursAgo}h ago`
+  const daysAgo = Math.floor(hoursAgo / 24)
+  if (daysAgo < 7) return `${daysAgo}d ago`
+  const weeksAgo = Math.floor(daysAgo / 7)
+  if (weeksAgo < 4) return `${weeksAgo}w ago`
+  const monthsAgo = Math.floor(daysAgo / 30)
+  if (monthsAgo < 12) return `${monthsAgo}mo ago`
+  const yearsAgo = Math.floor(monthsAgo / 12)
+  return `${yearsAgo}y ago`
+}
+
 export default function AgentBrokerPage({
   user,
   isFollowing,
@@ -42,6 +63,7 @@ export default function AgentBrokerPage({
   properties = [],
   onStartChat,
   onToggleFollow,
+  onShowFollowing,
   onShowFollowers,
   isChatLoading,
   isFollowLoading,
@@ -60,7 +82,11 @@ export default function AgentBrokerPage({
   followersDialogOpen = false,
   setFollowersDialogOpen,
   followers = [],
-  loadingFollowers = false
+  loadingFollowers = false,
+  followingDialogOpen = false,
+  setFollowingDialogOpen,
+  following = [],
+  loadingFollowing = false
 }) {
   const navigate = useNavigate()
   const isOwnProfile = currentUserId === user?._id
@@ -235,7 +261,7 @@ export default function AgentBrokerPage({
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div className="grid grid-cols-5 gap-3 mt-6">
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-xl p-4 text-center border border-blue-200 dark:border-blue-800">
                     <div className="flex justify-center mb-2">
                       <div className="bg-blue-500 rounded-lg p-2">
@@ -296,6 +322,26 @@ export default function AgentBrokerPage({
                         {followStats.totalFollowers || 0}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">Followers</p>
+                    </button>
+                  )}
+
+                  {followStats && (
+                    <button
+                      onClick={() => {
+                        setFollowingDialogOpen(true)
+                        onShowFollowing && onShowFollowing()
+                      }}
+                      className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900 rounded-xl p-4 text-center border border-cyan-200 dark:border-cyan-800 hover:shadow-lg transition-all"
+                    >
+                      <div className="flex justify-center mb-2">
+                        <div className="bg-cyan-500 rounded-lg p-2">
+                          <Users className="h-5 w-5 text-white" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-bold">
+                        {followStats.totalFollowing || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Following</p>
                     </button>
                   )}
                 </div>
@@ -585,7 +631,7 @@ export default function AgentBrokerPage({
                                         />
                                       ))}
                                     </div>
-                                    <span className="text-xs text-muted-foreground">4 weeks ago</span>
+                                    <span className="text-xs text-muted-foreground">{formatTimeAgo(review.createdAt)}</span>
                                   </div>
                                 </div>
                               </div>
@@ -688,6 +734,50 @@ export default function AgentBrokerPage({
                       <p className="font-semibold">{follower.fullName || follower.userName}</p>
                       {follower.agentTitle && (
                         <p className="text-sm text-muted-foreground">{follower.agentTitle}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Following Dialog */}
+      <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Following</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            {loadingFollowing ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : following.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">Not following anyone yet</p>
+            ) : (
+              <div className="space-y-2">
+                {following.map((person) => (
+                  <button
+                    key={person._id}
+                    onClick={() => {
+                      navigate(`/agents/${person._id}`)
+                      setFollowingDialogOpen(false)
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={person.avatar} />
+                      <AvatarFallback>
+                        {person.fullName?.charAt(0) || person.userName?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-semibold">{person.fullName || person.userName}</p>
+                      {person.agentTitle && (
+                        <p className="text-sm text-muted-foreground">{person.agentTitle}</p>
                       )}
                     </div>
                   </button>

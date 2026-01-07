@@ -719,6 +719,61 @@ const getListingStats = async (userId) => {
 }
 
 /**
+ * Get count of agents that user is following
+ */
+const getUserFollowingCount = async (userId) => {
+  try {
+    const count = await agentFollowModel.countDocuments({
+      follower: userId
+    })
+    return { totalFollowing: count }
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Get list of agents that user is following with pagination
+ */
+const getUserFollowing = async (userId, page = 1, limit = 20) => {
+  try {
+    const skip = (page - 1) * limit
+
+    // Find all follow records where this user is the follower
+    const followRecords = await agentFollowModel
+      .find({ follower: userId })
+      .select('agent')
+      .skip(skip)
+      .limit(limit)
+
+    // Get agent IDs
+    const agentIds = followRecords.map(f => f.agent)
+
+    // Fetch agent details
+    const following = await userModel
+      .find({ _id: { $in: agentIds }, isActive: true })
+      .select('-password -verifyToken')
+
+    // Count total
+    const total = await agentFollowModel.countDocuments({
+      follower: userId
+    })
+
+    return {
+      following: following.map(agent => pickUser(agent)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
  * Request forgot password - Send OTP or email link
  */
 const requestForgotPassword = async ({ contactType, email, phone }) => {
@@ -1049,5 +1104,7 @@ export const userService = {
   sendPhoneVerificationCode,
   verifyPhoneCode,
   sendEmailVerificationLink,
-  verifyEmailToken
+  verifyEmailToken,
+  getUserFollowingCount,
+  getUserFollowing
 }
