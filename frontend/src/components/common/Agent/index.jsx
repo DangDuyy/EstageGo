@@ -8,14 +8,14 @@ function AgentForm() {
   const navigate = useNavigate();
   const [agents, setAgents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const loadAgents = async () => {
       try {
         setIsLoading(true);
         const response = await getAllAgentsAPI('', 1, 100);
-        // ✅ Only get users with role = 'agent'
+        // ✅ Chỉ lấy user có role = 'agent'
         const mappedAgents = (response?.agents || response?.data || [])
           .filter((user) => user.role === 'agent')
           .map((user) => ({
@@ -39,15 +39,11 @@ function AgentForm() {
     loadAgents();
   }, []);
 
-  // Display agents according to visibleCount
-  const displayedAgents = agents.slice(0, visibleCount);
-
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => Math.min(prev + 6, agents.length));
-  };
+  // Hiển thị 6 agents đầu tiên hoặc tất cả nếu showAll = true
+  const displayedAgents = showAll ? agents : agents.slice(0, 6);
 
   return (
-    <div className="flex flex-col justify-center sm:py-12 px-6 lg:px-8 max-w-screen-xl mx-auto gap-12">
+    <div className="flex flex-col justify-center sm:py-12 px-6 lg:px-8 max-w-screen-xl mx-auto gap-16">
       <div className="text-center max-w-2xl mx-auto">
         <b className="text-center text-muted-foreground text-base font-semibold">
           We&apos;re hiring!
@@ -67,7 +63,7 @@ function AgentForm() {
         </div>
       </div>
 
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-3 gap-y-8">
         {isLoading ? (
           <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground">Loading agents...</p>
@@ -78,28 +74,27 @@ function AgentForm() {
           </div>
         ) : (
           displayedAgents.map((member) => (
-            <div key={member.id} className="cursor-pointer group" onClick={() => navigate(`/agents/${member.id}`)}>
+            <div key={member.id} className="cursor-pointer" onClick={() => navigate(`/agents/${member.id}`)}>
               <img
                 src={member.imageUrl}
                 alt={member.name}
-                width={400}
-                height={400}
-                className="w-full aspect-square rounded-lg object-cover bg-secondary group-hover:opacity-90 transition-opacity"
+                width={200}
+                height={200}
+                className="w-full aspect-square rounded-lg object-cover bg-secondary"
                 loading="lazy"
               />
-              <h3 className="mt-3 text-base font-semibold truncate">{member.name}</h3>
-              <p className="text-muted-foreground text-sm truncate">{member.title.toUpperCase()}</p>
-              <p className="mt-2 text-sm line-clamp-2">{member.bio}</p>
+              <h3 className="mt-2 text-sm font-semibold truncate">{member.name}</h3>
+              <p className="text-muted-foreground text-xs truncate">{member.title.toUpperCase()}</p>
 
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-2 flex items-center gap-1.5">
                 {member.email && (
                   <Button
                     className="bg-accent hover:bg-accent text-muted-foreground shadow-none"
                     size="icon"
                     asChild
                   >
-                    <a href={`mailto:${member.email}`} aria-label="Email" className="w-8 h-8">
-                      <Twitter className="stroke-muted-foreground w-4 h-4" />
+                    <a href={`mailto:${member.email}`} aria-label="Email" className="w-7 h-7">
+                      <Twitter className="stroke-muted-foreground w-3 h-3" />
                     </a>
                   </Button>
                 )}
@@ -110,8 +105,8 @@ function AgentForm() {
                     size="icon"
                     asChild
                   >
-                    <a href={`tel:${member.phone}`} aria-label="Phone" className="w-8 h-8">
-                      <Instagram className="stroke-muted-foreground w-4 h-4" />
+                    <a href={`tel:${member.phone}`} aria-label="Phone" className="w-7 h-7">
+                      <Instagram className="stroke-muted-foreground w-3 h-3" />
                     </a>
                   </Button>
                 )}
@@ -121,8 +116,8 @@ function AgentForm() {
                   size="icon"
                   asChild
                 >
-                  <a href="#" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn" className="w-8 h-8">
-                    <Linkedin className="stroke-muted-foreground w-4 h-4" />
+                  <a href="#" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn" className="w-7 h-7">
+                    <Linkedin className="stroke-muted-foreground w-3 h-3" />
                   </a>
                 </Button>
               </div>
@@ -131,15 +126,15 @@ function AgentForm() {
         )}
       </div>
 
-      {/* Load More Button */}
-      {!isLoading && visibleCount < agents.length && (
+      {/* Nút Xem thêm/Thu gọn */}
+      {!isLoading && agents.length > 6 && (
         <div className="text-center">
           <Button
             size="lg"
             variant="outline"
-            onClick={handleLoadMore}
+            onClick={() => setShowAll(!showAll)}
           >
-            Load More ({agents.length - visibleCount} remaining)
+            {showAll ? "Thu gọn" : `Xem thêm (${agents.length - 6} agents)`}
           </Button>
         </div>
       )}
