@@ -244,7 +244,8 @@ export default function PropertyDetail({ ImagesCarousel = PropertyImagesCarousel
         });
       }
 
-      navigate('/dashboard/messages', { state: { conversationId: conversation._id } })
+      const propertyUrl = `${window.location.origin}/properties/${propertyId}`
+      navigate('/dashboard/messages', { state: { conversationId: conversation._id, propertyUrl: propertyUrl } })
     } catch (error) {
       console.error('Error starting chat:', error)
       toast.error('Failed to start conversation')

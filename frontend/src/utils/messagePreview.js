@@ -3,6 +3,18 @@
  * Handles: text messages, attachments, reactions
  */
 
+export const truncateUserName = (name, maxLength = 10) => {
+  if (!name) {
+    return 'Unknown'
+  }
+
+  const trimmed = name.trim()
+  if (trimmed.length > maxLength) {
+    return trimmed.substring(0, maxLength) + '...'
+  }
+  return trimmed
+}
+
 export const getConversationPreviewText = (lastMessage, maxLength = 20) => {
   if (!lastMessage) {
     return 'No messages yet'

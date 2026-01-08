@@ -14,11 +14,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import { selectCurrentUser, selectUsersStatus, updatePresenceStatus } from '@/redux/user/userSlice'
 import { emitTypingStart, emitTypingStop, joinConversation, leaveConversation, requestPresenceSnapshot, onPresenceUpdate } from '@/lib/socket'
 import ReactionButton from '@/components/common/Chat/ReactionButton'
-import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI } from '@/apis'
+import { deleteMessageForMeAPI, recallMessageAPI, toggleReactionAPI, searchPropertiesAPI } from '@/apis'
 import { formatDistanceToNow } from 'date-fns'
 import PropertyPreview from '@/components/common/Chat/PropertyPreview'
 import MessageContent from '@/components/common/Chat/MessageContent'
-import { getConversationPreviewText } from '@/utils/messagePreview'
+import { getConversationPreviewText, truncateUserName } from '@/utils/messagePreview'
 import ChatSidebarRight from '@/components/common/Chat/ChatSidebarRight'
 import { ChatHeader } from '@/components/common/ChatHeader'
 
@@ -78,6 +78,15 @@ export default function Message() {
   const [viewerOpen, setViewerOpen] = useState(false)
   const [viewerImageUrl, setViewerImageUrl] = useState(null)
   const [sidebarRightOpen, setSidebarRightOpen] = useState(false)
+  const [propertyDialogOpen, setPropertyDialogOpen] = useState(false)
+  const [selectedSuggestion, setSelectedSuggestion] = useState('')
+  const [otherUserProperties, setOtherUserProperties] = useState([])
+  const [loadingProperties, setLoadingProperties] = useState(false)
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false)
+  const [postsDialogOpen, setPostsDialogOpen] = useState(false)
+  const [otherUserPosts, setOtherUserPosts] = useState([])
+  const [loadingPosts, setLoadingPosts] = useState(false)
+  const attachMenuRef = useRef(null)
 
   const {
     messages,
@@ -172,6 +181,18 @@ export default function Message() {
   }, [contextMenu.openForId])
 
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (attachMenuRef.current && !attachMenuRef.current.contains(e.target)) {
+        setAttachMenuOpen(false)
+      }
+    }
+    if (attachMenuOpen) {
+      window.addEventListener('mousedown', handleClickOutside)
+      return () => window.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [attachMenuOpen])
+
+  useEffect(() => {
     if (!messagesStartRef.current || !pagination.hasMore) return
     const observer = new IntersectionObserver(
       (entries) => {
@@ -201,7 +222,13 @@ export default function Message() {
   useEffect(() => {
     if (location.state?.conversationId && conversations.length > 0) {
       const conv = conversations.find((c) => c._id === location.state.conversationId)
-      if (conv) setSelectedConversation(conv)
+      if (conv) {
+        setSelectedConversation(conv)
+        // Set property URL to message text if provided
+        if (location.state?.propertyUrl) {
+          setMessageText(location.state.propertyUrl)
+        }
+      }
     }
   }, [location.state, conversations])
 
@@ -232,6 +259,64 @@ export default function Message() {
     return conversation.participants?.find((p) => p._id !== currentUser._id)
   }
 
+  const handleSuggestedMessageClick = async (suggestion) => {
+    setSelectedSuggestion(suggestion)
+    if (!otherUser?._id) {
+      setMessageText(suggestion)
+      return
+    }
+    
+    try {
+      setLoadingProperties(true)
+      const data = await searchPropertiesAPI({ owner: otherUser._id, page: 1, itemsPerPage: 20 })
+      const properties = data?.properties || data?.data || []
+      setOtherUserProperties(properties)
+      
+      if (properties.length > 0) {
+        setPropertyDialogOpen(true)
+      } else {
+        setMessageText(suggestion)
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error)
+      setMessageText(suggestion)
+    } finally {
+      setLoadingProperties(false)
+    }
+  }
+
+  const handlePropertySelect = (property) => {
+    const propertyUrl = `${window.location.origin}/properties/${property._id}`
+    setMessageText(`${selectedSuggestion}\n\n${propertyUrl}`)
+    setPropertyDialogOpen(false)
+  }
+  const handleAttachPostsClick = async () => {
+    setAttachMenuOpen(false)
+    setLoadingPosts(true)
+    try {
+      const response = await searchPropertiesAPI({ owner: otherUser._id })
+      console.log('Posts API response:', response)
+      const propertiesList = response?.properties || response?.data || []
+      console.log('Posts list extracted:', propertiesList)
+      setOtherUserPosts(propertiesList)
+      setPostsDialogOpen(true)
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
+
+  const handleAttachDeviceClick = () => {
+    setAttachMenuOpen(false)
+    fileInputRef.current?.click()
+  }
+
+  const handlePostSelect = (property) => {
+    const propertyUrl = `${window.location.origin}/properties/${property._id}`
+    setMessageText((prev) => (prev ? `${prev} ${propertyUrl}` : propertyUrl))
+    setPostsDialogOpen(false)
+  }
   const otherUser = useMemo(() => getOtherUser(selectedConversation), [selectedConversation, currentUser])
   const conversationForHeader = useMemo(() => {
     if (!selectedConversation) return null
@@ -393,11 +478,11 @@ export default function Message() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">
-                          {otherUser?.fullName || otherUser?.userName || 'Unknown'}
+                        <p className="font-semibold truncate line-clamp-1">
+                          {truncateUserName(otherUser?.fullName || otherUser?.userName || 'Unknown')}
                         </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {getConversationPreviewText(conv.lastMessage)}
+                        <p className="text-sm text-muted-foreground truncate line-clamp-1">
+                          {getConversationPreviewText(conv.lastMessage, 10)}
                         </p>
                       </div>
                       {conv.lastMessage?.createdAt && (
@@ -472,10 +557,11 @@ export default function Message() {
                         ].map((suggestion, idx) => (
                           <button
                             key={idx}
-                            onClick={() => setMessageText(suggestion)}
-                            className="px-4 py-3 text-sm text-left rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-200 shadow-sm"
+                            onClick={() => handleSuggestedMessageClick(suggestion)}
+                            disabled={loadingProperties}
+                            className="px-4 py-3 text-sm text-left rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {suggestion}
+                            {loadingProperties ? 'Loading...' : suggestion}
                           </button>
                         ))}
                       </div>
@@ -706,6 +792,146 @@ export default function Message() {
                 </DialogContent>
               </Dialog>
 
+              {/* Property selection dialog */}
+              <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
+                <DialogContent className="sm:max-w-2xl">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Chọn bất động sản</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Chọn bất động sản bạn muốn hỏi về
+                      </p>
+                    </div>
+                    <ScrollArea className="h-[400px] pr-4">
+                      {otherUserProperties.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">
+                          Không có bất động sản nào
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {otherUserProperties.map((property) => (
+                            <button
+                              key={property._id}
+                              onClick={() => handlePropertySelect(property)}
+                              className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
+                            >
+                              <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                                {property.media?.[0]?.url ? (
+                                  <img
+                                    src={property.media[0].url}
+                                    alt={property.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                    No image
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold line-clamp-2 mb-1">
+                                  {property.title}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {property.price ? `${property.price.toLocaleString()} VND` : 'Liên hệ'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {property.address?.fullAddress || property.address?.street || property.city || 'N/A'}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setPropertyDialogOpen(false)}
+                      >
+                        Hủy
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setMessageText(selectedSuggestion)
+                          setPropertyDialogOpen(false)
+                        }}
+                      >
+                        Gửi không có property
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Posts selection dialog */}
+              <Dialog open={postsDialogOpen} onOpenChange={setPostsDialogOpen}>
+                <DialogContent className="sm:max-w-2xl">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Chọn bài đăng</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Chọn bài đăng của {otherUser?.fullName || 'người này'} để đề cập trong tin nhắn
+                      </p>
+                    </div>
+                    <ScrollArea className="h-[400px] pr-4">
+                      {loadingPosts ? (
+                        <div className="flex justify-center items-center py-8">
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                        </div>
+                      ) : otherUserPosts.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">
+                          Không có bài đăng nào
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {otherUserPosts.map((property) => (
+                            <button
+                              key={property._id}
+                              onClick={() => handlePostSelect(property)}
+                              className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-accent transition-colors text-left"
+                            >
+                              <div className="w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                                {property.media?.[0]?.url ? (
+                                  <img
+                                    src={property.media[0].url}
+                                    alt={property.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                    No image
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold line-clamp-2 mb-1">
+                                  {property.title}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {property.price ? `${property.price.toLocaleString()} VND` : 'Liên hệ'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {property.address?.fullAddress || property.address?.street || property.city || 'N/A'}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => setPostsDialogOpen(false)}
+                      >
+                        Đóng
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               {contextMenu.openForId && (
                 <div
                   ref={contextMenuRef}
@@ -760,15 +986,36 @@ export default function Message() {
                     }}
                   />
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="shrink-0"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Paperclip className="h-4 w-4 mr-1" />
-                    Attach
-                  </Button>
+                  <div className="relative" ref={attachMenuRef}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0"
+                      onClick={() => setAttachMenuOpen(!attachMenuOpen)}
+                    >
+                      <Paperclip className="h-4 w-4 mr-1" />
+                      Attach
+                    </Button>
+
+                    {attachMenuOpen && (
+                      <div className="absolute bottom-full left-0 mb-2 bg-white border rounded-md shadow-lg min-w-[160px] z-50">
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
+                          onClick={handleAttachPostsClick}
+                        >
+                          Posts
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors border-t"
+                          onClick={handleAttachDeviceClick}
+                        >
+                          Device
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <Input
                     placeholder="Type a message..."

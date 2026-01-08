@@ -129,42 +129,14 @@ export default function ChatSidebarRight({
           </div>
         </button>
 
-        <div>
+        <div className="px-6">
           <button
             onClick={() => handleOpenProfile(participants.find(p => p._id !== currentUser?._id))}
-            className="text-xl font-semibold truncate hover:text-primary transition cursor-pointer"
-            title="View profile"
+            className="text-xl font-semibold hover:text-primary transition cursor-pointer break-words text-center w-full"
+            title={displayName}
           >
             {displayName}
           </button>
-        </div>
-
-        {/* Top 3 quick action buttons */}
-        <div className="grid grid-cols-3 gap-4 place-items-center">
-          <div className="h-16 w-20 grid place-items-center">
-            <button className={buttonStyle}>
-              <div className={contentStyle}>
-                <Bell size={20} className="mb-1" />
-                <span className={textStyle}>Mute</span>
-              </div>
-            </button>
-          </div>
-          <div className="h-16 w-20 grid place-items-center">
-            <button className={buttonStyle}>
-              <div className={contentStyle}>
-                <Pin size={20} className="mb-1" />
-                <span className={textStyle}>Pin</span>
-              </div>
-            </button>
-          </div>
-          <div className="h-16 w-20 grid place-items-center">
-            <button className={buttonStyle}>
-              <div className={contentStyle}>
-                <UsersIcon size={20} className="mb-1" />
-                <span className={textStyle}>Add</span>
-              </div>
-            </button>
-          </div>
         </div>
       </div>
 
@@ -297,7 +269,7 @@ export default function ChatSidebarRight({
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium truncate">{name}</div>
+                          <div className="text-sm font-medium break-words">{name}</div>
                           <div
                             className={`text-xs ${
                               presence.tone === 'online'
@@ -340,15 +312,7 @@ export default function ChatSidebarRight({
           <AccordionItem value="security">
             <AccordionTrigger className="text-base p-4 hover:bg-muted/50">Security settings</AccordionTrigger>
             <AccordionContent className="overflow-hidden">
-              <div className="px-4 pb-4 space-y-4">
-                <div className="flex items-center justify-between py-2 border-b">
-                  <div className="flex items-center gap-2">
-                    <EyeOff size={18} />
-                    <span className="text-sm font-medium">Hide conversation</span>
-                  </div>
-                  <Switch />
-                </div>
-
+              <div className="px-2 pb-4 space-y-4">
                 <button
                   type="button"
                   className="w-full flex items-center gap-2 text-destructive p-2 rounded hover:bg-destructive/10 transition"
