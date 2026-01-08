@@ -76,6 +76,7 @@ export default function AgentBrokerPage({
   onRemoveReviewImage,
   onSubmitReview,
   onDeleteReview,
+  setReviewImagePreviews,
   currentUser,
   enableFollow = true,
   enableReviews = true,
@@ -92,6 +93,7 @@ export default function AgentBrokerPage({
   const isOwnProfile = currentUserId === user?._id
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [showMenuId, setShowMenuId] = useState(null)
+  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false)
   
   // Fetch presence status
   const usersStatus = useSelector(selectUsersStatus)
@@ -105,24 +107,40 @@ export default function AgentBrokerPage({
       comment: review.comment,
       images: []
     })
+    // Preload existing media so user can remove/add images while editing
+    setReviewImagePreviews?.((review.media || []).map((mediaItem) => ({
+      url: mediaItem.url,
+      preview: mediaItem.url,
+      type: mediaItem.type || 'image',
+      isExisting: true
+    })))
     setShowMenuId(null)
   }
 
   const handleCancelEdit = () => {
     setEditingReviewId(null)
     setReviewForm({ rating: 5, comment: '', images: [] })
+    setReviewImagePreviews?.([])
   }
 
-  const handleSubmitWithId = async () => {
-    await onSubmitReview(editingReviewId)
-    setEditingReviewId(null)
+  const handleSubmitReview = async () => {
+    if (isReviewSubmitting) return
+    setIsReviewSubmitting(true)
+    try {
+      if (editingReviewId) {
+        await onSubmitReview(editingReviewId)
+        setEditingReviewId(null)
+      } else {
+        await onSubmitReview()
+      }
+    } finally {
+      setIsReviewSubmitting(false)
+    }
   }
 
   const handleDelete = async (reviewId) => {
-    if (window.confirm('Are you sure you want to delete this review?')) {
-      await onDeleteReview(reviewId)
-      setShowMenuId(null)
-    }
+    await onDeleteReview(reviewId)
+    setShowMenuId(null)
   }
 
   return (
@@ -578,9 +596,11 @@ export default function AgentBrokerPage({
                         </div>
                         <div className="flex gap-2">
                           <Button
-                            onClick={editingReviewId ? handleSubmitWithId : () => onSubmitReview()}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                            onClick={handleSubmitReview}
+                            disabled={isReviewSubmitting}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg disabled:opacity-70"
                           >
+                            {isReviewSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             {editingReviewId ? 'Update' : 'Submit Review'}
                           </Button>
                           {editingReviewId && (

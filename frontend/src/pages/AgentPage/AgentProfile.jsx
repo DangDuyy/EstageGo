@@ -373,7 +373,6 @@ export default function AgentProfile() {
       setReviewImagePreviews([])
       setReviewForm({ rating: 5, comment: '', images: [] })
       await fetchReviews()
-      toast.success('Review submitted successfully')
     } catch (error) {
       console.error('Error submitting review:', error)
       toast.error(error.response?.data?.message || 'Failed to submit review')
@@ -397,7 +396,6 @@ export default function AgentProfile() {
         setReviewImagePreviews([])
       }
       await fetchReviews()
-      toast.success('Review deleted successfully')
     } catch (error) {
       console.error('Error deleting review:', error)
       toast.error('Failed to delete review')
@@ -448,6 +446,7 @@ export default function AgentProfile() {
           onRemoveReviewImage={handleRemoveReviewImage}
           onSubmitReview={handleSubmitReview}
           onDeleteReview={handleDeleteReview}
+          setReviewImagePreviews={setReviewImagePreviews}
           currentUser={currentUser}
           enableFollow={isAgent}
           enableReviews={isAgent}
@@ -496,6 +495,7 @@ export default function AgentProfile() {
               onRemoveReviewImage={handleRemoveReviewImage}
               onSubmitReview={handleSubmitReview}
               onDeleteReview={handleDeleteReview}
+              setReviewImagePreviews={setReviewImagePreviews}
               followersDialogOpen={followersDialogOpen}
               setFollowersDialogOpen={setFollowersDialogOpen}
               followers={followers}

@@ -61,6 +61,7 @@ export default function AgentDefaultProfile({
   onRemoveReviewImage,
   onSubmitReview,
   onDeleteReview,
+  setReviewImagePreviews,
   followersDialogOpen = false,
   setFollowersDialogOpen,
   followers = [],
@@ -73,6 +74,7 @@ export default function AgentDefaultProfile({
   const navigate = useNavigate()
   const [editingReviewId, setEditingReviewId] = useState(null)
   const [showMenuId, setShowMenuId] = useState(null)
+  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false)
   
   const usersStatus = useSelector(selectUsersStatus)
   usePresenceSnapshot(user?._id ? [user._id] : [])
@@ -85,25 +87,41 @@ export default function AgentDefaultProfile({
       comment: review.comment || '',
       images: []
     })
+    // Show existing images when editing so user can remove/keep them
+    setReviewImagePreviews?.((review.media || []).map((mediaItem) => ({
+      url: mediaItem.url,
+      preview: mediaItem.url,
+      type: mediaItem.type || 'image',
+      isExisting: true
+    })))
   }
 
   const handleCancelEdit = () => {
     setEditingReviewId(null)
     setReviewForm({ rating: 5, comment: '', images: [] })
+    setReviewImagePreviews?.([])
   }
 
-  const handleSubmitWithId = async () => {
-    await onSubmitReview(editingReviewId)
-    setEditingReviewId(null)
+  const handleSubmitReview = async () => {
+    if (isReviewSubmitting) return
+    setIsReviewSubmitting(true)
+    try {
+      if (editingReviewId) {
+        await onSubmitReview(editingReviewId)
+        setEditingReviewId(null)
+      } else {
+        await onSubmitReview()
+      }
+    } finally {
+      setIsReviewSubmitting(false)
+    }
   }
 
   const handleDelete = async (reviewId) => {
-    if (window.confirm('Are you sure you want to delete this review?')) {
-      await onDeleteReview(reviewId)
-      setShowMenuId(null)
-      if (editingReviewId === reviewId) {
-        handleCancelEdit()
-      }
+    await onDeleteReview(reviewId)
+    setShowMenuId(null)
+    if (editingReviewId === reviewId) {
+      handleCancelEdit()
     }
   }
 
@@ -383,7 +401,12 @@ export default function AgentDefaultProfile({
                       )}
                     </div>
 
-                    <Button onClick={editingReviewId ? handleSubmitWithId : () => onSubmitReview()} className="w-full bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-100">
+                    <Button 
+                      onClick={handleSubmitReview} 
+                      disabled={isReviewSubmitting}
+                      className="w-full bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-100 disabled:opacity-70"
+                    >
+                      {isReviewSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2 inline" /> : null}
                       {editingReviewId ? 'Update' : 'Post Review'}
                     </Button>
                   </div>
