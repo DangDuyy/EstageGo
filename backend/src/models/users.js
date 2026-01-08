@@ -152,10 +152,7 @@ const userSchema = new mongoose.Schema({
         bio: String, // Giới thiệu chi tiết
         coverImage: String, // Ảnh bìa trang môi giới
         yearsOfExperience: Number, // Số năm kinh nghiệm
-        supportServices: [{
-            type: String, // Các dịch vụ hỗ trợ (tư vấn, vay vốn, công chứng...)
-            enum: Object.values(SUPPORT_SERVICES),
-        }],
+        supportServices: [String],
         operatingAreas: [String] // Các khu vực hoạt động
     },
     licenseNumber: {
