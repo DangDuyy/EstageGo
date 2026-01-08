@@ -28,7 +28,7 @@ export default function Wishlist() {
             <h3 className="text-xl font-semibold mb-2">Your wishlist is empty</h3>
             <p className="text-gray-500 mb-6">Start adding properties you love!</p>
             <Button asChild>
-              <Link to="/map">Browse Properties</Link>
+              <Link to="/listing/grid">Browse Properties</Link>
             </Button>
           </CardContent>
         </Card>
