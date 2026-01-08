@@ -13,7 +13,7 @@ import {
 import { 
   searchPropertiesAPI, createOrGetConversationAPI,
   getAgentReviewsAPI, getUserReviewForAgentAPI, createAgentReviewAPI, updateAgentReviewAPI, deleteAgentReviewAPI,
-  checkFollowingAPI, toggleFollowAgentAPI, getAgentFollowStatsAPI, getAgentFollowersAPI, getUserFollowingAPI
+  checkFollowingAPI, toggleFollowAgentAPI, getAgentFollowStatsAPI, getAgentFollowersAPI, getUserFollowingAPI, getAgentFollowingAPI
 } from '@/apis'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -146,13 +146,19 @@ export default function AgentProfile() {
   }
 
   const fetchFollowing = async () => {
-    if (!currentUser) return
+    if (!agentId) {
+      console.log('[fetchFollowing] agentId is empty, returning')
+      return
+    }
     try {
+      console.log('[fetchFollowing] Fetching following for agentId:', agentId)
       setLoadingFollowing(true)
-      const data = await getUserFollowingAPI(1, 50)
+      const data = await getAgentFollowingAPI(agentId, 1, 50)
+      console.log('[fetchFollowing] Success! Data received:', data)
       setFollowing(data.following || [])
     } catch (error) {
-      console.error('Error fetching following:', error)
+      console.error('[fetchFollowing] Error:', error)
+      toast.error('Failed to load following list')
     } finally {
       setLoadingFollowing(false)
     }

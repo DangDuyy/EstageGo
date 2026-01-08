@@ -249,9 +249,65 @@ const toggleFollow = async (followerId, agentId) => {
   }
 }
 
+// Get all agents that an agent is following
+const getAgentFollowing = async (agentId, page = 1, limit = 20) => {
+  try {
+    if (!Types.ObjectId.isValid(agentId)) {
+      throw new Error('Invalid agent ID')
+    }
+
+    // Check if agent exists
+    const agent = await userModel.findById(agentId)
+    if (!agent) {
+      throw new Error('Agent not found')
+    }
+
+    const skip = (page - 1) * limit
+
+    console.log(`[FollowService] Fetching following for agent: ${agentId}, skip: ${skip}, limit: ${limit}`)
+    
+    const follows = await agentFollowModel
+      .find({ follower: agentId, _destroy: false })
+      .populate({
+        path: 'agent',
+        select: 'fullName userName avatar role agentTitle companyName',
+        match: { _destroy: { $ne: true } } // Only get active users
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    console.log(`[FollowService] Found ${follows.length} follow records for agent ${agentId}`)
+
+    const total = await agentFollowModel.countDocuments({ follower: agentId, _destroy: false })
+
+    // Filter out null agents (in case user was deleted)
+    const following = follows
+      .map(f => f.agent)
+      .filter(f => f !== null && f !== undefined)
+
+    console.log(`[FollowService] Returning ${following.length} agents that ${agentId} is following`)
+
+    return {
+      success: true,
+      following,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+  } catch (error) {
+    console.error(`[FollowService] Error in getAgentFollowing:`, error.message)
+    throw error
+  }
+}
+
 export const agentFollowService = {
   getAgentFollowers,
   getUserFollowing,
+  getAgentFollowing,
   followAgent,
   unfollowAgent,
   isFollowing,

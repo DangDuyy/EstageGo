@@ -284,7 +284,7 @@ export default function AdminListingTierConfig() {
 
       {/* Properties Dialog */}
       <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
-        <DialogContent className="max-w-6xl">
+        <DialogContent className="max-w-[90vw]" unconstrained={true}>
           <DialogHeader>
             <DialogTitle>Listings in {selectedTier?.displayName?.en}</DialogTitle>
             <DialogDescription>Bài post đang gán tier này</DialogDescription>

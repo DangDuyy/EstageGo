@@ -328,8 +328,9 @@ export default function AgentBrokerPage({
                   {followStats && (
                     <button
                       onClick={() => {
+                        console.log('[AgentBrokerPage] Following button clicked, calling onShowFollowing')
                         setFollowingDialogOpen(true)
-                        onShowFollowing && onShowFollowing()
+                        onShowFollowing?.()
                       }}
                       className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900 rounded-xl p-4 text-center border border-cyan-200 dark:border-cyan-800 hover:shadow-lg transition-all"
                     >

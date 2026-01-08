@@ -11,6 +11,9 @@ Router.get('/followers/:agentId', agentFollowController.getAgentFollowers)
 // GET /api/v1/agent-follows/stats/:agentId - Get follow statistics for an agent
 Router.get('/stats/:agentId', agentFollowController.getAgentFollowStats)
 
+// GET /api/v1/agent-follows/following-list/:agentId - Get all agents an agent is following
+Router.get('/following-list/:agentId', agentFollowController.getAgentFollowing)
+
 // Protected routes (auth required)
 Router.use(authMiddleware.isAuthorized)
 

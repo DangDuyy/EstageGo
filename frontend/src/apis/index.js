@@ -741,6 +741,14 @@ export const getUserFollowingAPI = async (page = 1, limit = 20) => {
   return response.data
 }
 
+// Get all agents an agent is following
+export const getAgentFollowingAPI = async (agentId, page = 1, limit = 20) => {
+  const response = await axios.get(`${API_ROOT}/v1/agent-follows/following-list/${agentId}`, {
+    params: { page, limit }
+  })
+  return response.data
+}
+
 // Check if user is following an agent
 export const checkFollowingAPI = async (agentId) => {
   const response = await authorizeAxiosInstance.get(`${API_ROOT}/v1/agent-follows/check/${agentId}`)

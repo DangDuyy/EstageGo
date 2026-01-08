@@ -148,7 +148,11 @@ export default function AgentDefaultProfile({
                   </button>
                   <div className="w-px h-10 bg-gray-200" />
                   <button 
-                    onClick={() => {setFollowingDialogOpen?.(true); onShowFollowing?.()}}
+                    onClick={() => {
+                      console.log('[AgentDefaultProfile] Following button clicked, calling onShowFollowing')
+                      setFollowingDialogOpen?.(true)
+                      onShowFollowing?.()
+                    }}
                     className="text-center group"
                   >
                     <p className="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{followStats?.totalFollowing || 0}</p>
@@ -287,10 +291,10 @@ export default function AgentDefaultProfile({
           {isProfessional && (
             <Card className="border-none shadow-sm">
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                {user?.experience !== undefined && (
+                {user?.brokerPage?.yearsOfExperience !== undefined && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tenure</h4>
-                    <p className="text-xl font-bold">{user.experience} Years <span className="text-sm font-normal text-muted-foreground">in Real Estate</span></p>
+                    <p className="text-xl font-bold">{user?.brokerPage?.yearsOfExperience} Years <span className="text-sm font-normal text-muted-foreground">in Real Estate</span></p>
                   </div>
                 )}
                 {user?.operatingAreas?.length > 0 && (

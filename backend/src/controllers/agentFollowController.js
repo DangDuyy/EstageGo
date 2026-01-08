@@ -31,6 +31,24 @@ const getUserFollowing = async (req, res, next) => {
   }
 }
 
+// Get all agents an agent is following
+const getAgentFollowing = async (req, res, next) => {
+  try {
+    const { agentId } = req.params
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20
+
+    console.log(`[FollowController] Getting following for agent: ${agentId}, page: ${page}, limit: ${limit}`)
+    const result = await agentFollowService.getAgentFollowing(agentId, page, limit)
+    console.log(`[FollowController] Following result:`, result)
+    
+    return res.status(StatusCodes.OK).json(result)
+  } catch (error) {
+    console.error(`[FollowController] Error getting following:`, error)
+    next(error)
+  }
+}
+
 // Follow an agent
 const followAgent = async (req, res, next) => {
   try {
@@ -124,6 +142,7 @@ const toggleFollow = async (req, res, next) => {
 export const agentFollowController = {
   getAgentFollowers,
   getUserFollowing,
+  getAgentFollowing,
   followAgent,
   unfollowAgent,
   isFollowing,
